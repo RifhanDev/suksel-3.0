@@ -13,7 +13,8 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('petender_performances', function (Blueprint $table) {
+                if (! Schema::hasTable('petender_performances')) {
+Schema::create('petender_performances', function (Blueprint $table) {
             $table -> id();
             $table -> uuid('uuid');
             $table -> string('type') -> nullable();
@@ -30,6 +31,7 @@ return new class extends Migration
             $table -> integer('vendor_id');
             $table -> integer('appraiser_id');
         });
+        }
     }
 
     /**

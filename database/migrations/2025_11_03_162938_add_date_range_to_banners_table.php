@@ -11,10 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('banners', function (Blueprint $table) {
+                if (Schema::hasTable('banners')) {
+Schema::table('banners', function (Blueprint $table) {
+            if (! Schema::hasColumn('banners', 'start')) {
             $table->date('start')->nullable()->after('link');
+            }
+            if (! Schema::hasColumn('banners', 'end')) {
             $table->date('end')->nullable()->after('start');
+            }
         });
+        }
     }
 
     /**

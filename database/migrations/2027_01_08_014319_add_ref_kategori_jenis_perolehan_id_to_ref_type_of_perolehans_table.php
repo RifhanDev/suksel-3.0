@@ -18,7 +18,9 @@ return new class extends Migration
 
         if (! Schema::hasColumn('ref_type_of_perolehans', 'ref_kategori_jenis_perolehan_id')) {
             Schema::table('ref_type_of_perolehans', function (Blueprint $table) {
+                if (! Schema::hasColumn('ref_type_of_perolehans', 'ref_kategori_jenis_perolehan_id')) {
                 $table->unsignedBigInteger('ref_kategori_jenis_perolehan_id')->nullable()->after('id');
+                }
             });
         }
 

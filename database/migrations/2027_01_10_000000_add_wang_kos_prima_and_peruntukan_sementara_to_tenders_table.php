@@ -13,10 +13,16 @@ class AddWangKosPrimaAndPeruntukanSementaraToTendersTable extends Migration
      */
     public function up()
     {
-        Schema::table('tenders', function (Blueprint $table) {
+                if (Schema::hasTable('tenders')) {
+Schema::table('tenders', function (Blueprint $table) {
+            if (! Schema::hasColumn('tenders', 'wang_kos_prima')) {
             $table->decimal('wang_kos_prima', 15, 2)->nullable()->after('anggaran_jabatan');
+            }
+            if (! Schema::hasColumn('tenders', 'wang_peruntukan_sementara')) {
             $table->decimal('wang_peruntukan_sementara', 15, 2)->nullable()->after('wang_kos_prima');
+            }
         });
+        }
     }
 
     /**

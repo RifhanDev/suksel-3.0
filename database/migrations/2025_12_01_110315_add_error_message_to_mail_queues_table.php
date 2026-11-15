@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('mail_queues', function (Blueprint $table) {
+                if (Schema::hasTable('mail_queues')) {
+Schema::table('mail_queues', function (Blueprint $table) {
+            if (! Schema::hasColumn('mail_queues', 'error_message')) {
             $table->text('error_message')->nullable()->after('status');
+            }
         });
+        }
     }
 
     /**

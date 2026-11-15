@@ -17,7 +17,9 @@ return new class extends Migration
         }
 
         Schema::table('jawatankuasa_perolehan_pemilihan_headers', function (Blueprint $table) {
+            if (! Schema::hasColumn('jawatankuasa_perolehan_pemilihan_headers', 'catatan_bidaan')) {
             $table->text('catatan_bidaan')->nullable()->after('sahkan_layak_bidaan');
+            }
         });
     }
 

@@ -15,7 +15,9 @@ return new class extends Migration
     {
         if (Schema::hasTable('organization_units')) {
             Schema::table('organization_units', function (Blueprint $table) {
+                if (! Schema::hasColumn('organization_units', 'sort_no')) {
                 $table->integer('sort_no')->nullable()->after('updated_at');
+                }
             });
         }
     }

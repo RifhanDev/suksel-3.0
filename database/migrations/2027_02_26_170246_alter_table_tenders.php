@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('tenders', function (Blueprint $table) {
+                if (Schema::hasTable('tenders')) {
+Schema::table('tenders', function (Blueprint $table) {
+            if (! Schema::hasColumn('tenders', 'uuid')) {
             $table->uuid('uuid')->nullable()->after('id');
+            }
         });
+        }
     }
 
     /**

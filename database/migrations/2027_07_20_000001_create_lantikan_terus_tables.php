@@ -10,7 +10,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('lantikan_terus_documents', function (Blueprint $table) {
+                if (! Schema::hasTable('lantikan_terus_documents')) {
+Schema::create('lantikan_terus_documents', function (Blueprint $table) {
             $table->id();
             SchemaCompat::referenceColumn($table, 'tender_id', 'tenders');
             // bq = dokumen BQ pemilik projek; jpict/minit_bebas = cut-off; surat_setuju_terima = keputusan
@@ -23,8 +24,10 @@ return new class extends Migration
 
             $table->foreign('tender_id')->references('id')->on('tenders')->onDelete('cascade');
         });
+        }
 
-        Schema::create('lantikan_terus_offers', function (Blueprint $table) {
+                if (! Schema::hasTable('lantikan_terus_offers')) {
+Schema::create('lantikan_terus_offers', function (Blueprint $table) {
             $table->id();
             SchemaCompat::referenceColumn($table, 'tender_id', 'tenders');
             SchemaCompat::referenceColumn($table, 'vendor_id', 'vendors');
@@ -42,6 +45,7 @@ return new class extends Migration
             $table->unique(['tender_id', 'vendor_id']);
             $table->foreign('tender_id')->references('id')->on('tenders')->onDelete('cascade');
         });
+        }
 
         $exists = DB::table('ref_kaedah_perolehans')
             ->where('name', 'like', '%Lantikan Terus%')

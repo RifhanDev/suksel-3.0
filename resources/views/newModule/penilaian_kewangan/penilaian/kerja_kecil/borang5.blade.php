@@ -433,7 +433,6 @@
                 <table class="table table-modern-b5 align-middle mb-0">
                     <thead>
                         <tr>
-                            <th style="width: 60px;" class="text-center">BIL</th>
                             <th><i class="bi bi-person-vcard text-danger me-1"></i> KOD PEMBEKAL</th>
                             <th class="text-end"><i class="bi bi-cash-stack text-danger me-1"></i> JUMLAH KESELURUHAN KERJA (RM)</th>
                             <th style="width: 180px;" class="text-center"><i class="bi bi-sliders text-danger me-1"></i> TINDAKAN</th>
@@ -442,7 +441,6 @@
                     <tbody>
                         @forelse($vendorsData as $vId => $v)
                             <tr>
-                                <td class="text-center text-muted font-monospace fw-bold">{{ $loop->iteration }}</td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2.5">
                                         <div class="bg-danger bg-opacity-10 text-danger p-2 rounded-2 d-inline-flex align-items-center justify-content-center" style="width:32px; height:32px;">
@@ -473,7 +471,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="text-center py-4 text-muted">
+                                <td colspan="3" class="text-center py-4 text-muted">
                                     <div class="d-flex flex-column align-items-center gap-2">
                                         <i class="bi bi-exclamation-circle text-warning display-6"></i>
                                         <span class="fw-semibold">Tiada petender berdaftar bagi analisa Borang 5.</span>
@@ -787,7 +785,7 @@
     function openB5DetailModal(vId) {
         currentB5VendorId = vId;
         const vData = b5VendorDataMap[vId];
-        const kodPembekal = vData ? vData.kod_pembekal : vId;
+        const kodPembekal = vData ? (vData.kod_pembekal || '-') : '-';
 
         document.getElementById('b5ModalRefBadge').innerText = 'NO. RUJUKAN PETENDER : ' + kodPembekal;
         const refTitleEl = document.getElementById('b5ModalRefHeaderTitle');

@@ -13,6 +13,7 @@ use App\Models\TechnicalChecklistHeader;
 use App\Models\TechnicalChecklistItem;
 use App\Models\TenderTeknikalKerjaLampiran;
 use App\Models\TenderTeknikalPematuhanEvaluation;
+use App\Models\TenderVendorDokumenFile;
 use App\Services\OnlineFormStatusService;
 use App\Services\StosBackendClient;
 use App\Services\TeknikalEvaluationService;
@@ -20,6 +21,7 @@ use App\Services\TeknikalKerjaEvaluationService;
 use App\Services\VendorDokumenResponseService;
 use App\Support\ChecklistMechanism;
 use App\Support\TenderDokumenActionResolver;
+use App\Support\TenderDokumenPresenter;
 use App\Support\TenderProcessStatus;
 use App\Tender;
 use App\TenderVendor;
@@ -212,7 +214,7 @@ class PenilaianTeknikalController extends Controller
         $structure = $this->service->loadSpecificationStructure($checklistItems);
         $spesifikasiEvaluations = $this->service->loadSpesifikasiEvaluations($tender);
         $borangEvaluations = $this->service->loadBorangEvaluations($tender);
-        $step2Items = $this->mapStep2ChecklistItems($checklistItems, $step2Vendors, $structure, $spesifikasiEvaluations, $borangEvaluations);
+        $step2Items = $this->mapStep2ChecklistItems($tender, $checklistItems, $step2Vendors, $structure, $spesifikasiEvaluations, $borangEvaluations);
 
         $allItems = $step1Items->concat($step2Items);
 
@@ -242,6 +244,7 @@ class PenilaianTeknikalController extends Controller
         $spesifikasiEvaluations = $this->service->loadSpesifikasiEvaluations($tender);
         $borangEvaluations = $this->service->loadBorangEvaluations($tender);
         $step2Items = $this->mapStep2ChecklistItems(
+            $tender,
             $step1ChecklistItems,
             $step2Vendors,
             $step2Structure,
@@ -409,6 +412,13 @@ class PenilaianTeknikalController extends Controller
     {
         return collect($items)
             ->map(function (TechnicalChecklistItem $item) use ($tender, $vendors, $evaluations) {
+                $mechanism = $item->mechanism;
+                $vendorAction = $item->vendor_action;
+                if ((int) $tender->penilaian_fizikal !== 1
+                    && ($mechanism === ChecklistMechanism::SERAHAN_TANGAN || $vendorAction === 'serahan_tangan')) {
+                    $mechanism = ChecklistMechanism::PETENDER_MUAT_NAIK;
+                    $vendorAction = 'muat_naik';
+                }
                 $evaluatedCount = $vendors
                     ->filter(fn(TenderVendor $vendor) => isset($evaluations["{$vendor->vendor_id}:{$item->uuid}"]))
                     ->count();
@@ -417,10 +427,10 @@ class PenilaianTeknikalController extends Controller
                 return [
                     'uuid'            => $item->uuid,
                     'title'          => $item->title ?: '-',
-                    'mechanism'      => $item->mechanism,
-                    'mechanism_label' => ChecklistMechanism::label($item->mechanism, $item->source_type),
+                    'mechanism'      => $mechanism,
+                    'mechanism_label' => ChecklistMechanism::label($mechanism, $item->source_type),
                     'is_spesifikasi' => $item->source_type === ChecklistMechanism::SOURCE_SPECIFICATION,
-                    'is_borang_atas_talian' => TenderDokumenActionResolver::resolve($item->source_type, $item->mechanism, $item->vendor_action) === 'online_form',
+                    'is_borang_atas_talian' => TenderDokumenActionResolver::resolve($item->source_type, $mechanism, $vendorAction) === 'online_form',
                     'form_url'       => $this->resolveBorangAtasTalianUrl($item, $tender),
                     'can_menilai'    => true,
                     'status_label'   => $status['label'],
@@ -448,12 +458,19 @@ class PenilaianTeknikalController extends Controller
      * Maps ALL checklist items (every mechanism) to Langkah 2 rows, not just Spesifikasi.
      * Spesifikasi completeness comes from computeSpesifikasiRollup(); others from $borangEvaluations.
      */
-    private function mapStep2ChecklistItems(Collection $items, Collection $vendors, Collection $structure, array $spesifikasiEvaluations, array $borangEvaluations): Collection
+    private function mapStep2ChecklistItems(Tender $tender, Collection $items, Collection $vendors, Collection $structure, array $spesifikasiEvaluations, array $borangEvaluations): Collection
     {
         return $items
-            ->map(function (TechnicalChecklistItem $item) use ($vendors, $structure, $spesifikasiEvaluations, $borangEvaluations) {
+            ->map(function (TechnicalChecklistItem $item) use ($tender, $vendors, $structure, $spesifikasiEvaluations, $borangEvaluations) {
+                $mechanism = $item->mechanism;
+                $vendorAction = $item->vendor_action;
+                if ((int) $tender->penilaian_fizikal !== 1
+                    && ($mechanism === ChecklistMechanism::SERAHAN_TANGAN || $vendorAction === 'serahan_tangan')) {
+                    $mechanism = ChecklistMechanism::PETENDER_MUAT_NAIK;
+                    $vendorAction = 'muat_naik';
+                }
                 $isSpesifikasi = $item->source_type === ChecklistMechanism::SOURCE_SPECIFICATION;
-                $isItemLevelScored = in_array($item->mechanism, [
+                $isItemLevelScored = in_array($mechanism, [
                     ChecklistMechanism::BORANG_ATAS_TALIAN,
                     ChecklistMechanism::PETENDER_MUAT_NAIK,
                     ChecklistMechanism::PTJ_MUAT_NAIK,
@@ -478,8 +495,8 @@ class PenilaianTeknikalController extends Controller
                 return [
                     'uuid'            => $item->uuid,
                     'title'           => $item->title ?: '-',
-                    'mechanism'       => $item->mechanism,
-                    'mechanism_label' => ChecklistMechanism::label($item->mechanism, $item->source_type),
+                    'mechanism'       => $mechanism,
+                    'mechanism_label' => ChecklistMechanism::label($mechanism, $item->source_type),
                     'is_spesifikasi'  => $isSpesifikasi,
                     'is_item_level_scored' => $isItemLevelScored,
                     'status_label'    => $status['label'],
@@ -492,7 +509,7 @@ class PenilaianTeknikalController extends Controller
     /** Resolves an item-level checklist item (Borang/Muat Naik) scoped to this tender. */
     private function resolveBorangChecklistItem(Tender $tender, string $uuid): TechnicalChecklistItem
     {
-        return TechnicalChecklistItem::query()
+        $item = TechnicalChecklistItem::query()
             ->where('uuid', $uuid)
             ->whereIn('mechanism', [
                 ChecklistMechanism::BORANG_ATAS_TALIAN,
@@ -502,6 +519,13 @@ class PenilaianTeknikalController extends Controller
             ])
             ->whereHas('header', fn($query) => $query->where('tender_id', $tender->id))
             ->firstOrFail();
+
+        if ((int) $tender->penilaian_fizikal !== 1 && $item->mechanism === ChecklistMechanism::SERAHAN_TANGAN) {
+            $item->mechanism = ChecklistMechanism::PETENDER_MUAT_NAIK;
+            $item->vendor_action = 'muat_naik';
+        }
+
+        return $item;
     }
 
     /** Maps vendor_action to its OnlineFormStatusService form_key. Only 2 forms exist today. */
@@ -1269,14 +1293,33 @@ class PenilaianTeknikalController extends Controller
         $vendors = $this->kerjaService->loadShortlistedVendors($tender);
         $evaluations = $this->kerjaService->loadEvaluations($tender);
 
-        $borangTeknikalRows = $vendors->map(function (TenderVendor $vendor) use ($tender, $evaluations) {
+        $bqItem = collect(TenderDokumenPresenter::for($tender)->items('admin'))
+            ->first(fn (array $item) => ! empty($item['admin_content']['bq_template_mode']));
+        $bqFilesByVendor = collect();
+
+		if ($bqItem && $vendors->isNotEmpty()) {
+            $bqFilesByVendor = TenderVendorDokumenFile::query()
+                ->where('tender_id', $tender->id)
+                ->whereIn('vendor_id', $vendors->pluck('vendor_id')->unique())
+                ->where('checklist_item_uuid', $bqItem['uuid'])
+                ->orderBy('id')
+                ->get()
+                ->groupBy('vendor_id');
+        }
+
+        $borangTeknikalRows = $vendors->map(function (TenderVendor $vendor) use ($tender, $evaluations, $bqFilesByVendor) {
             $evaluation = $evaluations[$vendor->vendor_id] ?? null;
+            $bqFiles = $bqFilesByVendor->get($vendor->vendor_id, collect());
 
             return [
                 'vendor_id' => (int) $vendor->vendor_id,
                 'rujukan' => $vendor->kod_pembekal,
                 'harga' => $this->kerjaService->resolveHargaTawaran($tender, $vendor),
                 'status' => $evaluation->status ?? null,
+                'bq_files' => $bqFiles->map(fn (TenderVendorDokumenFile $file) => [
+                    'name' => $file->original_name ?: 'Dokumen BQ',
+                    'url' => $file->url(),
+                ])->values()->all(),
             ];
         })->values();
 

@@ -11,11 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('complaints', function (Blueprint $table) {
+                if (Schema::hasTable('complaints')) {
+Schema::table('complaints', function (Blueprint $table) {
+            if (! Schema::hasColumn('complaints', 'admin_reply')) {
             $table->text('admin_reply')->nullable()->after('content');
+            }
+            if (! Schema::hasColumn('complaints', 'replied_by')) {
             $table->unsignedBigInteger('replied_by')->nullable()->after('admin_reply');
+            }
+            if (! Schema::hasColumn('complaints', 'replied_at')) {
             $table->timestamp('replied_at')->nullable()->after('replied_by');
+            }
         });
+        }
     }
 
     /**

@@ -79,13 +79,22 @@
                         <td class="text-center">
                             @if ($dokumen)
                                 <input type="hidden" name="kelulusan_existing_dokumen[{{ $idx }}]" value="{{ $dokumen['path'] ?? '' }}">
+                                <input type="hidden" name="kelulusan_existing_name[{{ $idx }}]" value="{{ $dokumen['original_name'] ?? '' }}">
                             @endif
                             <label class="upload-mini" @if($dokumen) style="display:none;" @endif>
-                                <input type="file" name="kelulusan_dokumen[]" accept=".pdf,.doc,.docx,.jpg,.png">
+                                <input type="file" name="kelulusan_dokumen[{{ $idx }}]" accept=".pdf,.doc,.docx,.jpg,.png">
                                 Pilih Fail
                             </label>
                             <div class="file-info-display" @if(!$dokumen) style="display:none;" @endif>
-                                <a class="file-name-text" href="{{ $dokumen['url'] ?? '#' }}" target="_blank">{{ $dokumen['original_name'] ?? '' }}</a>
+                                @php
+                                    $docName = $dokumen['original_name'] ?? basename((string) ($dokumen['path'] ?? '')) ?: 'Dokumen';
+                                    $docUrl = (string) ($dokumen['url'] ?? '');
+                                @endphp
+                                @if ($docUrl !== '' && $docUrl !== '#')
+                                    <a class="file-name-text" href="{{ $docUrl }}" target="_blank" title="{{ $docName }}">{{ $docName }}</a>
+                                @else
+                                    <span class="file-name-text" title="{{ $docName }}">{{ $docName }}</span>
+                                @endif
                                 <button type="button" class="btn-remove-file" title="Buang fail">&times;</button>
                             </div>
                         </td>
@@ -102,6 +111,15 @@
 @push('scripts')
 <script>
 $(document).ready(function () {
+    function reindexKelulusanRows() {
+        $('#tblKelulusan tbody tr').each(function (i) {
+            $(this).find('input[type=file][name^="kelulusan_dokumen"]').attr('name', 'kelulusan_dokumen[' + i + ']');
+            $(this).find('input[name^="kelulusan_existing_dokumen"]').attr('name', 'kelulusan_existing_dokumen[' + i + ']');
+            $(this).find('input[name^="kelulusan_existing_name"]').attr('name', 'kelulusan_existing_name[' + i + ']');
+        });
+    }
+    window.reindexKelulusanRows = reindexKelulusanRows;
+
     function buildKelulusanRow() {
         return `<tr class="kelulusan-dynamic">
             <td class="text-center"><input type="checkbox" class="chk-row"></td>
@@ -114,8 +132,11 @@ $(document).ready(function () {
         </tr>`;
     }
 
+    $('#formPenyediaanIklan').on('submit', reindexKelulusanRows);
+
     $('#btnTambahKelulusan').on('click', function () {
         $('#tblKelulusan tbody').append(buildKelulusanRow());
+        reindexKelulusanRows();
         $('#btnHapusKelulusan').show();
     });
 
@@ -124,6 +145,7 @@ $(document).ready(function () {
             if ($(this).find('.chk-row').is(':checked')) $(this).remove();
         });
         $('#chkSelectAll').prop('checked', false);
+        reindexKelulusanRows();
         if ($('#tblKelulusan tbody tr.kelulusan-dynamic').length === 0) $('#btnHapusKelulusan').hide();
     });
 
@@ -131,7 +153,9 @@ $(document).ready(function () {
         if (!this.files.length) return;
         var $td = $(this).closest('td');
         $td.find('input[name^="kelulusan_existing_dokumen"]').remove();
-        $td.find('.file-name-text').text(this.files[0].name);
+        $td.find('input[name^="kelulusan_existing_name"]').remove();
+        $td.find('.text-danger').remove();
+        $td.find('.file-name-text').text(this.files[0].name).removeClass('text-muted');
         $td.find('.upload-mini').hide();
         $td.find('.file-info-display').show();
     });

@@ -8,7 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('tender_kewangan_laporans', function (Blueprint $table) {
+                if (! Schema::hasTable('tender_kewangan_laporans')) {
+Schema::create('tender_kewangan_laporans', function (Blueprint $table) {
             $table->id();
             $table->unsignedInteger('tender_id')->unique();
             $table->text('catatan_peringkat1')->nullable();
@@ -28,6 +29,7 @@ return new class extends Migration
             $table->foreign('submitted_by', 'tkl_submitted_by_fk')
                 ->references('id')->on('users')->nullOnDelete();
         });
+        }
     }
 
     public function down(): void

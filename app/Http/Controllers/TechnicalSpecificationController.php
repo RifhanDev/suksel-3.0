@@ -84,7 +84,7 @@ class TechnicalSpecificationController extends Controller
     {
         $this->ensureSpecificationAccess();
 
-        $payload = $request->except('_token');
+        $payload = $this->applyTenderPhysicalSubmissionSetting($request->except('_token'));
         $apiUrl = $this->url('technical-specifications');
 
         try
@@ -118,7 +118,8 @@ class TechnicalSpecificationController extends Controller
 
     public function update(Request $request, string $uuid)
     {
-        $response = $this->api()->put($this->url('technical-specifications/' . $uuid), $request->except('_token'));
+        $payload = $this->applyTenderPhysicalSubmissionSetting($request->except('_token'));
+        $response = $this->api()->put($this->url('technical-specifications/' . $uuid), $payload);
 
         return response()->json($response->json(), $response->status());
     }
@@ -149,6 +150,21 @@ class TechnicalSpecificationController extends Controller
         if (!$user->hasRole('Admin') && !$user->can('tender:specification-management')) {
             abort(403);
         }
+    }
+
+    private function applyTenderPhysicalSubmissionSetting(array $payload): array
+    {
+        $tenderUuid = $payload['tender_uuid'] ?? null;
+        if (!$tenderUuid) {
+            return $payload;
+        }
+
+        $physicalSubmissionEnabled = (int) Tender::where('uuid', $tenderUuid)->value('penilaian_fizikal') === 1;
+        if (!$physicalSubmissionEnabled) {
+            $payload['physical_submission'] = false;
+        }
+
+        return $payload;
     }
 
     private function logStoreApiFailure(array $payload, string $apiUrl, Response $response): void

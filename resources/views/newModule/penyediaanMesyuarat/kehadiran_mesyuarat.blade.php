@@ -1,5 +1,10 @@
 @extends('layouts.v3.master')
 
+@section('styles')
+    <link href="{{ asset('css/components/bq-upload-tokens.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/components/bq-upload.css') }}" rel="stylesheet">
+@endsection
+
 @section('content')
     <style>
         .nested-tabs { border-bottom: 1px solid #ddd; margin-bottom: 10px; }
@@ -97,6 +102,45 @@
         document.addEventListener('DOMContentLoaded', function () {
             const config = JSON.parse(document.getElementById('kehadiran-page-config').textContent);
             const { tenderUuid, saveUrl, pageUrl, csrfToken, stosConfigured } = config;
+            const attendanceDialog = window.Swal && typeof window.Swal.mixin === 'function'
+                ? window.Swal.mixin({
+                    buttonsStyling: false,
+                    heightAuto: false,
+                    scrollbarPadding: false,
+                    showClass: { popup: 'bq-dialog-fade-in', backdrop: 'bq-backdrop-fade-in' },
+                    hideClass: { popup: 'bq-dialog-fade-out', backdrop: 'bq-backdrop-fade-out' },
+                    customClass: {
+                        container: 'bq-dialog-container',
+                        popup: 'bq-dialog',
+                        confirmButton: 'bq-dialog-button',
+                        cancelButton: 'bq-dialog-button bq-dialog-cancel'
+                    }
+                })
+                : null;
+
+            function showAttendanceNotice(message, icon) {
+                if (attendanceDialog) {
+                    return attendanceDialog.fire({
+                        title: icon === 'success' ? 'Berjaya' : (icon === 'error' ? 'Ralat' : 'Perhatian'),
+                        text: message,
+                        icon: icon || 'warning',
+                        confirmButtonText: 'OK',
+                        showCancelButton: false
+                    });
+                }
+
+                if (typeof window.showConfirmModal === 'function') {
+                    return window.showConfirmModal({
+                        title: icon === 'success' ? 'Berjaya' : (icon === 'error' ? 'Ralat' : 'Perhatian'),
+                        message: message,
+                        icon: icon || 'warning',
+                        confirmText: 'OK',
+                        showCancel: false
+                    }).then(function () { return { isConfirmed: true }; });
+                }
+
+                return Promise.resolve({ isConfirmed: true });
+            }
 
             document.querySelectorAll('.nested-tabs').forEach(function (wrapper) {
                 wrapper.addEventListener('click', function (e) {
@@ -131,7 +175,7 @@
             document.querySelectorAll('.btn-simpan-kehadiran').forEach(function (btn) {
                 btn.addEventListener('click', function () {
                     if (!stosConfigured) {
-                        alert('STOS backend tidak dikonfigurasi.');
+                        showAttendanceNotice('STOS backend tidak dikonfigurasi.', 'warning');
                         return;
                     }
 
@@ -142,20 +186,20 @@
                     const untukKelulusan = tabEl.querySelector('.untuk-kelulusan-checkbox').checked;
 
                     if (!meetingId) {
-                        alert('Sila pilih tarikh mesyuarat.');
+                        showAttendanceNotice('Sila pilih tarikh mesyuarat.', 'warning');
                         return;
                     }
 
                     const attendance = [];
-                    tabEl.querySelectorAll('.kehadiran-member-body tr[data-jawatankuasa-id]').forEach(function (row) {
+                    tabEl.querySelectorAll('.kehadiran-member-body tr[data-meeting-attendee-id]').forEach(function (row) {
                         attendance.push({
-                            jawatankuasa_id: parseInt(row.dataset.jawatankuasaId, 10),
+                            meeting_attendee_id: parseInt(row.dataset.meetingAttendeeId, 10),
                             hadir: row.querySelector('.hadir-checkbox').checked ? 1 : 0,
                         });
                     });
 
                     if (!attendance.length) {
-                        alert('Tiada ahli jawatankuasa untuk disimpan.');
+                        showAttendanceNotice('Tiada ahli jawatankuasa untuk disimpan.', 'warning');
                         return;
                     }
 
@@ -171,15 +215,22 @@
                             attendance: attendance,
                         },
                         success: function (res) {
-                            alert(res.message || 'Berjaya.');
-                            window.location.reload();
+                            showAttendanceNotice(res.message || 'Kehadiran mesyuarat berjaya disimpan.', 'success')
+                                .then(function () { window.location.reload(); });
                         },
                         error: function (xhr) {
-                            alert((xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Gagal menyimpan kehadiran.');
+                            showAttendanceNotice(
+                                (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Gagal menyimpan kehadiran.',
+                                'error'
+                            );
                         },
                     });
                 });
             });
         });
     </script>
+@endsection
+
+@section('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 @endsection

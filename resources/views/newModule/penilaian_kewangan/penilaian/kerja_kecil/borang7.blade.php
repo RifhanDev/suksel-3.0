@@ -298,7 +298,6 @@
             <table class="table table-borang-modern align-middle mb-0">
                 <thead>
                     <tr>
-                        <th style="width: 60px;" class="text-center">BIL</th>
                         <th style="width: 130px;" class="text-center">Kod Pembekal</th>
                         <th style="min-width: 220px;" class="text-start ps-3">Nama Syarikat</th>
                         <th style="width: 200px;" class="text-center">Dokumen</th>
@@ -310,7 +309,7 @@
                     @forelse($qualifiedParticipants as $idx => $p)
                         @php
                             $vId = $p->vendor_id;
-                            $kodPembekal = $p->kod_pembekal ?: ($p->ref_number ?: ('V' . str_pad($idx + 1, 3, '0', STR_PAD_LEFT)));
+                            $kodPembekal = $p->kod_pembekal ?: '-';
                             $vendorName = $p->vendor->name ?? $p->vendor->company_name ?? $p->name ?? ('Petender ' . ($idx + 1));
                             $rocNo = $p->vendor->registration ?? $p->vendor->registration_no ?? $p->vendor->roc_no ?? null;
 
@@ -344,7 +343,6 @@
                             $catatanVal = $evalRec->catatan ?? $payload['catatan'] ?? '';
                         @endphp
                         <tr>
-                            <td class="text-center font-monospace fw-bold text-dark">{{ $idx + 1 }}</td>
                             <td class="text-center font-monospace fw-bold text-dark">{{ $kodPembekal }}</td>
                             <td class="ps-3">
                                 <div class="fw-bold text-dark">{{ $vendorName }}</div>
@@ -380,7 +378,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center py-4 text-muted">
+                            <td colspan="5" class="text-center py-4 text-muted">
                                 <div class="d-flex flex-column align-items-center gap-2">
                                     <i class="bi bi-info-circle text-secondary display-6"></i>
                                     <span class="fw-semibold">Tiada petender yang layak / lulus dari Borang terdahulu.</span>

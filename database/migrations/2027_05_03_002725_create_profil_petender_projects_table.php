@@ -8,7 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('profil_petender_projects', function (Blueprint $table) {
+                if (! Schema::hasTable('profil_petender_projects')) {
+Schema::create('profil_petender_projects', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->foreignId('profil_petender_id')->index()->constrained('profil_petenders')->cascadeOnDelete();
@@ -18,6 +19,7 @@ return new class extends Migration
             $table->unsignedSmallInteger('sort_order')->default(0);
             $table->timestamps();
         });
+        }
     }
 
     public function down(): void

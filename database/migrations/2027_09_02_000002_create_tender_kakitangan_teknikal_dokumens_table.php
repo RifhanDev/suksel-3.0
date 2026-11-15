@@ -8,7 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('tender_kakitangan_teknikal_dokumens', function (Blueprint $table) {
+                if (! Schema::hasTable('tender_kakitangan_teknikal_dokumens')) {
+Schema::create('tender_kakitangan_teknikal_dokumens', function (Blueprint $table) {
             $table->id();
             $table->string('uuid', 36)->unique();
             $table->string('tender_uuid')->index();
@@ -23,6 +24,7 @@ return new class extends Migration
             $table->unsignedBigInteger('uploaded_by')->nullable();
             $table->timestamps();
         });
+        }
     }
 
     public function down(): void

@@ -13,7 +13,8 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('mail_queues', function (Blueprint $table) {
+                if (! Schema::hasTable('mail_queues')) {
+Schema::create('mail_queues', function (Blueprint $table) {
             $table->id();
             $table->integer('smtp_mail_id');
             $table->text('content');
@@ -27,6 +28,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
         });
+        }
     }
 
     /**

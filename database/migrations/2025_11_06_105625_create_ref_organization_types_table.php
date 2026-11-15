@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ref_organization_types', function (Blueprint $table) {
+                if (! Schema::hasTable('ref_organization_types')) {
+Schema::create('ref_organization_types', function (Blueprint $table) {
             $table->id();
             $table->string('name')->nullable();
             $table->boolean('active')->default(true);
             $table->integer('is_ssm')->default(1)->comment('1: SSM, 0: No SSM');
             $table->timestamps();
         });
+        }
     }
 
     /**

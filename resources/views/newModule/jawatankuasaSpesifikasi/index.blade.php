@@ -74,7 +74,7 @@
                             <th class="text-uppercase text-muted small fw-bold py-3" width="130px">Tarikh Jual</th>
                             <th class="text-uppercase text-muted small fw-bold py-3" width="130px">Tarikh Tutup</th>
                             <th class="text-uppercase text-center text-muted small fw-bold py-3" width="140px">Status</th>
-                            <th class="text-uppercase text-center text-muted small fw-bold py-3 pe-4" width="120px">Tindakan</th>
+                            <th class="text-uppercase text-center text-muted small fw-bold py-3 pe-4" width="210px">Tindakan</th>
                         </tr>
                     </thead>
                     <tbody></tbody>

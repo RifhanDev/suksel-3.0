@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('financial_checklist_headers', function (Blueprint $table) {
+                if (! Schema::hasTable('financial_checklist_headers')) {
+Schema::create('financial_checklist_headers', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->unsignedInteger('tender_id')->unique();
@@ -29,6 +30,7 @@ return new class extends Migration
             $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
             $table->timestamps();
         });
+        }
     }
 
     /**

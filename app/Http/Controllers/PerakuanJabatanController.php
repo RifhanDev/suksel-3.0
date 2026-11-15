@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
+use App\Http\Controllers\Concerns\RestrictsTenderByRole;
 use App\Models\EbiddingJadualBidaan;
 use App\Models\EbiddingVendorBidItem;
 use App\Models\PerakuanJabatanKertasTaklimat;
@@ -11,6 +12,7 @@ use App\Models\PerakuanJabatanKertasTaklimatItemFile;
 use App\Models\PerakuanJabatanPengesyoranPembekal;
 use App\Models\PerakuanJabatanPengesyoranPembekalItem;
 use App\Models\TenderKewanganKerjaEvaluation;
+use App\Models\TenderKewanganLaporan;
 use App\Models\TenderTeknikalSpesifikasiEvaluation;
 use App\Services\StosBackendClient;
 use App\Services\TenderProcessStatusService;
@@ -27,10 +29,34 @@ use Illuminate\Validation\ValidationException;
 class PerakuanJabatanController extends Controller
 {
     use AdvancesTenderProcessStatus;
+    use RestrictsTenderByRole;
 
     public function __construct()
     {
         $this->menuMiddleware('DepartmentCertification:list');
+
+        $this->middleware(function ($request, $next) {
+            $tender = $request->route('tender');
+            if ($tender instanceof Tender) {
+                $this->assertOwnAgency($tender);
+            }
+
+            $id = $request->route('id');
+            if ($id !== null && $id !== '' && is_numeric($id)) {
+                $model = Tender::query()->find($id);
+                if ($model) {
+                    $this->assertOwnAgency($model);
+                }
+            }
+
+            $file = $request->route('file');
+            if ($file instanceof PerakuanJabatanKertasTaklimatItemFile) {
+                $file->loadMissing('item.header.tender');
+                $this->assertOwnAgency($file->item?->header?->tender);
+            }
+
+            return $next($request);
+        });
     }
 
     /**
@@ -38,8 +64,9 @@ class PerakuanJabatanController extends Controller
      */
     public function index()
     {
-        $tenders = Tender::query()
-            ->where('status_process_id', TenderProcessStatus::perakuanJabatanListStatus())
+        $tenders = $this->applyOwnAgencyScope(
+            Tender::query()->where('status_process_id', TenderProcessStatus::perakuanJabatanListStatus())
+        )
             ->orderByDesc('id')
             ->get([
                 'id',
@@ -532,18 +559,14 @@ class PerakuanJabatanController extends Controller
     }
 
     /**
-     * Pembekal that reached Perakuan Jabatan (participated, not eliminated).
+     * Pembekal that lulus penilaian kewangan, sorted by lowest price.
+     * Kod pembekal stays as assigned (e.g. 3/12) — not renumbered by filtered order.
      *
      * @return list<array<string, mixed>>
      */
     private function buildPengesyoranPembekalRows(Tender $tender, ?PerakuanJabatanPengesyoranPembekal $pengesyoran = null): array
     {
-        $participants = $tender->participants()
-            ->with('vendor')
-            ->where('participate', 1)
-            ->whereNull('eliminated_at')
-            ->orderBy('id')
-            ->get();
+        $participants = $this->loadPengesyoranEligibleParticipants($tender);
 
         if ($participants->isEmpty()) {
             return [];
@@ -561,7 +584,6 @@ class PerakuanJabatanController extends Controller
         $isEbidding = (bool) ($tender->is_ebidding ?? false);
         $teknikalScores = $isKerja ? [] : $this->loadTeknikalScoresByVendor($tender);
         $kerjaScores = $isKerja ? $this->loadKerjaBorang14ScoresByVendor($tender, $participants) : [];
-        $total = $participants->count();
 
         $bidTotalsByVendor = [];
         $specBreakdown = [];
@@ -578,19 +600,9 @@ class PerakuanJabatanController extends Controller
             $specBreakdown = BidSpecBreakdown::forTender($tender);
         }
 
-        $sortedByHarga = $participants
-            ->sortBy(fn ($p) => (float) ($p->harga_tawaran ?? $p->price ?? $p->amount ?? 0))
-            ->values();
-        $kedudukanKewangan = [];
-        foreach ($sortedByHarga as $idx => $p) {
-            $kedudukanKewangan[(int) $p->vendor_id] = $idx + 1;
-        }
-
-        return $participants->values()->map(function ($p, $idx) use (
-            $total,
+        $rows = $participants->map(function ($p) use (
             $teknikalScores,
             $kerjaScores,
-            $kedudukanKewangan,
             $savedByVendor,
             $isKerja,
             $isEbidding,
@@ -634,19 +646,25 @@ class PerakuanJabatanController extends Controller
                 }
             }
 
+            $sortHarga = $hargaBidaan !== null
+                ? (float) $hargaBidaan
+                : ($harga !== null ? (float) $harga : null);
+
             return [
                 'vendor_id' => $vendorId,
                 'vendor_name' => (string) ($vendor->name ?? '-'),
-                'bil' => ($idx + 1) . '/' . $total,
+                // Keep original kod (e.g. 3/12); do not renumber after filter/sort.
+                'bil' => filled($p->kod_pembekal) ? (string) $p->kod_pembekal : '—',
                 'status_bumiputra' => $bumi ? 'Ya' : 'Tidak',
                 'harga_tawaran' => $harga !== null ? (float) $harga : null,
                 'harga_bidaan' => $hargaBidaan,
+                'sort_harga' => $sortHarga,
                 'is_new_bid' => $isNewBid,
                 'spec_items' => $specItems,
                 'skor_teknikal' => $score['skor'] ?? null,
                 'skor_keseluruhan' => $isKerja ? ($score['skor'] ?? null) : null,
                 'kedudukan_teknikal' => $isKerja ? null : ($score['kedudukan'] ?? null),
-                'kedudukan_kewangan' => $isKerja ? null : ($kedudukanKewangan[$vendorId] ?? null),
+                'kedudukan_kewangan' => null,
                 'kedudukan_keseluruhan' => $isKerja ? ($score['kedudukan'] ?? null) : null,
                 'status_mof' => $mofStatus,
                 'prestasi_pembekal' => '—',
@@ -654,7 +672,124 @@ class PerakuanJabatanController extends Controller
                 'syor_urusetia' => $saved?->syor_urusetia,
                 'catatan_urusetia' => $saved?->catatan_urusetia,
             ];
-        })->all();
+        });
+
+        // Lowest price first; missing harga last.
+        $sorted = $rows
+            ->sortBy(fn (array $row) => $row['sort_harga'] ?? PHP_FLOAT_MAX)
+            ->values();
+
+        if (! $isKerja) {
+            $sorted = $sorted->map(function (array $row, int $idx) {
+                $row['kedudukan_kewangan'] = $idx + 1;
+                unset($row['sort_harga']);
+
+                return $row;
+            });
+        } else {
+            $sorted = $sorted->map(function (array $row) {
+                unset($row['sort_harga']);
+
+                return $row;
+            });
+        }
+
+        return $sorted->all();
+    }
+
+    /**
+     * Vendors that lulus penilaian kewangan (not eliminated / cancel).
+     * Prefer explicit passing/recommended IDs from kewangan laporan when present.
+     *
+     * @return \Illuminate\Support\Collection<int, mixed>
+     */
+    private function loadPengesyoranEligibleParticipants(Tender $tender)
+    {
+        $query = $tender->participants()
+            ->with('vendor')
+            ->where('participate', 1)
+            ->whereNull('eliminated_at')
+            ->whereNull('eliminated_process_id')
+            ->where(function ($q) {
+                $q->where('cancel_fg', 0)->orWhereNull('cancel_fg');
+            });
+
+        $lulusIds = $this->resolveLulusKewanganVendorIds($tender);
+        if ($lulusIds !== null) {
+            if ($lulusIds === []) {
+                return collect();
+            }
+            $query->whereIn('vendor_id', $lulusIds);
+        }
+
+        return $this->rejectPengesyoranWithoutOffer($tender, $query->orderBy('id')->get());
+    }
+
+    /**
+     * A company that bought the document but never became a petender
+     * (no kod_pembekal) and has no offer price must not appear in
+     * Pengesyoran Pembekal. A real bid still keeps the row.
+     *
+     * @param  \Illuminate\Support\Collection<int, mixed>  $participants
+     * @return \Illuminate\Support\Collection<int, mixed>
+     */
+    private function rejectPengesyoranWithoutOffer(Tender $tender, $participants)
+    {
+        if ($participants->isEmpty()) {
+            return $participants;
+        }
+
+        $bidderIds = [];
+        if ((bool) ($tender->is_ebidding ?? false)) {
+            $bidderIds = EbiddingVendorBidItem::query()
+                ->where('tender_id', $tender->id)
+                ->whereIn('vendor_id', $participants->pluck('vendor_id'))
+                ->whereNotNull('submitted_at')
+                ->where('bid_price', '>', 0)
+                ->pluck('vendor_id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+        }
+
+        return $participants->reject(function ($participant) use ($bidderIds) {
+            if (filled($participant->kod_pembekal)) {
+                return false;
+            }
+
+            if (in_array((int) $participant->vendor_id, $bidderIds, true)) {
+                return false;
+            }
+
+            $harga = $participant->harga_tawaran ?? $participant->price ?? $participant->amount ?? null;
+
+            return $harga === null || $harga === '' || (float) $harga <= 0;
+        })->values();
+    }
+
+    /**
+     * Explicit "lulus kewangan" vendor IDs from laporan, when available.
+     *
+     * @return list<int>|null  null = no explicit list; use elimination flags only
+     */
+    private function resolveLulusKewanganVendorIds(Tender $tender): ?array
+    {
+        $laporan = TenderKewanganLaporan::query()->where('tender_id', $tender->id)->first();
+        if (! $laporan) {
+            return null;
+        }
+
+        $justifikasi = $laporan->pengesyoran_justifikasi ?? [];
+        if (! is_array($justifikasi)) {
+            return null;
+        }
+
+        foreach (['passing_vendor_ids', 'recommended_vendor_ids'] as $key) {
+            if (! empty($justifikasi[$key]) && is_array($justifikasi[$key])) {
+                return array_values(array_unique(array_map('intval', $justifikasi[$key])));
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -734,9 +869,7 @@ class PerakuanJabatanController extends Controller
         $validated = $request->validate($rules);
         $rows = collect($validated['rows'] ?? []);
 
-        $allowedVendorIds = $tender->participants()
-            ->where('participate', 1)
-            ->whereNull('eliminated_at')
+        $allowedVendorIds = $this->loadPengesyoranEligibleParticipants($tender)
             ->pluck('vendor_id')
             ->map(fn ($id) => (int) $id)
             ->all();

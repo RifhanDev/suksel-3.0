@@ -13,7 +13,8 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('reject_templates', function (Blueprint $table) {
+                if (! Schema::hasTable('reject_templates')) {
+Schema::create('reject_templates', function (Blueprint $table) {
             $table->id();
             $table->string('title');
             $table->string('content');
@@ -23,6 +24,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
         });
+        }
     }
 
     /**

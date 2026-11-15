@@ -49,8 +49,9 @@ class PenilaianKewanganKerjaCalculator
         $asetCair = $wangDalamTangan + $bsGrandTotal;
 
         // 4. Jumlah Modal Tersedia (K)
-        // K = Purata 3 Bulan (F) + Wang Tangan (G) + Bon/Saham (H) + Aset Cair (I) + Kemudahan Kredit (J)
-        $jumlahModal = $purataBank + $wangDalamTangan + $bsGrandTotal + $asetCair + $bakiKredit;
+        // Aset Cair (I) is the subtotal of cash-in-hand (G) and bon/saham (H).
+        // Count that subtotal once alongside average bank balance (F) and credit (J).
+        $jumlahModal = $purataBank + $asetCair + $bakiKredit;
 
         // 5. Modal Minimum Requirement (1.5% of Anggaran Jabatan / Nilai Perolehan)
         $modalMinimum = $anggaranJabatan * ($minCapitalPct / 100);

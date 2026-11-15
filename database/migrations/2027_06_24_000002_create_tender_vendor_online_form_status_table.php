@@ -8,7 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('tender_vendor_online_form_statuses', function (Blueprint $table) {
+                if (! Schema::hasTable('tender_vendor_online_form_statuses')) {
+Schema::create('tender_vendor_online_form_statuses', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->unsignedInteger('tender_id')->index();
@@ -27,6 +28,7 @@ return new class extends Migration
                 ->on('tenders')
                 ->cascadeOnDelete();
         });
+        }
     }
 
     public function down(): void

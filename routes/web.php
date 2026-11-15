@@ -345,6 +345,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('/perincian-page', [PenyediaanMesyuaratController::class, 'show'])->name('perincianPage');
 	Route::post('/penyediaan-mesyuarat/simpan', [PenyediaanMesyuaratController::class, 'simpan'])->name('penyediaanMesyuarat.simpan');
 	Route::post('/penyediaan-mesyuarat/hantar', [PenyediaanMesyuaratController::class, 'hantar'])->name('penyediaanMesyuarat.hantar');
+	Route::post('/penyediaan-mesyuarat/kemaskini-ahli', [PenyediaanMesyuaratController::class, 'kemaskiniAhli'])->name('penyediaanMesyuarat.kemaskiniAhli');
 
 	Route::get('/index-jawatankuasa', [PenyediaanMesyuaratController::class, 'indexKehadiran'])->name('jawatankuasaMesyuarat');
 	Route::get('/jawatankuasa-page', [PenyediaanMesyuaratController::class, 'showKehadiran'])->name('jawatankuasaPage');
@@ -460,6 +461,7 @@ Route::middleware(['auth'])->group(function () {
 	// new penilaian kewangan
 	Route::get('/penilaian-kewangan', [PenilaianKewanganController::class, 'index'])->name('penilaianKewangan');
 	Route::get('/penilaian-kewangan/{tender_no}/laporan/cetak', [PenilaianKewanganController::class, 'cetakLaporan'])->name('penilaianKewangan.cetakLaporan');
+	Route::get('/penilaian-kewangan/rumusan-step3/{tender_no}', [PenilaianKewanganController::class, 'rumusanStep3'])->name('penilaianKewangan.rumusanStep3');
 	Route::get('/penilaian-kewangan/{tender_no}', [PenilaianKewanganController::class, 'show'])->name('penilaianKewangan.show')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan/simpan-pematuhan', [PenilaianKewanganController::class, 'simpanPematuhan'])->name('penilaianKewangan.simpanPematuhan');
 	Route::post('/penilaian-kewangan/kemaskini-langkah', [PenilaianKewanganController::class, 'kemaskiniLangkah'])->name('penilaianKewangan.kemaskiniLangkah');
@@ -502,10 +504,13 @@ Route::middleware(['auth'])->group(function () {
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang13/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang13Muktamad'])->name('penilaianKewanganKerja.borang13.simpanMuktamad')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang14/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang14Muktamad'])->name('penilaianKewanganKerja.borang14.simpanMuktamad')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang15/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang15Muktamad'])->middleware('2fa.penilaian:kewangan')->name('penilaianKewanganKerja.borang15.simpanMuktamad')->where('tender_no', '.*');
+	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang15/simpan-pengesyoran', [PenilaianKewanganKerjaController::class, 'simpanPengesyoranBorang15'])->name('penilaianKewanganKerja.borang15.simpanPengesyoran')->where('tender_no', '.*');
+	Route::post('/penilaian-kewangan-kerja/{tender_no}/kerja-kecil/simpan-keputusan', [PenilaianKewanganKerjaController::class, 'simpanKeputusanKerjaKecil'])->name('penilaianKewanganKerja.kerjaKecil.simpanKeputusan')->where('tender_no', '.*');
 	Route::get('/penilaian-kewangan-kerja/{tender_no}/borang/{borang_code}', [PenilaianKewanganKerjaController::class, 'getBorang'])->name('penilaianKewanganKerja.borang.show')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/{borang_code}/simpan', [PenilaianKewanganKerjaController::class, 'simpanBorang'])->name('penilaianKewanganKerja.borang.simpan')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/pengesahan-peringkat', [PenilaianKewanganKerjaController::class, 'sahkanPeringkat'])->name('penilaianKewanganKerja.sahkanPeringkat')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/hantar', [PenilaianKewanganKerjaController::class, 'hantar'])->middleware('2fa.penilaian:kewangan')->name('penilaianKewanganKerja.hantar')->where('tender_no', '.*');
+	Route::get('/penilaian-kewangan-kerja/{tender_no}/laporan/cetak', [PenilaianKewanganKerjaController::class, 'cetakLaporan'])->name('penilaianKewanganKerja.cetakLaporan')->where('tender_no', '.*');
 	Route::get('/penilaian-kewangan-kerja/{tender_no}', [PenilaianKewanganKerjaController::class, 'show'])->name('penilaianKewanganKerja.show')->where('tender_no', '.*');
 });
 
@@ -546,8 +551,8 @@ Route::view('/syarat-tender', 'newModule.syarikatPembekal.syarat_tender')->name(
 Route::view('/kod-bidang', 'newModule.syarikatPembekal.kod_bidang')->name('kodBidang');
 
 // Dummy Controller 
-Route::get('/tender/cipta', [DummyController::class, 'create'])->name('tender.create');
-Route::post('/tender/store', [DummyController::class, 'store'])->name('tender.store');
+Route::get('/tender/cipta', [DummyController::class, 'create'])->name('tender.dummy.create');
+Route::post('/tender/store', [DummyController::class, 'store'])->name('tender.dummy.store');
 Route::get('/tender/bekalan', [DummyController::class, 'bekalan'])->name('tender.bekalan');
 Route::get('/tender/kerja', [DummyController::class, 'kerja'])->name('tender.kerja');
 Route::get('/tender/status/{status}', [DummyController::class, 'viewByStatus'])->name('tender.status');
@@ -853,52 +858,6 @@ Route::middleware(['auth'])->group(function () {
 			Route::get('penilaian/logs', [TwoFactorAdminController::class, 'penilaianLogs'])->name('penilaian.logs');
 		});
 
-		Route::get('users/pending-approval', [UsersController::class, 'pendingApproval'])->name('users.pending-approval');
-		Route::get('users/{user}/approval', [UsersController::class, 'approval'])->name('users.approval');
-		Route::put('users/{user}/approval', [UsersController::class, 'storeApproval'])->name('users.store-approval');
-		Route::put('users/{user}/approve', [UsersController::class, 'approveUser'])->name('users.approve');
-		Route::get('users/{user}/histories', [UsersController::class, 'histories'])->name('users.histories');
-		Route::get('users/{user}/login', [UsersController::class, 'doLogin'])->name('users.login');
-		Route::put('users/{user}/confirm', [UsersController::class, 'confirm']);
-		Route::get('users/{user}/reset_password', [UsersController::class, 'getSetPassword'])->name('user.reset-password');
-		Route::put('users/{user}/reset_password', [UsersController::class, 'putSetPassword']);
-		Route::get('users/{user}/send_reset_password', [UsersController::class, 'sendResetPasswordEmail'])->name('user.send-reset-password');
-		Route::put('users/{user}/confirm', [UsersController::class, 'putSetConfirmation']);
-		Route::get('users/{user}/resend_confirmation', [UsersController::class, 'resendConfirmation']);
-		Route::resource('users', UsersController::class);
-
-		Route::post('user/byagency', [UsersController::class, 'getUserByAgencies'])->name('user.by.agency');
-		Route::post('user/byid', [UsersController::class, 'getUserById'])->name('user.by.id');
-
-
-
-		Route::get('requests/show/{request_id}', [CodeRequestsController::class, 'showAll'])->name('requests.showAll');
-		Route::put('requests/{requests}/approve', [CodeRequestsController::class, 'approve'])->name('requests.approve');
-		Route::post('requests/{requests}/reject', [CodeRequestsController::class, 'reject'])->name('requests.reject');
-
-
-
-		Route::post('transactions/ajax', [TransactionsController::class, 'updateFpxCount'])->name('updateFpxCount');
-		Route::get('transactions/subscription', [TransactionsController::class, 'subscriptionIndex']);
-		Route::get('transactions/purchase', [TransactionsController::class, 'purchaseIndex']);
-		Route::get('transactions/success', [TransactionsController::class, 'successTransIndex']);
-		Route::get('transactions/pending', [TransactionsController::class, 'pendingTransIndex']);
-		Route::get('transactions/declined', [TransactionsController::class, 'declinedTransIndex']);
-		Route::get('transactions/failed', [TransactionsController::class, 'failedTransIndex']);
-		Route::get('transactions/pending_authorization', [TransactionsController::class, 'pendingAuthTransIndex']);
-
-		Route::resource('transactions', TransactionsController::class);
-		Route::get('transactions/{id}/receipt', [TransactionsController::class, 'receipt'])->name('transactions.receipt');
-		Route::get('transactions/{id}/fpx_query', [TransactionsController::class, 'fpx_query'])->name('transactions.fpx_query');
-		Route::get('transactions/{id}/fpx_requery', [TransactionsController::class, 'fpx_requery'])->name('transactions.fpx_requery');
-		Route::get('transactions/{id}/temp_receipt', [TransactionsController::class, 'temp_receipt'])->name('transactions.temp_receipt');
-
-		Route::resource('blacklists', VendorBlacklistsController::class);
-		Route::prefix('vendor/{vendor}/blacklists/{blacklists}')->name('vendor.blacklists.')->controller(VendorBlacklistsController::class)->group(function () {
-			Route::put('cancel', 'cancel')->name('cancel');
-			Route::get('unblacklist', 'unblacklist')->name('unblacklist');
-		});
-
 		// Settings - Controller doesn't exist, commented out
 		// Route::get('settings', [SettingsController::class, 'index'])->name('settings');
 		// Route::put('settings', [SettingsController::class, 'update']);
@@ -937,108 +896,12 @@ Route::middleware(['auth'])->group(function () {
 		// News
 		Route::get('news/{id}/publish', [NewsController::class, 'publish'])->name('news.publish');
 
-		// Reports - Individual Report Controllers
-		Route::get('reports/revenue', [ReportRevenueController::class, 'index']);
-		Route::post('reports/revenue', [ReportRevenueController::class, 'view']);
-		Route::get('reports/revenue/excel', [ReportRevenueController::class, 'excel']);
-
-		Route::get('reports/agency/active', [ReportAgencyActiveController::class, 'index']);
-		Route::post('reports/agency/active', [ReportAgencyActiveController::class, 'view']);
-		Route::get('reports/agency/active/excel', [ReportAgencyActiveController::class, 'excel']);
-
-		Route::get('reports/agency/all', [ReportAgencyAllController::class, 'index']);
-		Route::post('reports/agency/all', [ReportAgencyAllController::class, 'view']);
-		Route::get('reports/agency/all/excel', [ReportAgencyAllController::class, 'excel']);
-
-		Route::get('reports/agency/type', [ReportAgencyTypeController::class, 'index']);
-		Route::post('reports/agency/type', [ReportAgencyTypeController::class, 'view']);
-		Route::get('reports/agency/type/excel', [ReportAgencyTypeController::class, 'excel']);
-
-		Route::get('reports/agency/daily', [ReportAgencyDailyController::class, 'index']);
-		Route::post('reports/agency/daily', [ReportAgencyDailyController::class, 'view']);
-		Route::get('reports/agency/daily/excel', [ReportAgencyDailyController::class, 'excel']);
-
-		Route::get('reports/agency/transaction', [ReportAgencyTransactionController::class, 'index']);
-		Route::post('reports/agency/transaction', [ReportAgencyTransactionController::class, 'view']);
-		Route::get('reports/agency/transaction/receipts', [ReportAgencyTransactionController::class, 'receipts']);
-		Route::get('reports/agency/transaction/excel', [ReportAgencyTransactionController::class, 'excel']);
-
-		Route::get('reports/gateway/daily', [ReportGatewayDailyController::class, 'index']);
-		Route::post('reports/gateway/daily', [ReportGatewayDailyController::class, 'view']);
-		Route::get('reports/gateway/daily/excel', [ReportGatewayDailyController::class, 'excel']);
-
-		Route::get('reports/vendor/status', [ReportVendorStatusController::class, 'index']);
-		Route::get('reports/vendor/status/view/{view}', [ReportVendorStatusController::class, 'view']);
-		Route::get('reports/vendor/status/csv/{view}', [ReportVendorStatusController::class, 'csv']);
-		Route::get('reports/vendor/status/excel/{view}', [ReportVendorStatusController::class, 'excel']);
-
-		/* add by zayid 4-jan-23 */
-		Route::get('reports/vendor/summary/{year}/{vendor_id}', [ReportVendorSummaryController::class, 'index'])->name('report.vendor.summary');
-
-		Route::get('reports/vendor/request', [ReportCodeRequestController::class, 'index']);
-		Route::post('reports/vendor/request', [ReportCodeRequestController::class, 'view']);
-
-		Route::get('reports/vendor/registration', [ReportVendorRegistrationController::class, 'index']);
-		Route::post('reports/vendor/registration', [ReportVendorRegistrationController::class, 'view']);
-
-		Route::get('reports/vendor/registration-list', [ReportVendorRegistrationListController::class, 'index']);
-		Route::post('reports/vendor/registration-list', [ReportVendorRegistrationListController::class, 'view']);
-
-		Route::get('reports/staff/activity', [ReportStaffActivityController::class, 'index']);
-		Route::post('reports/staff/activity', [ReportStaffActivityController::class, 'view']);
-
-		Route::get('reports/code/district', [ReportCodeDistrictController::class, 'index']);
-		Route::post('reports/code/district', [ReportCodeDistrictController::class, 'view']);
-
-		Route::get('reports/vendor/transaction', [ReportVendorTransactionController::class, 'index']);
-		Route::post('reports/vendor/transaction', [ReportVendorTransactionController::class, 'view']);
-
-		Route::get('reports/transaction/hasil', [ReportTransactionByHasilController::class, 'index']);
-		Route::post('reports/transaction/hasil', [ReportTransactionByHasilController::class, 'view']);
-
-		/* end by zayid */
-
-		Route::get('reports/vendor/codes', [ReportVendorCodeController::class, 'index']);
-		Route::post('reports/vendor/codes', [ReportVendorCodeController::class, 'view']);
-		Route::get('reports/vendor/codes/excel', [ReportVendorCodeController::class, 'excel']);
-
-		Route::get('reports/user/agency', [ReportUserAgencyController::class, 'index']);
-		Route::post('reports/user/agency', [ReportUserAgencyController::class, 'view']);
-		Route::get('reports/user/agency/excel', [ReportUserAgencyController::class, 'excel']);
-
-		Route::get('reports/user/active', [ReportUserActiveController::class, 'index']);
-		Route::post('reports/user/active', [ReportUserActiveController::class, 'view']);
-		Route::get('reports/user/active/excel', [ReportUserActiveController::class, 'excel']);
-
-		Route::get('reports/vendor/district', [ReportVendorDistrictController::class, 'index']);
-		Route::get('reports/vendor/district/view', [ReportVendorDistrictController::class, 'view']);
-		Route::get('reports/vendor/district/excel', [ReportVendorDistrictController::class, 'excel']);
-
-		Route::get('reports/user/activity', [ReportUserActivityController::class, 'index']);
-		Route::post('reports/user/activity', [ReportUserActivityController::class, 'view']);
-		Route::get('reports/user/activity/excel', [ReportUserActivityController::class, 'excel']);
-
-		Route::get('reports/user/login', [ReportUserLoginController::class, 'index']);
-		Route::post('reports/user/login', [ReportUserLoginController::class, 'view']);
-		Route::get('reports/user/login/excel', [ReportUserLoginController::class, 'excel']);
-
 		// Circular
 		Route::resource('circulars', CircularController::class)->except(['show', 'destroy']);
 		Route::get('circulars/{id}/publish', [CircularController::class, 'publish'])->name('circulars.publish');
 		Route::get('circulars/list', [CircularController::class, 'public'])->name('circulars.public');
 		Route::get('circulars/sort', [CircularController::class, 'sortPosition'])->name('circulars.position');
 		Route::post('circulars/sort', [CircularController::class, 'updatePosition'])->name('circulars.update.position');
-
-		// Version histories (CRUD – admin)
-		Route::resource('version-histories', VersionHistoryController::class)->names([
-			'index' => 'version-histories.index',
-			'create' => 'version-histories.create',
-			'store' => 'version-histories.store',
-			'show' => 'version-histories.show',
-			'edit' => 'version-histories.edit',
-			'update' => 'version-histories.update',
-			'destroy' => 'version-histories.destroy',
-		]);
 
 		// Refunds
 		Route::prefix('refunds')->group(function () {
@@ -1101,6 +964,152 @@ Route::middleware(['auth'])->group(function () {
 		// Reject Template
 		Route::resource('reject-template', RejectTemplateController::class);
 	});
+
+	// Agency Admin + Admin shared routes (ACL on controllers/models)
+	Route::get('users/pending-approval', [UsersController::class, 'pendingApproval'])->name('users.pending-approval');
+	Route::get('users/{user}/approval', [UsersController::class, 'approval'])->name('users.approval');
+	Route::put('users/{user}/approval', [UsersController::class, 'storeApproval'])->name('users.store-approval');
+	Route::put('users/{user}/approve', [UsersController::class, 'approveUser'])->name('users.approve');
+	Route::get('users/{user}/histories', [UsersController::class, 'histories'])->name('users.histories');
+	Route::get('users/{user}/login', [UsersController::class, 'doLogin'])->name('users.login');
+	Route::put('users/{user}/confirm', [UsersController::class, 'confirm']);
+	Route::get('users/{user}/reset_password', [UsersController::class, 'getSetPassword'])->name('user.reset-password');
+	Route::put('users/{user}/reset_password', [UsersController::class, 'putSetPassword']);
+	Route::get('users/{user}/send_reset_password', [UsersController::class, 'sendResetPasswordEmail'])->name('user.send-reset-password');
+	Route::put('users/{user}/confirm', [UsersController::class, 'putSetConfirmation']);
+	Route::get('users/{user}/resend_confirmation', [UsersController::class, 'resendConfirmation']);
+	Route::resource('users', UsersController::class);
+
+	Route::post('user/byagency', [UsersController::class, 'getUserByAgencies'])->name('user.by.agency');
+	Route::post('user/byid', [UsersController::class, 'getUserById'])->name('user.by.id');
+
+
+
+	Route::get('requests/show/{request_id}', [CodeRequestsController::class, 'showAll'])->name('requests.showAll');
+	Route::put('requests/{requests}/approve', [CodeRequestsController::class, 'approve'])->name('requests.approve');
+	Route::post('requests/{requests}/reject', [CodeRequestsController::class, 'reject'])->name('requests.reject');
+
+
+
+	Route::post('transactions/ajax', [TransactionsController::class, 'updateFpxCount'])->name('updateFpxCount');
+	Route::get('transactions/subscription', [TransactionsController::class, 'subscriptionIndex']);
+	Route::get('transactions/purchase', [TransactionsController::class, 'purchaseIndex']);
+	Route::get('transactions/success', [TransactionsController::class, 'successTransIndex']);
+	Route::get('transactions/pending', [TransactionsController::class, 'pendingTransIndex']);
+	Route::get('transactions/declined', [TransactionsController::class, 'declinedTransIndex']);
+	Route::get('transactions/failed', [TransactionsController::class, 'failedTransIndex']);
+	Route::get('transactions/pending_authorization', [TransactionsController::class, 'pendingAuthTransIndex']);
+
+	Route::resource('transactions', TransactionsController::class);
+	Route::get('transactions/{id}/receipt', [TransactionsController::class, 'receipt'])->name('transactions.receipt');
+	Route::get('transactions/{id}/fpx_query', [TransactionsController::class, 'fpx_query'])->name('transactions.fpx_query');
+	Route::get('transactions/{id}/fpx_requery', [TransactionsController::class, 'fpx_requery'])->name('transactions.fpx_requery');
+	Route::get('transactions/{id}/temp_receipt', [TransactionsController::class, 'temp_receipt'])->name('transactions.temp_receipt');
+
+	Route::resource('blacklists', VendorBlacklistsController::class);
+	Route::prefix('vendor/{vendor}/blacklists/{blacklists}')->name('vendor.blacklists.')->controller(VendorBlacklistsController::class)->group(function () {
+		Route::put('cancel', 'cancel')->name('cancel');
+		Route::get('unblacklist', 'unblacklist')->name('unblacklist');
+	});
+
+
+	// Reports — Admin + Agency Admin (ACL in ReportAccess / controllers)
+	Route::get('reports/revenue', [ReportRevenueController::class, 'index']);
+	Route::post('reports/revenue', [ReportRevenueController::class, 'view']);
+	Route::get('reports/revenue/excel', [ReportRevenueController::class, 'excel']);
+
+	Route::get('reports/agency/active', [ReportAgencyActiveController::class, 'index']);
+	Route::post('reports/agency/active', [ReportAgencyActiveController::class, 'view']);
+	Route::get('reports/agency/active/excel', [ReportAgencyActiveController::class, 'excel']);
+
+	Route::get('reports/agency/all', [ReportAgencyAllController::class, 'index']);
+	Route::post('reports/agency/all', [ReportAgencyAllController::class, 'view']);
+	Route::get('reports/agency/all/excel', [ReportAgencyAllController::class, 'excel']);
+
+	Route::get('reports/agency/type', [ReportAgencyTypeController::class, 'index']);
+	Route::post('reports/agency/type', [ReportAgencyTypeController::class, 'view']);
+	Route::get('reports/agency/type/excel', [ReportAgencyTypeController::class, 'excel']);
+
+	Route::get('reports/agency/daily', [ReportAgencyDailyController::class, 'index']);
+	Route::post('reports/agency/daily', [ReportAgencyDailyController::class, 'view']);
+	Route::get('reports/agency/daily/excel', [ReportAgencyDailyController::class, 'excel']);
+
+	Route::get('reports/agency/transaction', [ReportAgencyTransactionController::class, 'index']);
+	Route::post('reports/agency/transaction', [ReportAgencyTransactionController::class, 'view']);
+	Route::get('reports/agency/transaction/receipts', [ReportAgencyTransactionController::class, 'receipts']);
+	Route::get('reports/agency/transaction/excel', [ReportAgencyTransactionController::class, 'excel']);
+
+	Route::get('reports/gateway/daily', [ReportGatewayDailyController::class, 'index']);
+	Route::post('reports/gateway/daily', [ReportGatewayDailyController::class, 'view']);
+	Route::get('reports/gateway/daily/excel', [ReportGatewayDailyController::class, 'excel']);
+
+	Route::get('reports/vendor/status', [ReportVendorStatusController::class, 'index']);
+	Route::get('reports/vendor/status/view/{view}', [ReportVendorStatusController::class, 'view']);
+	Route::get('reports/vendor/status/csv/{view}', [ReportVendorStatusController::class, 'csv']);
+	Route::get('reports/vendor/status/excel/{view}', [ReportVendorStatusController::class, 'excel']);
+
+	/* add by zayid 4-jan-23 */
+	Route::get('reports/vendor/summary/{year}/{vendor_id}', [ReportVendorSummaryController::class, 'index'])->name('report.vendor.summary');
+
+	Route::get('reports/vendor/request', [ReportCodeRequestController::class, 'index']);
+	Route::post('reports/vendor/request', [ReportCodeRequestController::class, 'view']);
+
+	Route::get('reports/vendor/registration', [ReportVendorRegistrationController::class, 'index']);
+	Route::post('reports/vendor/registration', [ReportVendorRegistrationController::class, 'view']);
+
+	Route::get('reports/vendor/registration-list', [ReportVendorRegistrationListController::class, 'index']);
+	Route::post('reports/vendor/registration-list', [ReportVendorRegistrationListController::class, 'view']);
+
+	Route::get('reports/staff/activity', [ReportStaffActivityController::class, 'index']);
+	Route::post('reports/staff/activity', [ReportStaffActivityController::class, 'view']);
+
+	Route::get('reports/code/district', [ReportCodeDistrictController::class, 'index']);
+	Route::post('reports/code/district', [ReportCodeDistrictController::class, 'view']);
+
+	Route::get('reports/vendor/transaction', [ReportVendorTransactionController::class, 'index']);
+	Route::post('reports/vendor/transaction', [ReportVendorTransactionController::class, 'view']);
+
+	Route::get('reports/transaction/hasil', [ReportTransactionByHasilController::class, 'index']);
+	Route::post('reports/transaction/hasil', [ReportTransactionByHasilController::class, 'view']);
+
+	/* end by zayid */
+
+	Route::get('reports/vendor/codes', [ReportVendorCodeController::class, 'index']);
+	Route::post('reports/vendor/codes', [ReportVendorCodeController::class, 'view']);
+	Route::get('reports/vendor/codes/excel', [ReportVendorCodeController::class, 'excel']);
+
+	Route::get('reports/user/agency', [ReportUserAgencyController::class, 'index']);
+	Route::post('reports/user/agency', [ReportUserAgencyController::class, 'view']);
+	Route::get('reports/user/agency/excel', [ReportUserAgencyController::class, 'excel']);
+
+	Route::get('reports/user/active', [ReportUserActiveController::class, 'index']);
+	Route::post('reports/user/active', [ReportUserActiveController::class, 'view']);
+	Route::get('reports/user/active/excel', [ReportUserActiveController::class, 'excel']);
+
+	Route::get('reports/vendor/district', [ReportVendorDistrictController::class, 'index']);
+	Route::get('reports/vendor/district/view', [ReportVendorDistrictController::class, 'view']);
+	Route::get('reports/vendor/district/excel', [ReportVendorDistrictController::class, 'excel']);
+
+	Route::get('reports/user/activity', [ReportUserActivityController::class, 'index']);
+	Route::post('reports/user/activity', [ReportUserActivityController::class, 'view']);
+	Route::get('reports/user/activity/excel', [ReportUserActivityController::class, 'excel']);
+
+	Route::get('reports/user/login', [ReportUserLoginController::class, 'index']);
+	Route::post('reports/user/login', [ReportUserLoginController::class, 'view']);
+	Route::get('reports/user/login/excel', [ReportUserLoginController::class, 'excel']);
+
+
+	// Version histories (ACL on VersionHistory model — Admin CRUD, Agency Admin view)
+	Route::resource('version-histories', VersionHistoryController::class)->names([
+		'index' => 'version-histories.index',
+		'create' => 'version-histories.create',
+		'store' => 'version-histories.store',
+		'show' => 'version-histories.show',
+		'edit' => 'version-histories.edit',
+		'update' => 'version-histories.update',
+		'destroy' => 'version-histories.destroy',
+	]);
+
 
 	// Laporan Transaksi Syarikat (vendor-accessible — duplicated outside Admin group)
 	Route::get('reports/vendor/summary/{year}/{vendor_id}', [ReportVendorSummaryController::class, 'index'])->name('vendor.report.vendor.summary');

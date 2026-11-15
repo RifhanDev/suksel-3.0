@@ -12,6 +12,10 @@ class TenderVendor extends Model
 {
    protected $table = 'tender_vendors';
 
+   // Resolved values are computed for display/sorting and are not database columns.
+   public ?float $harga_tawaran_resolved = null;
+   public ?string $harga_tawaran_fmt = null;
+
    protected $fillable = [
         	'ref_number',
         	'kod_pembekal',

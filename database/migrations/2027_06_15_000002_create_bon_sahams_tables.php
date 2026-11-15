@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('bon_sahams', function (Blueprint $table) {
+                if (! Schema::hasTable('bon_sahams')) {
+Schema::create('bon_sahams', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->unsignedInteger('tender_id')->unique();
@@ -24,8 +25,10 @@ return new class extends Migration
             $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
             $table->timestamps();
         });
+        }
 
-        Schema::create('bon_saham_accounts', function (Blueprint $table) {
+                if (! Schema::hasTable('bon_saham_accounts')) {
+Schema::create('bon_saham_accounts', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->foreignId('bon_saham_id')->constrained('bon_sahams')->cascadeOnDelete();
@@ -33,6 +36,7 @@ return new class extends Migration
             $table->decimal('jumlah_deposit', 15, 2)->default(0.00);
             $table->timestamps();
         });
+        }
     }
 
     /**

@@ -14,7 +14,7 @@ return new class extends Migration
             $roleColumns = $this->tableColumns('roles');
             $permissionColumns = $this->tableColumns('permissions');
 
-            foreach ($this->newRoles() as $role) {
+            foreach ($this->rolesToEnsure() as $role) {
                 $roleExists = DB::table('roles')
                     ->where('name', $role['name'])
                     ->exists();
@@ -26,7 +26,7 @@ return new class extends Migration
                 DB::table('roles')->insert($this->filterColumns([
                     'name' => $role['name'],
                     'guard_name' => $role['guard_name'] ?? 'web',
-                    'display_name' => $role['display_name'] ?? null,
+                    'display_name' => $role['display_name'] ?? $role['name'],
                     'description' => $role['description'] ?? null,
                     'created_at' => $timestamp,
                     'updated_at' => $timestamp,
@@ -89,14 +89,15 @@ return new class extends Migration
             $role = DB::table('roles')->where('name', $mapping['role'])->first();
 
             if (!$role) {
-                throw new RuntimeException("Role [{$mapping['role']}] was not found while assigning permissions.");
+                // Imported DBs can miss base roles (e.g. Admin). Skip mapping instead of aborting migrate.
+                continue;
             }
 
             foreach ($mapping['permissions'] as $permissionName) {
                 $permission = DB::table('permissions')->where('name', $permissionName)->first();
 
                 if (!$permission) {
-                    throw new RuntimeException("Permission [{$permissionName}] was not found while assigning roles.");
+                    continue;
                 }
 
                 if ($syncLegacyPivot) {
@@ -211,6 +212,32 @@ return new class extends Migration
                 'display_name' => 'Jawatan Kuasa Spesifikasi',
             ],
         ];
+    }
+
+    /**
+     * Roles this migration needs (new + existing like Admin).
+     * Existing base roles are ensured if missing after a DB import, but not deleted on rollback.
+     *
+     * @return array<int, array{name: string, display_name?: string, description?: string, guard_name?: string}>
+     */
+    private function rolesToEnsure(): array
+    {
+        $roles = $this->newRoles();
+
+        foreach ($this->rolePermissions() as $mapping) {
+            $name = $mapping['role'];
+            $alreadyListed = collect($roles)->contains(fn ($role) => $role['name'] === $name);
+            if ($alreadyListed) {
+                continue;
+            }
+
+            $roles[] = [
+                'name' => $name,
+                'display_name' => $name,
+            ];
+        }
+
+        return $roles;
     }
 
     private function newPermissions(): array

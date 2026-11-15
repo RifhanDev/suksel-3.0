@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ref_lokalitis', function (Blueprint $table) {
+                if (! Schema::hasTable('ref_lokalitis')) {
+Schema::create('ref_lokalitis', function (Blueprint $table) {
             $table->id();
             $table->string('name', 255)->nullable();
             $table->string('description', 255)->nullable();
             $table->boolean('active')->default(true);
             $table->timestamps();
         });
+        }
     }
 
     /**

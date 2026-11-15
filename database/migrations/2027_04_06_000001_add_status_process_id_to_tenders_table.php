@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('tenders', function (Blueprint $table) {
+                if (Schema::hasTable('tenders')) {
+Schema::table('tenders', function (Blueprint $table) {
+            if (! Schema::hasColumn('tenders', 'status_process_id')) {
             $table->bigInteger('status_process_id')->nullable()->index();
+            }
         });
+        }
     }
 
     /**

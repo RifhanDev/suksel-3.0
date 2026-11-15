@@ -3,6 +3,8 @@
 @section('styles')
 	<link href="{{ asset('css/components/button-components.css') }}" rel="stylesheet">
 	<link href="{{ asset('css/components/badges.css') }}" rel="stylesheet">
+	<link href="{{ asset('css/components/bq-upload-tokens.css') }}" rel="stylesheet">
+	<link href="{{ asset('css/components/bq-upload.css') }}" rel="stylesheet">
 	<style>
 		.vendor-tender-card {
 			background: #fff;
@@ -265,6 +267,25 @@
 			}
 		}
 		$dokumenList = $tenderDokumen->items('vendor', $vendorHasPurchased ? (int) Auth::user()->vendor_id : null);
+		// 2.0 Dokumen Sebut Harga/Tender = uploads public=0 (NAS legacy). Use when 3.0 checklist empty.
+		$legacyTenderFileCount = $tender->files()->where('public', 0)->count();
+		$hasIklanDokumenTab = ! $tender->isIklanSahaja()
+			&& $tender->showDokumenSenaraiTab()
+			&& $vendorHasPurchased
+			&& $tender->usesIklanDokumen()
+			&& $tender->iklanDokumens->isNotEmpty();
+		$useLegacyAsDokumenSenarai = ! $hasIklanDokumenTab
+			&& ! $tender->isIklanSahaja()
+			&& $tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id ?? null)
+			&& $legacyTenderFileCount > 0
+			&& count($dokumenList) === 0;
+		$useChecklistDokumenSenarai = ! $hasIklanDokumenTab
+			&& ! $tender->isIklanSahaja()
+			&& $tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id ?? null)
+			&& ! $useLegacyAsDokumenSenarai;
+		$usePlainLegacyTab = ! $tender->isIklanSahaja()
+			&& ! $tender->showDokumenSenaraiTab()
+			&& $tender->canShowFiles(Auth::user()->vendor_id);
 		$canManageWakilLawatan =
 		    Auth::check() &&
 		    Auth::user()->vendor_id &&
@@ -592,12 +613,7 @@
 						</a>
 					@endif
 
-					@if (
-						!$tender->isIklanSahaja() &&
-							$tender->showDokumenSenaraiTab() &&
-							$vendorHasPurchased &&
-							$tender->usesIklanDokumen() &&
-							$tender->iklanDokumens->isNotEmpty())
+					@if ($hasIklanDokumenTab)
 						<a class="nav-link" href="#vt-dokumen-tawaran" data-bs-toggle="pill" role="tab">
 							<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
 								stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -607,7 +623,17 @@
 							{{ $tender->dokumenSenaraiTabLabel() }}
 							<span class="badge bg-primary ms-auto" style="font-size:0.6rem;">{{ $tender->iklanDokumens->count() }}</span>
 						</a>
-					@elseif (!$tender->isIklanSahaja() && $tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
+					@elseif ($useLegacyAsDokumenSenarai)
+						<a class="nav-link" href="#vt-doc2" data-bs-toggle="pill" role="tab">
+							<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+								stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+								<polyline points="13 2 13 9 20 9" />
+							</svg>
+							{{ $tender->dokumenSenaraiTabLabel() }}
+							<span class="badge bg-primary ms-auto" style="font-size:0.6rem;">{{ $legacyTenderFileCount }}</span>
+						</a>
+					@elseif ($useChecklistDokumenSenarai)
 						<a class="nav-link" href="#vt-dokumen-tawaran" data-bs-toggle="pill" role="tab">
 							<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
 								stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -619,8 +645,7 @@
 						</a>
 					@endif
 
-					{{-- Duplicate of Dokumen Tender/Tawaran checklist tab — hidden for vendor view
-					@if ($tender->showDokumenSenaraiTab() && $tender->canShowFiles(Auth::user()->vendor_id))
+					@if ($usePlainLegacyTab)
 						<a class="nav-link" href="#vt-doc2" data-bs-toggle="pill" role="tab">
 							<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
 								stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -628,11 +653,9 @@
 								<polyline points="13 2 13 9 20 9" />
 							</svg>
 							Dokumen {{ App\Tender::$types[$tender->type] ?? 'Tender' }}
-							<span class="badge bg-primary ms-auto"
-								style="font-size:0.6rem;">{{ $tender->files()->where('public', 0)->count() }}</span>
+							<span class="badge bg-primary ms-auto" style="font-size:0.6rem;">{{ $legacyTenderFileCount }}</span>
 						</a>
 					@endif
-					--}}
 
 					<a class="nav-link" href="#vt-news" data-bs-toggle="pill" role="tab">
 						<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
@@ -792,6 +815,12 @@
 								<tr>
 									<th>Syarikat Dibawah Daerah Sahaja</th>
 									<td><span class="badge bg-info">SELURUH SELANGOR</span></td>
+								</tr>
+							@endif
+							@if ($tender->hasDaerahLiputanProjek())
+								<tr>
+									<th>Daerah Liputan Projek</th>
+									<td>{{ $tender->getDaerahLiputanProjek() }}</td>
 								</tr>
 							@endif
 							<tr>
@@ -1094,12 +1123,7 @@
 				@endif
 
 				{{-- TAB: Dokumen Tender/Tawaran atau Sebut Harga — hidden for Iklan Sahaja --}}
-				@if (
-					!$tender->isIklanSahaja() &&
-						$tender->showDokumenSenaraiTab() &&
-						$vendorHasPurchased &&
-						$tender->usesIklanDokumen() &&
-						$tender->iklanDokumens->isNotEmpty())
+				@if ($hasIklanDokumenTab)
 					<div class="tab-pane fade" id="vt-dokumen-tawaran" role="tabpanel">
 						<div class="vendor-tender-card">
 							<div class="vendor-tender-card-header">
@@ -1117,7 +1141,7 @@
 							@include('tenders._iklan_dokumen_table', ['tender' => $tender])
 						</div>
 					</div>
-				@elseif (!$tender->isIklanSahaja() && $tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
+				@elseif ($useChecklistDokumenSenarai)
 					<div class="tab-pane fade" id="vt-dokumen-tawaran" role="tabpanel">
 						<div class="vendor-tender-card">
 							<div class="vendor-tender-card-header">
@@ -1143,8 +1167,8 @@
 					</div>
 				@endif
 
-				{{-- TAB: Dokumen muat turun (legacy — hanya jika tiada tab senarai semak kaedah) --}}
-				@if (!$tender->isIklanSahaja() && !$tender->showDokumenSenaraiTab() && $tender->canShowFiles(Auth::user()->vendor_id))
+				{{-- TAB: 2.0 uploads public=0 (NAS legacy) — also when checklist empty --}}
+				@if ($useLegacyAsDokumenSenarai || $usePlainLegacyTab)
 					<div class="tab-pane fade" id="vt-doc2" role="tabpanel">
 						<div class="vendor-tender-card">
 							<div class="vendor-tender-card-header">
@@ -1154,7 +1178,7 @@
 										<path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
 										<polyline points="13 2 13 9 20 9" />
 									</svg></div>
-								<h6>Dokumen {{ App\Tender::$types[$tender->type] ?? 'Tender' }}</h6>
+								<h6>{{ $useLegacyAsDokumenSenarai ? $tender->dokumenSenaraiTabLabel() : 'Dokumen '.(App\Tender::$types[$tender->type] ?? 'Tender') }}</h6>
 							</div>
 							@if (count($tender->tender_files) > 0)
 								<div class="table-responsive">
@@ -1177,11 +1201,13 @@
 										<tbody>
 											@foreach ($tender->tenderFiles as $upload)
 												<tr style="border-color:#e5e7eb;">
-													<td class="ps-4">{{ $upload->label }}</td>
+													<td class="ps-4">{{ method_exists($upload, 'displayName') ? $upload->displayName() : ($upload->label ?: $upload->name) }}</td>
 													<td>{{ $upload->size }}</td>
 													<td>{{ $upload->type }}</td>
-													<td class="pe-4 text-center"><a href="{{ $upload->url }}" class="btn btn-sm btn-primary rounded-8 px-3"
-															download>Muat Turun</a></td>
+													<td class="pe-4 text-center">
+														<a href="{{ route('tenders.files', [$tender->id, $upload->id]) }}" class="btn btn-sm btn-primary rounded-8 px-3"
+															download>Muat Turun</a>
+													</td>
 												</tr>
 											@endforeach
 										</tbody>
@@ -1593,12 +1619,28 @@
 	@endif
 
 	@if ($vendorHasPurchased && !$vendorSubmitted && !$tender->usesIklanDokumen())
+		<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 		<script>
 			$(function() {
 				var READINESS_URL = @json(route('tenders.vendorSubmission.readiness', $tender->id));
 				var SUBMIT_URL = @json(route('tenders.vendorSubmission.submit', $tender->id));
 				var TENDER_URL = @json(route('tenders.show', $tender->id));
 				var CSRF = @json(csrf_token());
+				var submissionDialog = window.Swal && typeof window.Swal.mixin === 'function'
+					? window.Swal.mixin({
+						buttonsStyling: false,
+						heightAuto: false,
+						scrollbarPadding: false,
+						showClass: { popup: 'bq-dialog-fade-in', backdrop: 'bq-backdrop-fade-in' },
+						hideClass: { popup: 'bq-dialog-fade-out', backdrop: 'bq-backdrop-fade-out' },
+						customClass: {
+							container: 'bq-dialog-container',
+							popup: 'bq-dialog',
+							confirmButton: 'bq-dialog-button',
+							cancelButton: 'bq-dialog-button bq-dialog-cancel'
+						}
+					})
+					: null;
 				var warningModal = document.getElementById('vendorSubmissionWarningModal');
 				var warningModalInstance = warningModal && typeof bootstrap !== 'undefined' ?
 					bootstrap.Modal.getOrCreateInstance(warningModal) :
@@ -1682,6 +1724,38 @@
 						});
 				}
 
+				function confirmSubmitTawaran() {
+					var title = 'Hantar tawaran?';
+					var message = 'Maklumat tidak boleh dikemaskini selepas ini.';
+
+					if (submissionDialog) {
+						return submissionDialog.fire({
+							title: title,
+							text: message,
+							icon: 'warning',
+							showCancelButton: true,
+							confirmButtonText: 'Ya, Hantar Tawaran',
+							cancelButtonText: 'Batal',
+							reverseButtons: true,
+							focusCancel: true
+						}).then(function(result) {
+							return result.isConfirmed;
+						});
+					}
+
+					if (typeof window.showConfirmModal === 'function') {
+						return window.showConfirmModal({
+							title: title,
+							message: message,
+							icon: 'warning',
+							confirmText: 'Ya, Hantar Tawaran',
+							cancelText: 'Batal'
+						});
+					}
+
+					return Promise.resolve(false);
+				}
+
 				$('#btn-vendor-submit-tawaran').on('click', function() {
 					var $btn = $(this);
 
@@ -1691,11 +1765,9 @@
 							return;
 						}
 
-						if (!confirm('Hantar tawaran? Maklumat tidak boleh dikemaskini selepas ini.')) {
-							return;
-						}
-
-						submitTawaran($btn);
+						confirmSubmitTawaran().then(function(isConfirmed) {
+							if (isConfirmed) submitTawaran($btn);
+						});
 					}).fail(function() {
 						alert('Gagal menyemak status tawaran. Sila cuba lagi.');
 					});

@@ -26,7 +26,8 @@ return new class extends Migration
             });
         }
 
-        Schema::create('tender_vendor_form_payloads', function (Blueprint $table) {
+                if (! Schema::hasTable('tender_vendor_form_payloads')) {
+Schema::create('tender_vendor_form_payloads', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->unsignedInteger('tender_id');
@@ -41,6 +42,7 @@ return new class extends Migration
 
             $table->unique(['tender_id', 'vendor_id', 'form_key'], 'tvfp_tender_vendor_form_unique');
         });
+        }
     }
 
     public function down(): void

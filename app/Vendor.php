@@ -1082,12 +1082,15 @@ class Vendor extends Model
 		});
 
 		self::saving(function ($model) {
-			$path = public_path() . '/uploads/' . md5($model->registration);
-			if (!is_dir($path)) {
-				if (!file_exists(dirname($path))) {
-					mkdir(dirname($path), 0755, true);
+			$registration = (string) $model->registration;
+			if ($registration !== '') {
+				$path = public_path() . '/uploads/' . md5($registration);
+				if (! is_dir($path)) {
+					if (! is_dir(dirname($path))) {
+						@mkdir(dirname($path), 0755, true);
+					}
+					@mkdir($path, 0755, true);
 				}
-				mkdir($path, 0755, true);
 			}
 			$model->processVendorUploads();
 		});

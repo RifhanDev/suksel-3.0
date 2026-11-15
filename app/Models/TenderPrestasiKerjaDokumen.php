@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TenderPrestasiKerjaDokumen extends Model
 {
@@ -19,7 +20,12 @@ class TenderPrestasiKerjaDokumen extends Model
         'size',
     ];
 
-    public function parent()
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(TenderPrestasiKerja::class, 'tender_prestasi_kerja_id');
+    }
+
+    public function prestasiKerja(): BelongsTo
     {
         return $this->belongsTo(TenderPrestasiKerja::class, 'tender_prestasi_kerja_id');
     }

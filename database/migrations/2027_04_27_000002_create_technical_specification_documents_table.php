@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('technical_specification_documents', function (Blueprint $table) {
+                if (! Schema::hasTable('technical_specification_documents')) {
+Schema::create('technical_specification_documents', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->text('title')->nullable();
@@ -37,6 +38,7 @@ return new class extends Migration
                 ->on('users')
                 ->nullOnDelete();
         });
+        }
     }
 
     /**

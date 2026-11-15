@@ -11,8 +11,12 @@ use App\TenderHistory;
 use App\CodeRequest;
 use App\VendorHistory;
 
+use App\Http\Controllers\Concerns\AuthorizesReportAccess;
+
 class ReportUserActivityController extends Controller
 {
+	use AuthorizesReportAccess;
+
 	protected $exclude_roles = [
 		'Vendor'
 	];
@@ -44,6 +48,10 @@ class ReportUserActivityController extends Controller
 
 	public function index()
 	{
+		if ($denied = $this->denyUnlessReport('Report:view:user_activity')) {
+			return $denied;
+		}
+
 		$that = $this;
 		$select_users = User::whereHas('roles', function ($query) use ($that) {
 			return $query->whereNotIn('name', $that->exclude_roles);
@@ -54,6 +62,10 @@ class ReportUserActivityController extends Controller
 
 	public function view(Request $request)
 	{
+		if ($denied = $this->denyUnlessReport('Report:view:user_activity')) {
+			return $denied;
+		}
+
 
 		$users      = $request->input('users', []);
 		$date_start = $request->input('date_start');
@@ -75,6 +87,10 @@ class ReportUserActivityController extends Controller
 
 	public function excel(Request $request)
 	{
+		if ($denied = $this->denyUnlessReport('Report:view:user_activity')) {
+			return $denied;
+		}
+
 
 		$users      = $request->input('users', []);
 		$date_start = $request->input('date_start');

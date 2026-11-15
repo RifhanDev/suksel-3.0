@@ -15,7 +15,9 @@ return new class extends Migration
     {
         if (Schema::hasTable('tenders')) {
             Schema::table('tenders', function (Blueprint $table) {
+                if (! Schema::hasColumn('tenders', 'allow_exception')) {
                 $table->integer('allow_exception')->default(1)->after('price');
+                }
             });
         }
     }

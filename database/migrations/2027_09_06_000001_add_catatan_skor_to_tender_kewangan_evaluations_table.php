@@ -10,7 +10,9 @@ return new class extends Migration
     {
         if (Schema::hasTable('tender_kewangan_evaluations') && !Schema::hasColumn('tender_kewangan_evaluations', 'catatan_skor')) {
             Schema::table('tender_kewangan_evaluations', function (Blueprint $table) {
+                if (! Schema::hasColumn('tender_kewangan_evaluations', 'catatan_skor')) {
                 $table->text('catatan_skor')->nullable()->after('catatan');
+                }
             });
         }
     }

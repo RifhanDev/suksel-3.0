@@ -1,6 +1,8 @@
 @extends('layouts.v3.master')
 
 @section('styles')
+    <link href="{{ asset('css/components/bq-upload-tokens.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/components/bq-upload.css') }}" rel="stylesheet">
     <link href="{{ asset('css/components/badges.css') }}" rel="stylesheet">
     <link href="{{ asset('css/components/button-components.css') }}" rel="stylesheet">
     <link href="{{ asset('css/components/custom-table.css') }}" rel="stylesheet">
@@ -83,8 +85,8 @@
 
     <div class="d-flex flex-column flex-lg-row justify-content-start align-items-start align-items-lg-center mb-4">
         <div>
-            <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Penyediaan Spesifikasi Tender</h3>
-            <p class="text-muted small m-0">Isi maklumat spesifikasi bagi tender / sebutharga ini.</p>
+            <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Penyediaan Jadual Harga Dan Kuantiti</h3>
+            <p class="text-muted small m-0">Isi jadual harga dan kuantiti bagi tender / sebutharga ini.</p>
         </div>
     </div>
 
@@ -145,11 +147,14 @@
                     </svg>
                 </div>
                 <div>
-                    <h3 class="content-card-title mb-0" style="font-size:1rem;">Senarai Spesifikasi</h3>
-                    <p class="text-muted mb-0" style="font-size:0.78rem;">Tambah item dan spesifikasi bagi tender ini</p>
+            <h3 class="content-card-title mb-0" style="font-size:1rem;">Muat Naik Jadual Harga & Kuantiti (BQ)</h3>
+                    <p class="text-muted mb-0" style="font-size:0.78rem;">Muat naik templat BQ untuk dimuat turun dan dilengkapkan oleh petender.</p>
                 </div>
             </div>
         </div>
+        {{--
+        Legacy item-based specification editor retained for reference.
+        This section is replaced by the tender-level BQ template workflow below.
         <div class="content-card-body p-4">
 
             <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
@@ -237,6 +242,35 @@
             </div>
 
         </div>
+        --}}
+        <div class="content-card-body p-4 bq-upload">
+            <div class="bq-upload-panel" id="bq-upload-panel" aria-busy="false">
+                <div class="bq-upload-heading">
+                    <div class="bq-upload-symbol" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M12 18v-6m-3 3 3-3 3 3"/></svg>
+                    </div>
+                    <div>
+                        <h4 class="bq-upload-title">Seret dan letakkan templat BQ di sini</h4>
+                        <p class="bq-upload-help">atau pilih dokumen daripada komputer anda.</p>
+                    </div>
+                    <label for="input-bq-template" class="mb-0 bq-upload-action">
+                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m-4 4 4-4 4 4M4 16v4h16v-4"/></svg><span id="bq-template-upload-label">Pilih Templat BQ</span>
+                        <input type="file" id="input-bq-template" aria-label="Pilih atau ganti templat BQ" aria-describedby="bq-template-rules bq-template-feedback" accept=".pdf,.doc,.docx,.xls,.xlsx">
+                    </label>
+                </div>
+            </div>
+            <div id="bq-template-rules" class="bq-upload-rules">
+                <span>Format: PDF, Word atau Excel</span>
+                <span>1 dokumen sahaja, maksimum 25 MB</span>
+            </div>
+            <div id="bq-template-feedback" class="small mt-3" role="status" aria-live="polite" aria-atomic="true"></div>
+            <div class="bq-document-heading">
+                <h4>Dokumen templat BQ</h4>
+                <span id="bq-document-count" class="bq-document-count">0 / 1 dokumen</span>
+            </div>
+            <div id="bq-template-file"></div>
+            <p class="bq-replacement-note">Petender akan memuat turun templat ini untuk dilengkapkan. Memuat naik dokumen baharu akan menggantikan templat sedia ada.</p>
+        </div>
     </div>
 
     <div id="form-actions" class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
@@ -249,14 +283,18 @@
             Kembali
         </a>
         <div id="action-btn-group" class="d-flex gap-2">
-            <button type="button" id="btn-simpan" class="btn-form btn-form-primary">Simpan</button>
-            <button type="button" id="btn-hantar" class="btn-form btn-form-success">Hantar</button>
+            <button type="button" id="btn-simpan" disabled class="btn-form btn-form-primary">Simpan</button>
+            <button type="button" id="btn-hantar" disabled class="btn-form btn-form-success">Hantar</button>
         </div>
     </div>
 
 @endsection
 
 @section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{{--
+Legacy specification editor JavaScript retained for reference. It manages item
+rows, pagination, quantities, rates, totals, and the old submit validation.
 <script>
 $(document).ready(function () {
 
@@ -1128,6 +1166,284 @@ $(document).ready(function () {
         $('#btn-simpan, #btn-hantar, #btn-tambah-item').prop('disabled', true);
     }
 
+});
+</script>
+--}}
+<script>
+$(function () {
+    const uploadUrl = @json(route('penyediaanSpekTender.uploadFile', $tender->uuid));
+    const deleteBase = @json(url('/penyediaan-spesifikasi-tender/fail'));
+    const fileBase = @json(url('/penyediaan-spesifikasi-tender/' . $tender->uuid . '/fail'));
+    const saveUrl = @json(route('penyediaanSpekTender.store', $tender->uuid));
+    const submitUrl = @json(route('penyediaanSpekTender.submit', $tender->uuid));
+    const listUrl = @json(route('pengurusanSpesifikasi'));
+    const userId = @json(auth()->id());
+    const isSubmitted = @json(($checklistData['status'] ?? null) === 'submitted');
+    let templateFiles = (@json($checklistData['files'] ?? []))
+        .filter(file => ['bq_template', 'bq'].includes(file.file_type || ''));
+    templateFiles = templateFiles.filter(file => file.file_type === 'bq_template').slice(-1).concat(
+        templateFiles.some(file => file.file_type === 'bq_template') ? [] : templateFiles.slice(-1)
+    );
+    let templateBusy = false;
+    let actionBusy = false;
+
+    function syncTemplateActions() {
+        const locked = isSubmitted || templateBusy || actionBusy;
+        $('#btn-simpan, #btn-hantar').prop('disabled', locked || !templateFiles.length);
+        $('#input-bq-template, #btn-delete-bq-template').prop('disabled', locked);
+    }
+
+    function canProceedWithTemplate() {
+        if (isSubmitted || templateBusy || actionBusy) return false;
+        if (!templateFiles.length) {
+            $('#bq-template-feedback').removeClass('text-success').addClass('text-danger')
+                .text('Muat naik templat BQ sebelum menyimpan atau menghantar.');
+            syncTemplateActions();
+            return false;
+        }
+        return true;
+    }
+    const templateDialog = Swal.mixin({
+        buttonsStyling: false,
+        heightAuto: false,
+        scrollbarPadding: false,
+        showClass: {popup: 'bq-dialog-fade-in', backdrop: 'bq-backdrop-fade-in'},
+        hideClass: {popup: 'bq-dialog-fade-out', backdrop: 'bq-backdrop-fade-out'},
+        customClass: {
+            container: 'bq-dialog-container',
+            popup: 'bq-dialog',
+            confirmButton: 'bq-dialog-button',
+            cancelButton: 'bq-dialog-button bq-dialog-cancel'
+        }
+    });
+
+    function escapeHtml(value) {
+        return $('<div>').text(value || '').html();
+    }
+
+    function renderTemplate() {
+        syncTemplateActions();
+        const $container = $('#bq-template-file').empty();
+        $('#bq-document-count').text(templateFiles.length ? '1 / 1 dokumen' : '0 / 1 dokumen');
+        $('#bq-template-upload-label').text(templateFiles.length ? 'Ganti Templat BQ' : 'Pilih Templat BQ');
+        if (!templateFiles.length) {
+            $container.html('<p class="bq-upload-empty">Tiada dokumen dipilih. Pilih satu templat BQ untuk bermula.</p>');
+            return;
+        }
+        const file = templateFiles[templateFiles.length - 1];
+        const size = file.size ? (file.size / 1024 / 1024).toFixed(2) + ' MB' : '';
+        const uploaded = file.created_at ? new Date(file.created_at).toLocaleString('ms-MY') : '';
+        const href = fileBase + '/' + encodeURIComponent(file.uuid);
+        $container.html(
+            '<div class="bq-upload-file">' +
+                '<span class="bq-file-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg></span>' +
+                '<div class="bq-file-info"><a class="bq-file-name" target="_blank" rel="noopener" href="' + href + '">' + escapeHtml(file.original_name) + '</a>' +
+                '<div class="bq-file-meta"><span>' + escapeHtml(size) + '</span><span>' + escapeHtml(uploaded) + '</span></div></div>' +
+                '<div class="bq-file-actions"><a class="btn btn-sm btn-outline-secondary" download href="' + href + '"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-4-4 4 4 4-4M4 16v5h16v-5"/></svg>Muat Turun</a>' +
+                '<button type="button" class="btn btn-sm btn-outline-danger" id="btn-delete-bq-template"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7"/></svg>Padam</button></div>' +
+            '</div>'
+        );
+    }
+
+    renderTemplate();
+    if (isSubmitted) {
+        $('#input-bq-template, #btn-simpan, #btn-hantar').prop('disabled', true);
+        $('#bq-template-upload-label').text('Templat telah dihantar');
+        $('#bq-template-file').find('button').prop('disabled', true);
+    }
+
+    function uploadTemplate(files) {
+        if (files && files.length > 1) {
+            $('#bq-template-feedback').removeClass('text-success').addClass('text-danger').text('Hanya satu dokumen dibenarkan. Sila pilih satu templat BQ.');
+            return;
+        }
+        const file = files && files[0];
+        if (!file || isSubmitted || templateBusy || actionBusy) return;
+        $('#bq-template-feedback').removeClass('text-danger text-success');
+        if (!/\.(pdf|docx?|xlsx?)$/i.test(file.name)) {
+            $('#bq-template-feedback').addClass('text-danger').text('Format fail tidak dibenarkan. Pilih PDF, Word atau Excel.');
+            return;
+        }
+        if (file.size > 25 * 1024 * 1024) {
+            $('#bq-template-feedback').addClass('text-danger').text('Saiz fail melebihi had 25 MB.');
+            return;
+        }
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('file_type', 'bq_template');
+        formData.append('user_id', userId || '');
+        templateBusy = true;
+        $('#bq-upload-panel').attr('aria-busy', 'true');
+        $('#btn-delete-bq-template, #btn-simpan, #btn-hantar').prop('disabled', true);
+        const $input = $('#input-bq-template').prop('disabled', true);
+        $('#bq-template-upload-label').text('Memuat naik...');
+        $('#bq-template-feedback').removeClass('text-danger text-success').text('Sedang memuat naik...');
+        fetch(uploadUrl, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || $('meta[name="_token"]').attr('content') || ''
+            }
+        }).then(async response => {
+            const payload = await response.json().catch(() => null);
+            if (!response.ok || !payload?.success) {
+                const statusMessages = {
+                    401: 'Sesi anda telah tamat. Sila log masuk semula sebelum memuat naik.',
+                    403: 'Anda tidak mempunyai kebenaran untuk memuat naik dokumen ini.',
+                    413: 'Saiz muat naik melebihi had pelayan. Sila kecilkan fail atau hubungi pentadbir.',
+                    419: 'Sesi anda telah tamat. Sila muat semula halaman dan cuba lagi.',
+                    429: 'Terlalu banyak percubaan muat naik. Sila tunggu sebentar dan cuba lagi.'
+                };
+                const validationErrors = Object.values(payload?.errors || {}).flat().filter(message => typeof message === 'string');
+                throw new Error(validationErrors.length
+                    ? [...new Set(validationErrors)].join(' ')
+                    : statusMessages[response.status] || (response.status >= 500
+                        ? 'Pelayan mengalami ralat semasa memuat naik dokumen (HTTP ' + response.status + '). Sila cuba lagi atau hubungi pentadbir.'
+                        : payload?.message || 'Gagal memuat naik templat (HTTP ' + response.status + '). Sila cuba lagi.'));
+            }
+            templateFiles = [payload.data];
+            renderTemplate();
+            $('#bq-template-feedback').addClass('text-success').text('Templat BQ berjaya dimuat naik.');
+        }).catch(error => {
+            const message = error instanceof TypeError
+                ? 'Tidak dapat menghubungi pelayan. Sila semak sambungan internet dan cuba lagi.'
+                : error.message || 'Gagal memuat naik templat. Sila cuba lagi.';
+            $('#bq-template-feedback').removeClass('text-success').addClass('text-danger').text(message);
+        }).finally(() => {
+            templateBusy = false;
+            $input.prop('disabled', isSubmitted);
+            $('#bq-upload-panel').attr('aria-busy', 'false');
+            syncTemplateActions();
+            $('#bq-template-upload-label').text(templateFiles.length ? 'Ganti Templat BQ' : 'Pilih Templat BQ');
+        });
+    }
+
+    $('#input-bq-template').on('change', function () {
+        uploadTemplate(this.files);
+        this.value = '';
+    });
+
+    let dragDepth = 0;
+    $('#bq-upload-panel').on('dragenter dragover', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (isSubmitted || templateBusy || actionBusy) return;
+        if (event.type === 'dragenter') dragDepth++;
+        $(this).addClass('is-dragging');
+    }).on('dragleave', function (event) {
+        event.preventDefault();
+        dragDepth = Math.max(0, dragDepth - 1);
+        if (!dragDepth) $(this).removeClass('is-dragging');
+    }).on('drop', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        dragDepth = 0;
+        $(this).removeClass('is-dragging');
+        if (!isSubmitted && !templateBusy && !actionBusy) uploadTemplate(event.originalEvent.dataTransfer.files);
+    });
+    $('#bq-template-file').on('click', '#btn-delete-bq-template', async function () {
+        const file = templateFiles[templateFiles.length - 1];
+        if (!file || isSubmitted || templateBusy || actionBusy) return;
+        templateBusy = true;
+        $('#input-bq-template, #btn-delete-bq-template, #btn-simpan, #btn-hantar').prop('disabled', true);
+        try {
+            const confirmation = await templateDialog.fire({
+                title: 'Padam Templat BQ?',
+                text: 'Dokumen "' + file.original_name + '" akan dipadam. Tindakan ini tidak boleh dibatalkan.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Padam',
+                cancelButtonText: 'Batal',
+                reverseButtons: true,
+                focusCancel: true,
+                heightAuto: false,
+                scrollbarPadding: false
+            });
+            if (!confirmation.isConfirmed) return;
+            $('#bq-template-feedback').removeClass('text-danger text-success').text('Sedang memadam templat...');
+            const response = await fetch(deleteBase + '/' + encodeURIComponent(file.uuid), {
+                method: 'DELETE',
+                headers: {'Accept': 'application/json', 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')}
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) throw new Error(result.message || 'Gagal memadam templat.');
+            templateFiles = templateFiles.filter(item => item.uuid !== file.uuid);
+            renderTemplate();
+            $('#bq-template-feedback').removeClass('text-danger').addClass('text-success').text('Templat BQ berjaya dipadam.');
+            await templateDialog.fire({
+                title: 'Berjaya!',
+                text: 'Templat BQ berjaya dipadam.',
+                icon: 'success',
+                confirmButtonText: 'OK',
+                heightAuto: false,
+                scrollbarPadding: false
+            });
+        } catch (error) {
+            const message = error.message || 'Gagal memadam templat.';
+            $('#bq-template-feedback').removeClass('text-success').addClass('text-danger').text(message);
+            await templateDialog.fire({
+                title: 'Ralat',
+                text: message,
+                icon: 'error',
+                confirmButtonText: 'Tutup',
+                heightAuto: false,
+                scrollbarPadding: false
+            });
+        } finally {
+            templateBusy = false;
+            syncTemplateActions();
+        }
+    });
+
+    $('#btn-simpan').on('click', function () {
+        if (!canProceedWithTemplate()) return;
+        actionBusy = true;
+        syncTemplateActions();
+        const button = $(this).text('Menyimpan...');
+        $.ajax({
+            url: saveUrl, method: 'POST', contentType: 'application/json',
+            data: JSON.stringify({status: 'draft', user_id: userId}),
+            success: response => {
+                if (!response || !response.success) {
+                    $('#bq-template-feedback').addClass('text-danger').text(response.message || 'Gagal menyimpan.');
+                    return;
+                }
+                $('#bq-template-feedback').removeClass('text-danger').addClass('text-success').text('Draf berjaya disimpan.');
+            },
+            error: xhr => $('#bq-template-feedback').addClass('text-danger').text(xhr.responseJSON?.message || 'Gagal menyimpan.'),
+            complete: () => { actionBusy = false; button.text('Simpan'); syncTemplateActions(); }
+        });
+    });
+
+    $('#btn-hantar').on('click', function () {
+        if (!canProceedWithTemplate()) return;
+        if (!window.confirm('Hantar templat BQ ini?')) return;
+        actionBusy = true;
+        syncTemplateActions();
+        const button = $(this).text('Menghantar...');
+        $.ajax({
+            url: submitUrl, method: 'POST', contentType: 'application/json',
+            data: JSON.stringify({user_id: userId}),
+            success: response => {
+                if (!response || !response.success) {
+                    $('#bq-template-feedback').addClass('text-danger').text(response.message || 'Gagal menghantar.');
+                    actionBusy = false;
+                    button.text('Hantar');
+                    syncTemplateActions();
+                    return;
+                }
+                window.location.href = listUrl;
+            },
+            error: xhr => {
+                $('#bq-template-feedback').addClass('text-danger').text(xhr.responseJSON?.message || 'Gagal menghantar.');
+                actionBusy = false;
+                    button.text('Hantar');
+                    syncTemplateActions();
+            }
+        });
+    });
 });
 </script>
 @endsection

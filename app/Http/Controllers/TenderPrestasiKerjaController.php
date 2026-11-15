@@ -257,7 +257,7 @@ class TenderPrestasiKerjaController extends Controller
 
             if (! $user->hasRole('Admin') && ! $user->can('tender:specification-management')) {
                 $vendorId = (int) ($user->vendor_id ?? 0);
-                if ($vendorId <= 0 || ($dokumen->prestasiKerja?->vendor_id && (int) $dokumen->prestasiKerja->vendor_id !== $vendorId)) {
+                if ($vendorId <= 0 || !$dokumen->prestasiKerja || (int) $dokumen->prestasiKerja->vendor_id !== $vendorId) {
                     abort(403, 'Akses tidak dibenarkan.');
                 }
             }
@@ -296,6 +296,8 @@ class TenderPrestasiKerjaController extends Controller
     {
         $tender = Tender::where('uuid', $tenderUuid)->firstOrFail();
         $dokumen = TenderPrestasiKerjaDokumen::with('prestasiKerja')->where('uuid', $fileUuid)->firstOrFail();
+
+        abort_unless((int) $dokumen->prestasiKerja?->tender_id === (int) $tender->id, 404);
 
         $ownerVendorId = $dokumen->prestasiKerja?->vendor_id ? (int) $dokumen->prestasiKerja->vendor_id : null;
         $this->assertCanAccessTenderFile($tender, $ownerVendorId);

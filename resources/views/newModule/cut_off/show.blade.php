@@ -208,7 +208,7 @@
                 <div class="section-title-cutoff">Penentuan dan Pengasingan Harga "Freak"</div>
                 <div class="cutoff-freak-box border rounded p-3 bg-light h-40">
                     <p class="mb-0 text-secondary text-default">
-                        Sesuatu harga tender dianggap 'Freak' dan secara automatik tidak diambil kira sekiranya tahap 'significance'nya (Alfa) kurang daripada 0.01, iaitu Z-score nya melebihi +2.33 atau kurang dari -2.33.
+                        Sesuatu harga tender dianggap 'Freak' dan secara automatik tidak diambil kira sekiranya tahap 'significance'nya (Alfa) kurang daripada 0.01, iaitu Z-score nya melebihi +2.33 atau kurang dari -2.33. Harga Builder's Work yang kurang daripada 1% Anggaran Jabatan, sifar atau negatif, atau melebihi 10 kali ganda Anggaran Jabatan, juga dianggap tidak munasabah dan ditanda 'Freak' sebelum Z-score dikira semula.
                     </p>
                 </div>
             </div>

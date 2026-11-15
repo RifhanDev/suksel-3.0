@@ -13,13 +13,15 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('version_histories', function (Blueprint $table) {
+                if (! Schema::hasTable('version_histories')) {
+Schema::create('version_histories', function (Blueprint $table) {
             $table->id();
             $table->string('version', 50);
             $table->date('released_at');
             $table->text('notes')->nullable();
             $table->timestamps();
         });
+        }
     }
 
     /**

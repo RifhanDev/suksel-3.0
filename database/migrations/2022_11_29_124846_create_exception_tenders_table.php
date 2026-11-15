@@ -13,7 +13,8 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('exception_tenders', function (Blueprint $table) {
+                if (! Schema::hasTable('exception_tenders')) {
+Schema::create('exception_tenders', function (Blueprint $table) {
             $table->id();
             $table->integer('vendor_id');
             $table->integer('tender_id');
@@ -23,6 +24,7 @@ return new class extends Migration
             $table->string('rejection_template_id')->nullable();
             $table->timestamps();
         });
+        }
     }
 
     /**

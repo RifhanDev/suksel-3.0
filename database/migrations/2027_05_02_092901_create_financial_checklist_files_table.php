@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('financial_checklist_files', function (Blueprint $table) {
+                if (! Schema::hasTable('financial_checklist_files')) {
+Schema::create('financial_checklist_files', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->foreignId('financial_checklist_header_id')->nullable()->index()->constrained('financial_checklist_headers')->cascadeOnDelete();
@@ -26,6 +27,7 @@ return new class extends Migration
             $table->foreign('uploaded_by')->references('id')->on('users')->nullOnDelete();
             $table->timestamps();
         });
+        }
     }
 
     /**

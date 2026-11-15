@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Jawatankuasa;
 use App\Services\StosBackendClient;
 use App\Services\TenderProcessStatusService;
+use App\Support\TenderProcessStatus;
 use App\Tender;
 use App\User;
 use Carbon\Carbon;
@@ -38,6 +39,9 @@ class JawatankuasaController extends Controller
                     ->with('error', 'Kaedah dokumen ini tidak memerlukan pelantikan jawatankuasa. Sila teruskan ke Penyediaan Iklan.');
             }
             if ($tender) {
+                if ($this->isMeetingPhase($tender)) {
+                    return redirect()->route('perincianPage', ['tender' => $tender->uuid]);
+                }
                 $tender->update(['tender_peringkat' => 2]);
             }
         }
@@ -58,6 +62,9 @@ class JawatankuasaController extends Controller
                     ->with('error', 'Kaedah dokumen ini tidak memerlukan pelantikan jawatankuasa. Sila teruskan ke Penyediaan Iklan.');
             }
             if ($tender) {
+                if ($this->isMeetingPhase($tender)) {
+                    return redirect()->route('perincianPage', ['tender' => $tender->uuid]);
+                }
                 $tender->update(['tender_peringkat' => 1]);
             }
         }
@@ -73,6 +80,14 @@ class JawatankuasaController extends Controller
         $tender = null;
         if (!empty($tenderUuid)) {
             $tender = Tender::where('uuid', $tenderUuid)->first();
+        }
+
+        if ($tender && $this->isMeetingPhase($tender)) {
+            $message = 'Kemaskini ahli jawatankuasa pada peringkat ini perlu dibuat melalui Perincian Mesyuarat.';
+
+            return $request->expectsJson()
+                ? response()->json(['message' => $message], 422)
+                : redirect()->back()->with('error', $message);
         }
 
         $supportedJenis = $this->getSupportedJenis($tender);
@@ -304,7 +319,7 @@ class JawatankuasaController extends Controller
 
         Jawatankuasa::where('tender_id', $tender->id)
             ->where('jenis_jawatankuasa', $jenis)
-            ->delete();
+            ->update(['is_current' => false]);
 
         if ($rows->isEmpty()) {
             $shouldKeepMeta = !empty($catatan) || !empty($docPath) || ($jenis === 'spec' && $this->hasMeetingValue($meetingFields));
@@ -464,6 +479,10 @@ class JawatankuasaController extends Controller
 
         $emailCount = $specQueued;
         $useQueue = config('mail.use_queue', false);
+        $tenderNo = $tender->no_tender ?: ($tender->ref_number ?? '-');
+        $kaedahLabel = $tender->isTenderKaedah() ? 'Tender' : 'Sebut Harga';
+        $jenisLabels['eval'] = 'Jawatankuasa Penilaian ' . $kaedahLabel;
+        $jenisLabels['harga'] = $jenisLabels['eval'];
 
         foreach ($members as $member) {
             if ($member->jenis_jawatankuasa === 'spec') {
@@ -478,13 +497,14 @@ class JawatankuasaController extends Controller
             $perananLabel = $perananLabels[(string) $member->peranan] ?? 'Ahli';
 
             $to = trim($member->user->email);
-            $subject = 'Pemakluman Pelantikan ' . $jenisLabel . ' - ' . ($tender->ref_number ?? '');
+            $subject = 'Pemakluman Pelantikan ' . $jenisLabel . ' - ' . $tenderNo;
             $viewParams = [
                 'tender' => $tender,
                 'emailUser' => $member->user,
                 'jenisLabel' => $jenisLabel,
                 'perananLabel' => $perananLabel,
-                'tenderRefNumber' => $tender->ref_number ?? '-',
+                'kaedahLabel' => $kaedahLabel,
+                'tenderRefNumber' => $tenderNo,
                 'tenderPtj' => optional($tender->tenderer)->name ?? '-',
             ];
 
@@ -589,7 +609,7 @@ class JawatankuasaController extends Controller
             }
 
             $result = $this->createEmailQueue(
-                $recipient['content'] ?? '',
+                view('emails.pemakluman_jawatankuasa_spesifikasi', $recipient['view_data'])->render(),
                 $to,
                 $recipient['subject'] ?? 'Pemakluman Pelantikan Jawatankuasa Spesifikasi dan Jemputan Mesyuarat',
                 $recipient['attachments'] ?? []
@@ -964,5 +984,16 @@ class JawatankuasaController extends Controller
             return ['spec', 'open', 'tech', 'fin'];
         }
         return ['spec', 'open', 'tech', 'fin', 'eval'];
+    }
+
+    private function isMeetingPhase(Tender $tender): bool
+    {
+        return in_array((int) $tender->status_process_id, [
+            TenderProcessStatus::HANTAR_DOKUMEN_SYARIKAT,
+            TenderProcessStatus::PENYEDIAAN_MESYUARAT,
+            TenderProcessStatus::PENILAIAN_PEMBUKA,
+            TenderProcessStatus::CUT_OFF,
+            TenderProcessStatus::PENILAIAN_TEKNIKAL,
+        ], true);
     }
 }

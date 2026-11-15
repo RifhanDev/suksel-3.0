@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
+                if (Schema::hasTable('users')) {
+Schema::table('users', function (Blueprint $table) {
+            if (! Schema::hasColumn('users', 'gred')) {
             $table->string('gred', 50)->nullable()->after('ic_number');
+            }
         });
+        }
     }
 
     /**

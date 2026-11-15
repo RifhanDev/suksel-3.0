@@ -13,13 +13,15 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('bank_lists', function (Blueprint $table) {
+                if (! Schema::hasTable('bank_lists')) {
+Schema::create('bank_lists', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->string('display_name');
             $table->integer('status')->default(1);
             $table->timestamps();
         });
+        }
     }
 
     /**

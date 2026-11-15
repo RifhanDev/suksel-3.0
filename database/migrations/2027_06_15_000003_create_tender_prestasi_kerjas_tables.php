@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tender_prestasi_kerjas', function (Blueprint $table) {
+                if (! Schema::hasTable('tender_prestasi_kerjas')) {
+Schema::create('tender_prestasi_kerjas', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->unsignedInteger('tender_id')->unique();
@@ -23,8 +24,10 @@ return new class extends Migration
             $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
             $table->timestamps();
         });
+        }
 
-        Schema::create('tender_prestasi_kerja_items', function (Blueprint $table) {
+                if (! Schema::hasTable('tender_prestasi_kerja_items')) {
+Schema::create('tender_prestasi_kerja_items', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->foreignId('tender_prestasi_kerja_id')->constrained('tender_prestasi_kerjas')->cascadeOnDelete();
@@ -41,8 +44,10 @@ return new class extends Migration
             $table->unsignedSmallInteger('sort_order')->default(0);
             $table->timestamps();
         });
+        }
 
-        Schema::create('tender_prestasi_kerja_dokumens', function (Blueprint $table) {
+                if (! Schema::hasTable('tender_prestasi_kerja_dokumens')) {
+Schema::create('tender_prestasi_kerja_dokumens', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->foreignId('tender_prestasi_kerja_id')->constrained('tender_prestasi_kerjas')->cascadeOnDelete();
@@ -53,6 +58,7 @@ return new class extends Migration
             $table->unsignedBigInteger('size')->nullable();
             $table->timestamps();
         });
+        }
     }
 
     /**

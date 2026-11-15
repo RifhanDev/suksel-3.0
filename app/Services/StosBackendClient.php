@@ -38,9 +38,23 @@ class StosBackendClient
         $this->apiKey = config('services.stos_backend.api_key');
     }
 
+    protected ?int $timeoutSeconds = null;
+
     public function isConfigured(): bool
     {
         return $this->baseUrl !== '' && ! empty($this->apiKey);
+    }
+
+    /**
+     * A copy of this client with a shorter timeout, for calls made while a user
+     * waits on a page load.
+     */
+    public function withTimeout(int $seconds): static
+    {
+        $clone = clone $this;
+        $clone->timeoutSeconds = $seconds;
+
+        return $clone;
     }
 
     public function get(string $path, array $query = []): Response
@@ -58,9 +72,12 @@ class StosBackendClient
         return $this->request('put', $path, ['json' => $payload]);
     }
 
-    public function createTender(array $payload): Response
+    public function createTender(array $payload, string $idempotencyKey): Response
     {
-        return $this->post('/api/tenders', $payload);
+        return $this->request('post', '/api/tenders', [
+            'json' => $payload,
+            'headers' => ['Idempotency-Key' => $idempotencyKey],
+        ]);
     }
 
     public function updateTender(int $tenderId, array $payload): Response
@@ -108,6 +125,11 @@ class StosBackendClient
     public function submitPenyediaanMesyuarat(int $tenderId, array $payload): Response
     {
         return $this->post('/api/tenders/' . $tenderId . '/penyediaan-mesyuarat/submit', $payload);
+    }
+
+    public function syncPenyediaanMesyuaratAttendees(int $tenderId, string $jenis): Response
+    {
+        return $this->post('/api/tenders/' . $tenderId . '/penyediaan-mesyuarat/' . rawurlencode($jenis) . '/sync-attendees');
     }
 
     public function submitJawatankuasaSpesifikasiPemakluman(int $tenderId, array $payload): Response
@@ -493,6 +515,11 @@ class StosBackendClient
         return $this->get('/api/surat-niat/' . $tenderId . '/surat');
     }
 
+    public function getSuratNiatAccessInfo(int $suratId): Response
+    {
+        return $this->get('/api/surat-niat/surat/' . $suratId . '/access');
+    }
+
     public function generateSuratNiat(int $tenderId, array $payload): Response
     {
         return $this->post('/api/surat-niat/' . $tenderId . '/surat', $payload);
@@ -655,6 +682,14 @@ class StosBackendClient
         $url = $this->baseUrl . '/' . ltrim($path, '/');
 
         $client = self::http();
+
+        if (! empty($options['headers'])) {
+            $client = $client->withHeaders($options['headers']);
+        }
+
+        if ($this->timeoutSeconds !== null) {
+            $client = $client->timeout($this->timeoutSeconds)->connectTimeout(min(3, $this->timeoutSeconds));
+        }
 
         try {
             if ($method === 'get') {

@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('technical_checklist_headers', function (Blueprint $table) {
+                if (! Schema::hasTable('technical_checklist_headers')) {
+Schema::create('technical_checklist_headers', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->unsignedInteger('tender_id')->unique();
@@ -45,6 +46,7 @@ return new class extends Migration
                 ->on('users')
                 ->nullOnDelete();
         });
+        }
     }
 
     /**

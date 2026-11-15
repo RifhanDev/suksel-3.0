@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\RestrictsTenderByRole;
 use App\Http\Controllers\Concerns\UpdatesTenderProcessAfterChecklistSubmit;
 use App\Models\TechnicalChecklistFile;
 use App\Models\TechnicalChecklistHeader;
@@ -16,6 +17,20 @@ use Illuminate\Support\Str;
 class TechnicalChecklistController extends Controller
 {
     use UpdatesTenderProcessAfterChecklistSubmit;
+	use RestrictsTenderByRole;
+
+	public function __construct()
+	{
+		$this->middleware(function ($request, $next) {
+			$tenderUuid = $request->route('tenderUuid');
+			if ($tenderUuid) {
+				$this->assertOwnAgency(\App\Tender::query()->where('uuid', $tenderUuid)->first());
+			}
+
+			return $next($request);
+		});
+	}
+
     public function index(string $tenderUuid)
     {
         $this->ensureSpecificationAccess();
@@ -61,6 +76,22 @@ class TechnicalChecklistController extends Controller
             }
         }
 
+        if (!empty($checklistData['items'])) {
+            $localFlags = \Illuminate\Support\Facades\DB::table('technical_checklist_items as tci')
+                ->join('technical_checklist_headers as tch', 'tch.id', '=', 'tci.technical_checklist_header_id')
+                ->leftJoin('technical_specification_documents as tsd', 'tsd.id', '=', 'tci.specification_document_id')
+                ->where('tch.tender_id', $tender->id)
+                ->select('tci.uuid', 'tci.source_type', 'tci.penghantaran_fizikal')
+                ->get()
+                ->keyBy('uuid');
+            foreach ($checklistData['items'] as &$item) {
+                $flag = $localFlags[$item['uuid'] ?? ''] ?? null;
+                $item['penghantaran_fizikal'] = (int) $tender->penilaian_fizikal === 1
+                    && (bool) ($flag?->penghantaran_fizikal ?? $item['penghantaran_fizikal'] ?? false);
+            }
+            unset($item);
+        }
+
         $standardItems = [];
         try {
             $standardApiUrl   = $this->url('standard-checklist-items?category=technical');
@@ -85,7 +116,9 @@ class TechnicalChecklistController extends Controller
                 ->all();
         }
 
-        return view('TechnicalChecklist.senarai_teknikal', compact('tender', 'checklistData', 'standardItems'));
+        $physicalSubmissionEnabled = (int) $tender->penilaian_fizikal === 1;
+
+        return view('TechnicalChecklist.senarai_teknikal', compact('tender', 'checklistData', 'standardItems', 'physicalSubmissionEnabled'));
     }
 
     public function store(Request $request, string $tenderUuid)
@@ -93,6 +126,34 @@ class TechnicalChecklistController extends Controller
         $this->ensureSpecificationAccess();
 
         $response = $this->api()->post($this->url('technical-checklists/' . $tenderUuid), $request->except('_token'));
+
+        if ($response->successful() && $request->has('items')) {
+            $tender = Tender::where('uuid', $tenderUuid)->firstOrFail();
+            $apiItems = $response->json('data.items', []);
+            $header = TechnicalChecklistHeader::where('tender_id', $tender->id)->first();
+            $needsLocalSync = !$header;
+            foreach ($apiItems as $savedItem) {
+                if (!is_array($savedItem)) continue;
+                if ($header && !empty($savedItem['uuid']) && !TechnicalChecklistItem::where('technical_checklist_header_id', $header->id)->where('uuid', $savedItem['uuid'])->exists()) {
+                    $needsLocalSync = true;
+                    break;
+                }
+            }
+            if ($needsLocalSync) {
+                app(\App\Services\StosTenderChecklistSync::class)->syncForTender($tender);
+                $header = TechnicalChecklistHeader::where('tender_id', $tender->id)->first();
+            }
+            if ($header) {
+                foreach ((array) $request->input('items', []) as $index => $item) {
+                    if (!is_array($item)) continue;
+                    $uuid = $item['uuid'] ?? ($apiItems[$index]['uuid'] ?? null);
+                    if (!$uuid || !array_key_exists('penghantaran_fizikal', $item)) continue;
+                    TechnicalChecklistItem::where('technical_checklist_header_id', $header->id)
+                        ->where('uuid', $uuid)
+                        ->update(['penghantaran_fizikal' => (int) $tender->penilaian_fizikal === 1 && (bool) $item['penghantaran_fizikal']]);
+                }
+            }
+        }
 
         return response()->json($response->json(), $response->status());
     }
@@ -173,6 +234,9 @@ class TechnicalChecklistController extends Controller
 
         $file = TechnicalChecklistFile::where('uuid', $fileUuid)->first();
         if ($file) {
+            $tenderId = $file->header?->tender_id ?? $file->item?->header?->tender_id;
+            $this->assertOwnAgency($tenderId ? \App\Tender::query()->find($tenderId) : null);
+
             if ($file->path && \App\Support\AttachmentStorage::exists($file->path)) {
                 \App\Support\AttachmentStorage::delete($file->path);
             }
@@ -185,6 +249,9 @@ class TechnicalChecklistController extends Controller
         }
 
         // Backward compatibility fallback if row only exists on STOS API
+        if (!auth()->user()?->hasRole('Admin')) {
+            abort(403, 'PTJ fail ini tidak dapat disahkan.');
+        }
         try {
             $response = $this->api()->delete($this->url('technical-checklist-files/' . $fileUuid));
             if ($response->successful()) {
@@ -239,12 +306,22 @@ class TechnicalChecklistController extends Controller
             'status' => $header->status,
             'submitted_at' => optional($header->submitted_at)->toIso8601String(),
             'items' => $header->items->map(function ($item) use ($tender) {
+                $mechanism = $item->mechanism;
+                $vendorAction = $item->vendor_action;
+                if ((int) $tender->penilaian_fizikal !== 1
+                    && ($mechanism === 'serahan_tangan' || $vendorAction === 'serahan_tangan')) {
+                    $mechanism = 'petender_muat_naik';
+                    $vendorAction = 'muat_naik';
+                }
+
                 return [
                     'uuid' => $item->uuid,
                     'source_type' => $item->source_type,
                     'title' => $item->title,
-                    'mechanism' => $item->mechanism,
-                    'vendor_action' => $item->vendor_action,
+                    'mechanism' => $mechanism,
+                    'vendor_action' => $vendorAction,
+                    'penghantaran_fizikal' => (int) $tender->penilaian_fizikal === 1
+                        && (bool) ($item->penghantaran_fizikal ?? false),
                     'score' => (float) $item->score,
                     'status' => $item->status,
                     'sort_order' => (int) $item->sort_order,

@@ -30,7 +30,9 @@ return new class extends Migration
         }
 
         Schema::table('tenders', function (Blueprint $table) {
+            if (! Schema::hasColumn('tenders', 'kaedah_dokumen_id')) {
             $table->unsignedBigInteger('kaedah_dokumen_id')->nullable()->after('only_advertise');
+            }
             $table->foreign('kaedah_dokumen_id')
                 ->references('id')
                 ->on('ref_kaedah_dokumens')

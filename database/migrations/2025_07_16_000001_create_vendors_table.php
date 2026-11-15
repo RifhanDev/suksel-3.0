@@ -70,7 +70,8 @@ class CreateVendorsTable extends Migration
         //     // $table->foreign('district_id')->references('id')->on('districts')->onDelete('set null');
         // });
 
-        Schema::create('vendors', function (Blueprint $table) {
+                if (! Schema::hasTable('vendors')) {
+Schema::create('vendors', function (Blueprint $table) {
             $table->id();
             $table->string('registration', 128);
             $table->string('name', 255)->nullable();
@@ -136,6 +137,7 @@ class CreateVendorsTable extends Migration
             $table->index('approval_1_id', 'fk_vendors_approvals1_idx');
             $table->index('organization_unit_id', 'fk_vendors_organization_units1_idx');
         });
+        }
 
         Schema::table('users', function (Blueprint $table)
         {

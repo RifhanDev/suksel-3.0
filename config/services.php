@@ -64,6 +64,18 @@ return [
         // only so an environment behind a TLS-intercepting proxy can opt out explicitly
         // instead of the old behaviour of hardcoding 'verify' => false in every call.
         'verify_tls' => env('FPX_VERIFY_TLS', true),
+
+        // Max pending FPX transactions queued for status requery per run.
+        'jobs_limit' => (int) env('FPX_JOBS_LIMIT', 50),
+    ],
+
+    // Internal mail relay (STOS-2.0-WEB-MailServer). Always read these through
+    // config(), never env() directly in app code: once config is cached
+    // (php artisan optimize / config:cache) Laravel stops loading .env, so a
+    // direct env('MAIL_SERVER') returns null and queued emails never get sent.
+    'mail_server' => [
+        'url' => env('MAIL_SERVER'),
+        'sampler_url' => env('MAIL_SAMPLER'),
     ],
 
     'stos_backend' => [

@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('complaints', function (Blueprint $table) {
+                if (Schema::hasTable('complaints')) {
+Schema::table('complaints', function (Blueprint $table) {
+            if (! Schema::hasColumn('complaints', 'module')) {
             $table->string('module', 100)->nullable()->after('subject')->comment('Modul sistem / isu utama');
+            }
         });
+        }
     }
 
     /**

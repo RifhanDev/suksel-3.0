@@ -147,7 +147,7 @@
                         <table class="table table-hover align-middle mb-0 w-100">
                             <thead class="bg-light">
                                 <tr>
-                                    <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 15%; font-size: 0.725rem; letter-spacing: 0.5px;">BIL</th>
+                                    <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 15%; font-size: 0.725rem; letter-spacing: 0.5px;">KOD PEMBEKAL</th>
                                     <th class="py-2.5 px-3 text-start text-uppercase text-secondary fw-bold" style="width: 85%; font-size: 0.725rem; letter-spacing: 0.5px;">ULASAN</th>
                                 </tr>
                             </thead>
@@ -190,7 +190,7 @@
                         <table class="table table-hover align-middle mb-0 w-100">
                             <thead class="bg-light">
                                 <tr>
-                                    <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 15%; font-size: 0.725rem; letter-spacing: 0.5px;">BIL</th>
+                                    <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 15%; font-size: 0.725rem; letter-spacing: 0.5px;">KOD PEMBEKAL</th>
                                     <th class="py-2.5 px-3 text-start text-uppercase text-secondary fw-bold" style="width: 85%; font-size: 0.725rem; letter-spacing: 0.5px;">ULASAN</th>
                                 </tr>
                             </thead>
@@ -245,7 +245,7 @@
                     <table class="table align-middle mb-0" style="font-size: 0.85rem;">
                         <thead style="--bs-table-bg: #d7d7d9; --bs-table-color: #3f3f3f;">
                             <tr>
-                                <th class="text-center text-uppercase fw-bold py-2" style="width: 15%; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Bil</th>
+                                <th class="text-center text-uppercase fw-bold py-2" style="width: 15%; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Kod Pembekal</th>
                                 <th class="text-center text-uppercase fw-bold py-2" style="width: 22%; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Jumlah Skor</th>
                                 <th class="text-center text-uppercase fw-bold py-2" style="width: 28%; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Status Penilaian</th>
                                 <th class="text-center text-uppercase fw-bold py-2" style="width: 35%; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Tindakan</th>
@@ -298,7 +298,7 @@
                     <div class="row g-3 align-items-center">
                         <div class="col-md-3 border-end border-slate-200">
                             <span class="d-block text-uppercase text-muted fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.05em;">Kod Pembekal</span>
-                            <span id="modalStep2KodPembekal" class="fw-bold text-dark fs-6">1/2</span>
+                            <span id="modalStep2KodPembekal" class="fw-bold text-dark fs-6">-</span>
                         </div>
                         <div class="col-md-4 border-end border-slate-200">
                             <span class="d-block text-uppercase text-muted fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.05em;">Nama Pembekal</span>
@@ -346,6 +346,12 @@
                     <div class="rounded-2 px-3 py-2 d-inline-flex align-items-center gap-2 mb-3" style="background:#eff6ff; border:1px solid #bfdbfe; font-size:0.78rem; color:#1e40af;">
                         <i class="bi bi-info-circle-fill text-primary flex-shrink-0 me-1"></i>
                         <span>Sila masukkan amaun RM bagi setiap bulan. Jumlah, purata, dan skor akan dikira secara automatik.</span>
+                    </div>
+
+                    <div id="modalStep2BankNames" class="rounded-3 border bg-light-subtle p-3 mb-3 d-none">
+                        <div class="small text-muted fw-semibold text-uppercase mb-2" style="letter-spacing:0.04em;">Nama Bank Mengikut Akaun</div>
+                        <div id="modalStep2BankNameList" class="d-flex flex-wrap gap-2"></div>
+                        <div class="small text-muted mt-2">Amaun bulanan di bawah ialah jumlah gabungan daripada semua akaun petender.</div>
                     </div>
 
                     <div class="table-responsive rounded-3 border bg-white mb-3">

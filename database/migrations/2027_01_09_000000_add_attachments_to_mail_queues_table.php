@@ -17,7 +17,9 @@ class AddAttachmentsToMailQueuesTable extends Migration
             Schema::table('mail_queues', function (Blueprint $table) {
                 // JSON array of attachments: [{ filename, mime, data (base64) }, ...]
                 // Nullable so existing/plain emails are unaffected.
+                if (! Schema::hasColumn('mail_queues', 'attachments')) {
                 $table->longText('attachments')->nullable()->after('payload');
+                }
             });
         }
     }

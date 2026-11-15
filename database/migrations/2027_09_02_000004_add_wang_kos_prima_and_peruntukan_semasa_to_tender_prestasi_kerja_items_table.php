@@ -11,10 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('tender_prestasi_kerja_items', function (Blueprint $table) {
+                if (Schema::hasTable('tender_prestasi_kerja_items')) {
+Schema::table('tender_prestasi_kerja_items', function (Blueprint $table) {
+            if (! Schema::hasColumn('tender_prestasi_kerja_items', 'wang_kos_prima')) {
             $table->decimal('wang_kos_prima', 15, 2)->nullable()->after('harga');
+            }
+            if (! Schema::hasColumn('tender_prestasi_kerja_items', 'wang_peruntukan_semasa')) {
             $table->decimal('wang_peruntukan_semasa', 15, 2)->nullable()->after('wang_kos_prima');
+            }
         });
+        }
     }
 
     /**

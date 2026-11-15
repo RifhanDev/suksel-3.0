@@ -302,7 +302,7 @@
     </div>
 </div>
 
-{{-- Modal 2: SENARAI SPESIFIKASI TEKNIKAL (8 columns, Simpan only - opened from row Menilai in modal above) --}}
+{{-- Modal 2: SENARAI SPESIFIKASI TEKNIKAL (7 columns, Simpan only - opened from row Menilai in modal above) --}}
 <div class="modal fade" id="modalSenaraiSpesifikasiTeknikal" tabindex="-1" aria-labelledby="modalSenaraiSpesifikasiTeknikalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style="max-width: 1400px;">
         <div class="modal-content">
@@ -330,7 +330,6 @@
                                 <th style="min-width: 260px;">Item / Spesifikasi</th>
                                 <th style="width: 110px;">Kekerapan</th>
                                 <th style="width: 110px;">Unit Ukuran</th>
-                                <th style="width: 120px;">Kadar Harga (RM)</th>
                                 <th style="min-width: 260px;">Cadangan Petender</th>
                                 <th style="width: 150px;">Skor Automatik</th>
                                 <th style="width: 160px;">Skor Manual</th>
@@ -339,7 +338,7 @@
                         </thead>
                         <tbody id="spesifikasiDetailTbody">
                             <tr>
-                                <td colspan="8" class="text-center text-muted py-3">Memuatkan...</td>
+                                <td colspan="7" class="text-center text-muted py-3">Memuatkan...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -805,7 +804,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!rows.length) {
             const tr = document.createElement('tr');
             const td = document.createElement('td');
-            td.colSpan = 8;
+            td.colSpan = 7;
             td.className = 'text-center text-muted py-3';
             td.textContent = 'Tiada spesifikasi untuk item ini.';
             tr.appendChild(td);
@@ -827,17 +826,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const tdUnit = document.createElement('td');
                 tdUnit.className = 'text-center';
                 tdUnit.textContent = row.unit || '-';
-                const tdKadar = document.createElement('td');
-                tdKadar.className = 'text-end';
-                if (row.kadar_harga !== null && row.kadar_harga !== undefined && row.kadar_harga !== '') {
-                    tdKadar.textContent = Number(row.kadar_harga).toLocaleString('en-US', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    });
-                } else {
-                    tdKadar.textContent = '-';
-                }
-                tr.append(tdTitle, tdQty, tdUnit, tdKadar);
+                tr.append(tdTitle, tdQty, tdUnit);
                 for (let i = 0; i < 4; i++) tr.appendChild(document.createElement('td'));
                 detailTbody.appendChild(tr);
                 return;
@@ -855,9 +844,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const tdUnit = document.createElement('td');
             tdUnit.className = 'text-center text-muted';
             tdUnit.textContent = '-';
-            const tdKadar = document.createElement('td');
-            tdKadar.className = 'text-center text-muted';
-            tdKadar.textContent = '-';
 
             const tdCadangan = buildCadanganCell(row);
             const [tdAuto, tdManual] = buildScoreCells(row);
@@ -870,14 +856,14 @@ document.addEventListener('DOMContentLoaded', function() {
             catatanInput.value = row.catatan || '';
             tdCatatan.appendChild(catatanInput);
 
-            tr.append(tdDesc, tdQty, tdUnit, tdKadar, tdCadangan, tdAuto, tdManual, tdCatatan);
+            tr.append(tdDesc, tdQty, tdUnit, tdCadangan, tdAuto, tdManual, tdCatatan);
             detailTbody.appendChild(tr);
         });
     }
 
     function openSpesifikasiDetail(itemUuid, vendorId) {
         activeDetailVendorId = vendorId;
-        detailTbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3">Memuatkan...</td></tr>';
+        detailTbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">Memuatkan...</td></tr>';
 
         bootstrap.Modal.getOrCreateInstance(modalDetail).show();
 

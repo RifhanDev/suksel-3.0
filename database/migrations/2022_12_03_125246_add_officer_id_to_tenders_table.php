@@ -15,7 +15,9 @@ return new class extends Migration
     {
         if (Schema::hasTable('tenders')) {
             Schema::table('tenders', function (Blueprint $table) {
+                if (! Schema::hasColumn('tenders', 'officer_id')) {
                 $table->integer('officer_id')->nullable()->after('creator_id');
+                }
             });
         }
     }

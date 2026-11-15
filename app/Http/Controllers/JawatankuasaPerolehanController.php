@@ -47,7 +47,9 @@ class JawatankuasaPerolehanController extends Controller
     public function index()
     {
         $tenders = $this->applyLembagaDecisionScope(
-            Tender::query()->where('status_process_id', TenderProcessStatus::jawatankuasaPerolehanListStatus())
+            $this->applyOwnAgencyScope(
+                Tender::query()->where('status_process_id', TenderProcessStatus::jawatankuasaPerolehanListStatus())
+            )
         )
             ->orderByDesc('id')
             ->get([
@@ -230,6 +232,13 @@ class JawatankuasaPerolehanController extends Controller
                 ->orderBy('sort_order')
                 ->get();
 
+            $kodPembekalByVendor = $tender->participants()
+                ->whereNotNull('kod_pembekal')
+                ->where('kod_pembekal', '!=', '')
+                ->pluck('kod_pembekal', 'vendor_id')
+                ->mapWithKeys(fn ($kod, $vendorId) => [(int) $vendorId => (string) $kod])
+                ->all();
+
             $isEbidding = (bool) ($tender->is_ebidding ?? false);
             $showBidPriceDiff = $isEbidding && (int) ($tender->ebidding_process_stage_id ?? 0) >= 3;
             $bidSpecBreakdown = $isEbidding ? BidSpecBreakdown::forTender($tender) : [];
@@ -246,17 +255,9 @@ class JawatankuasaPerolehanController extends Controller
             }
 
             $pemilihanItems = $pemilihanItems
-                ->map(function (JawatankuasaPerolehanPemilihanItem $item) use ($isEbidding, $bidsByItemVendor, $bidSpecBreakdown) {
-                    return [
-                        'id' => $item->id,
-                        'perihal_item' => $item->perihal_item,
-                        'jenis_item' => $item->jenis_item,
-                        'unit_ukuran' => $item->unit_ukuran,
-                        'jenis_harga' => $item->jenis_harga,
-                        'dibatalkan' => $item->dibatalkan,
-                        'pembekal_dipilih' => (int) $item->pembekal_dipilih,
-                        'kuantiti' => (string) $item->kuantiti,
-                        'petenders' => $item->petenders->map(function (JawatankuasaPerolehanPemilihanPetender $p) use ($item, $isEbidding, $bidsByItemVendor, $bidSpecBreakdown) {
+                ->map(function (JawatankuasaPerolehanPemilihanItem $item) use ($isEbidding, $bidsByItemVendor, $bidSpecBreakdown, $kodPembekalByVendor) {
+                    $petenders = $item->petenders
+                        ->map(function (JawatankuasaPerolehanPemilihanPetender $p) use ($item, $isEbidding, $bidsByItemVendor, $bidSpecBreakdown, $kodPembekalByVendor) {
                             $hasCidbMeta = $p->vendor_id
                                 && is_array(VendorCidbMeta::normalizeMeta(is_array($p->vendor?->meta) ? $p->vendor->meta : null));
 
@@ -268,12 +269,15 @@ class JawatankuasaPerolehanController extends Controller
                                 $hargaBidaan = $bidPrice !== null ? (float) $bidPrice : $hargaTawaran;
                             }
 
+                            $bilLabel = $kodPembekalByVendor[$vendorId]
+                                ?? (filled($p->bil_label) ? (string) $p->bil_label : '—');
+
                             return [
                                 'id' => $p->id,
                                 'vendor_id' => $p->vendor_id,
                                 'vendor_name' => (string) ($p->vendor->name ?? '-'),
                                 'cidb_has_meta' => $hasCidbMeta,
-                                'bil_label' => $p->bil_label,
+                                'bil_label' => $bilLabel,
                                 'status_bumiputra' => $p->status_bumiputra ?: '',
                                 'harga_tawaran' => (string) $hargaTawaran,
                                 'harga_bidaan' => $hargaBidaan !== null ? (string) $hargaBidaan : null,
@@ -288,7 +292,41 @@ class JawatankuasaPerolehanController extends Controller
                                 'keputusan_urusetia' => $p->keputusan_urusetia ?: '',
                                 'catatan_urusetia' => $p->catatan_urusetia ?: '',
                             ];
-                        })->values(),
+                        })
+                        // Bought the document only: no petender number, harga 0, skor 0.
+                        ->reject(function (array $row) use ($kodPembekalByVendor) {
+                            $vendorId = (int) ($row['vendor_id'] ?? 0);
+                            if ($vendorId > 0 && filled($kodPembekalByVendor[$vendorId] ?? null)) {
+                                return false;
+                            }
+
+                            $harga = (float) ($row['harga_tawaran'] ?? 0);
+                            $skor = (float) ($row['jumlah_skor'] ?? 0);
+                            $bid = $row['harga_bidaan'] ?? null;
+                            $hasBid = $bid !== null && $bid !== '' && (float) $bid > 0;
+
+                            return $harga <= 0 && $skor <= 0 && ! $hasBid;
+                        })
+                        // Lowest harga tawaran first (use harga bidaan when present).
+                        ->sortBy(function (array $row) {
+                            $harga = $row['harga_bidaan'] ?? $row['harga_tawaran'] ?? null;
+
+                            return $harga !== null && $harga !== ''
+                                ? (float) $harga
+                                : PHP_FLOAT_MAX;
+                        })
+                        ->values();
+
+                    return [
+                        'id' => $item->id,
+                        'perihal_item' => $item->perihal_item,
+                        'jenis_item' => $item->jenis_item,
+                        'unit_ukuran' => $item->unit_ukuran,
+                        'jenis_harga' => $item->jenis_harga,
+                        'dibatalkan' => $item->dibatalkan,
+                        'pembekal_dipilih' => $petenders->count(),
+                        'kuantiti' => (string) $item->kuantiti,
+                        'petenders' => $petenders,
                     ];
                 })
                 ->values();
@@ -299,7 +337,16 @@ class JawatankuasaPerolehanController extends Controller
                     $item['petenders'] = BidSpecBreakdown::attachToRows(
                         collect($item['petenders'] ?? []),
                         $bidSpecBreakdown
-                    )->all();
+                    )
+                        ->sortBy(function (array $row) {
+                            $harga = $row['harga_bidaan'] ?? $row['harga_tawaran'] ?? null;
+
+                            return $harga !== null && $harga !== ''
+                                ? (float) $harga
+                                : PHP_FLOAT_MAX;
+                        })
+                        ->values()
+                        ->all();
 
                     return $item;
                 })->values();
@@ -334,12 +381,16 @@ class JawatankuasaPerolehanController extends Controller
     /** Proxy printable teknikal report for JP Paparan Kertas Taklimat (MeetingDecision role). */
     public function muatTurunLaporanTeknikal(Tender $tender)
     {
+        $this->assertOwnAgency($tender);
+
         return app(PenilaianTeknikalController::class)->cetakLaporan($tender);
     }
 
     /** Proxy printable kewangan report for JP Paparan Kertas Taklimat (MeetingDecision role). */
     public function muatTurunLaporanKewangan(Tender $tender)
     {
+        $this->assertOwnAgency($tender);
+
         $identifier = $tender->uuid ?: ($tender->no_tender ?: ($tender->ref_number ?: (string) $tender->id));
 
         return app(PenilaianKewanganController::class)->cetakLaporan($identifier, false);
@@ -768,19 +819,35 @@ class JawatankuasaPerolehanController extends Controller
             // When multiple Senarai Item rows already exist (e.g. eBidding child specs),
             // do not overwrite the first row into the tender name / overall harga — that
             // corrupts child prices and breaks breakdown totals vs table totals.
-            $existingItemCount = JawatankuasaPerolehanPemilihanItem::query()
-                ->where('tender_id', $tender->id)
-                ->count();
-            if ($existingItemCount > 1) {
-                return;
-            }
-
             $participants = $tender->participants()
                 ->with('vendor')
                 ->where('participate', 1)
                 ->whereNull('eliminated_at')
+                ->whereNull('eliminated_process_id')
+                ->where(function ($q) {
+                    $q->where('cancel_fg', 0)->orWhereNull('cancel_fg');
+                })
                 ->orderBy('id')
                 ->get();
+
+            $participants = $this->rejectPetendersWithoutOffer($tender, $participants)
+                // Lowest harga tawaran first for Senarai Pembekal / Keputusan Mesyuarat.
+                ->sortBy(fn ($p) => (float) ($p->harga_tawaran ?? $p->price ?? $p->amount ?? PHP_FLOAT_MAX))
+                ->values();
+
+            $existingItemCount = JawatankuasaPerolehanPemilihanItem::query()
+                ->where('tender_id', $tender->id)
+                ->count();
+            if ($existingItemCount > 1) {
+                // Child spec rows must keep their own prices. Only drop companies
+                // that never submitted, which were copied onto every item.
+                $this->prunePetendersNotIn(
+                    $tender,
+                    $participants->pluck('vendor_id')->map(fn ($id) => (int) $id)->all()
+                );
+
+                return;
+            }
 
             $jenisItem = $this->resolveJenisItem($tender);
             $eligibleCount = $participants->count();
@@ -818,7 +885,6 @@ class JawatankuasaPerolehanController extends Controller
             }
 
             $keepVendorIds = [];
-            $total = max($eligibleCount, 1);
 
             foreach ($participants->values() as $idx => $participant) {
                 $vendorId = (int) $participant->vendor_id;
@@ -851,7 +917,10 @@ class JawatankuasaPerolehanController extends Controller
                     ],
                     [
                         'sort_order' => $idx + 1,
-                        'bil_label' => ($idx + 1) . '/' . $total,
+                        // Keep original kod pembekal (e.g. 2/2); do not renumber to 1/1.
+                        'bil_label' => filled($participant->kod_pembekal)
+                            ? (string) $participant->kod_pembekal
+                            : '—',
                         'status_bumiputra' => $bumi ? 'Ya' : 'Tidak',
                         'harga_tawaran' => (float) $harga,
                         'jumlah_skor' => $score['skor'] ?? 0,
@@ -878,6 +947,75 @@ class JawatankuasaPerolehanController extends Controller
                 })->delete();
             }
         });
+    }
+
+    /**
+     * Companies that only bought the document have no petender number and
+     * no offer. They must not appear as harga 0 / skor 0 in Keputusan Mesyuarat.
+     * A company that submitted (kod pembekal) or placed a bid stays.
+     *
+     * @param  \Illuminate\Support\Collection<int, mixed>  $participants
+     * @return \Illuminate\Support\Collection<int, mixed>
+     */
+    private function rejectPetendersWithoutOffer(Tender $tender, $participants)
+    {
+        if ($participants->isEmpty()) {
+            return $participants;
+        }
+
+        $bidderIds = [];
+        if ((bool) ($tender->is_ebidding ?? false)) {
+            $bidderIds = EbiddingVendorBidItem::query()
+                ->where('tender_id', $tender->id)
+                ->whereIn('vendor_id', $participants->pluck('vendor_id'))
+                ->whereNotNull('submitted_at')
+                ->where('bid_price', '>', 0)
+                ->pluck('vendor_id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+        }
+
+        return $participants->reject(function ($participant) use ($bidderIds) {
+            if (filled($participant->kod_pembekal)) {
+                return false;
+            }
+
+            if (in_array((int) $participant->vendor_id, $bidderIds, true)) {
+                return false;
+            }
+
+            $harga = $participant->harga_tawaran ?? $participant->price ?? $participant->amount ?? null;
+
+            return $harga === null || $harga === '' || (float) $harga <= 0;
+        })->values();
+    }
+
+    /**
+     * @param  list<int>  $keepVendorIds
+     */
+    private function prunePetendersNotIn(Tender $tender, array $keepVendorIds): void
+    {
+        $itemIds = JawatankuasaPerolehanPemilihanItem::query()
+            ->where('tender_id', $tender->id)
+            ->pluck('id');
+
+        if ($itemIds->isEmpty()) {
+            return;
+        }
+
+        $query = JawatankuasaPerolehanPemilihanPetender::query()
+            ->whereIn('pemilihan_item_id', $itemIds);
+
+        if ($keepVendorIds === []) {
+            $query->delete();
+
+            return;
+        }
+
+        $query->where(function ($q) use ($keepVendorIds) {
+            $q->whereNull('vendor_id')
+                ->orWhereNotIn('vendor_id', $keepVendorIds);
+        })->delete();
     }
 
     private function resolveJenisItem(Tender $tender): string
@@ -1223,6 +1361,7 @@ class JawatankuasaPerolehanController extends Controller
         }
 
         if ($tender) {
+            $this->assertOwnAgency($tender);
             $this->assertLembagaDecisionAccess($tender);
         }
 

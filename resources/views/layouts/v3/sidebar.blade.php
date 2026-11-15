@@ -62,7 +62,7 @@
 					</a>
 					<div class="collapse {{ $isTenderMenuActive ? 'show' : '' }}" id="menuTender">
 						<ul class="sidebar-submenu">
-							@if ($user->can('Tender:execute'))
+							@if ($user->can('Tender:execute') || $user->hasRole('Agency Admin') || $user->hasRole('Admin'))
 								<!-- new permission -->
 								<li>
 									<a class="submenu-item" href="{{ route('ciptaTender') }}">
@@ -712,7 +712,7 @@
 												Banner</span>
 										</a></li>
 								@endif
-								@if (Auth::user()->can('System:histories'))
+								@if (App\Models\VersionHistory::canList())
 									<li><a class="submenu-item" href="{{ asset('version-histories') }}">
 											<div class="submenu-icon"
 												style="{{ request()->is('version-histories*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
@@ -1028,7 +1028,7 @@
 				@endif
 
                 <!-- 11. LAPORAN -->
-                @if (Auth::user()->can('Report:view'))
+                @if (\App\Support\ReportAccess::canOpenMenu(Auth::user()))
                     @php $isLaporanMenuActive = request()->is('reports*'); @endphp
                     <li class="nav-item">
                         <a class="sidebar-link {{ $isLaporanMenuActive ? 'active' : 'collapsed' }}" data-bs-toggle="collapse" data-bs-target="#menuReport"
@@ -1049,81 +1049,79 @@
                         </a>
                         <div class="collapse {{ $isLaporanMenuActive ? 'show' : '' }}" id="menuReport">
                             <ul class="sidebar-submenu">
-                                @if (Auth::user()->can('Report:view:revenue_yearly'))
+                                @if (\App\Support\ReportAccess::allows(Auth::user(), 'Report:view:revenue_yearly'))
                                     <li><a class="submenu-item {{ request()->is('reports/revenue') ? 'active' : '' }}" href="{{ asset('reports/revenue') }}">
                                             <div class="submenu-icon" style="{{ request()->is('reports/revenue') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
                                             <span class="{{ request()->is('reports/revenue') ? 'text-white' : '' }}">Hasil Transaksi Tahunan</span>
                                         </a></li>
                                 @endif
-                                @if (Auth::user()->can('Report:view:agency_active'))
+                                @if (\App\Support\ReportAccess::allows(Auth::user(), 'Report:view:agency_active'))
                                     <li><a class="submenu-item {{ request()->is('reports/agency/active') ? 'active' : '' }}" href="{{ asset('reports/agency/active') }}">
                                             <div class="submenu-icon" style="{{ request()->is('reports/agency/active') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
                                             <span class="{{ request()->is('reports/agency/active') ? 'text-white' : '' }}">10 Agensi Aktif</span>
                                         </a></li>
                                 @endif
-                                @if (Auth::user()->can('Report:view:agency_transaction'))
+                                @if (\App\Support\ReportAccess::allows(Auth::user(), 'Report:view:agency_transaction'))
                                     <li><a class="submenu-item {{ request()->is('reports/agency/all') ? 'active' : '' }}" href="{{ asset('reports/agency/all') }}">
                                             <div class="submenu-icon" style="{{ request()->is('reports/agency/all') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
                                             <span class="{{ request()->is('reports/agency/all') ? 'text-white' : '' }}">Transaksi Semua Agensi</span>
                                         </a></li>
                                 @endif
-                                @if (Auth::user()->can('reports/agency/type'))
+                                @if (Auth::user()->can('reports/agency/type') || \App\Support\ReportAccess::allows(Auth::user(), 'Report:view:agency_type'))
                                     <li><a class="submenu-item {{ request()->is('reports/agency/type') ? 'active' : '' }}" href="{{ asset('reports/agency/type') }}">
                                             <div class="submenu-icon" style="{{ request()->is('reports/agency/type') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
                                             <span class="{{ request()->is('reports/agency/type') ? 'text-white' : '' }}">Transaksi Mengikut Kategori Agensi</span>
                                         </a></li>
                                 @endif
-                                @if (Auth::user()->can('Report:view:agency_tender') ||
-                                        Auth::user()->can('Report:view:agency_tender:organization_unit_id'))
+                                @if (\App\Support\ReportAccess::allows(Auth::user(), 'Report:view:agency_tender', 'Report:view:agency_tender:organization_unit_id'))
                                     <li><a class="submenu-item {{ request()->is('reports/agency/transaction') ? 'active' : '' }}" href="{{ asset('reports/agency/transaction') }}">
                                             <div class="submenu-icon" style="{{ request()->is('reports/agency/transaction') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
                                             <span class="{{ request()->is('reports/agency/transaction') ? 'text-white' : '' }}">Transaksi Agensi Mengikut Tender</span>
                                         </a></li>
                                 @endif
-                                @if (Auth::user()->can('Report:view:agency_daily') || Auth::user()->can('Report:view:agency_daily:organization_unit_id'))
+                                @if (\App\Support\ReportAccess::allows(Auth::user(), 'Report:view:agency_daily', 'Report:view:agency_daily:organization_unit_id'))
                                     <li><a class="submenu-item {{ request()->is('reports/agency/daily') ? 'active' : '' }}" href="{{ asset('reports/agency/daily') }}">
                                             <div class="submenu-icon" style="{{ request()->is('reports/agency/daily') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
                                             <span class="{{ request()->is('reports/agency/daily') ? 'text-white' : '' }}">Transaksi Harian Agensi</span>
                                         </a></li>
                                 @endif
-                                @if (Auth::user()->can('Report:view:gateway_daily') ||
-                                        Auth::user()->can('Report:view:gateway_daily:organization_unit_id'))
+                                @if (\App\Support\ReportAccess::allows(Auth::user(), 'Report:view:gateway_daily', 'Report:view:gateway_daily:organization_unit_id'))
                                     <li><a class="submenu-item {{ request()->is('reports/gateway/daily') ? 'active' : '' }}" href="{{ asset('reports/gateway/daily') }}">
                                             <div class="submenu-icon" style="{{ request()->is('reports/gateway/daily') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
                                             <span class="{{ request()->is('reports/gateway/daily') ? 'text-white' : '' }}">Transaksi Harian Gateway</span>
                                         </a></li>
                                 @endif
-                                @if (Auth::user()->can('Report:view:vendor_status'))
+                                @if (\App\Support\ReportAccess::allows(Auth::user(), 'Report:view:vendor_status'))
                                     <li><a class="submenu-item {{ request()->is('reports/vendor/status') ? 'active' : '' }}" href="{{ asset('reports/vendor/status') }}">
                                             <div class="submenu-icon" style="{{ request()->is('reports/vendor/status') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
                                             <span class="{{ request()->is('reports/vendor/status') ? 'text-white' : '' }}">Syarikat Mengikut Status</span>
                                         </a></li>
                                 @endif
-                                @if (Auth::user()->can('Report:view:vendor_code'))
+                                @if (\App\Support\ReportAccess::allows(Auth::user(), 'Report:view:vendor_code'))
                                     <li><a class="submenu-item {{ request()->is('reports/vendor/codes') ? 'active' : '' }}" href="{{ asset('reports/vendor/codes') }}">
                                             <div class="submenu-icon" style="{{ request()->is('reports/vendor/codes') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
                                             <span class="{{ request()->is('reports/vendor/codes') ? 'text-white' : '' }}">Syarikat Mengikut Kod Bidang</span>
                                         </a></li>
                                 @endif
-                                @if (Auth::user()->can('Report:view:vendor_district'))
+                                @if (\App\Support\ReportAccess::allows(Auth::user(), 'Report:view:vendor_district'))
                                     <li><a class="submenu-item {{ request()->is('reports/vendor/district') ? 'active' : '' }}" href="{{ asset('reports/vendor/district') }}">
                                             <div class="submenu-icon" style="{{ request()->is('reports/vendor/district') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
                                             <span class="{{ request()->is('reports/vendor/district') ? 'text-white' : '' }}">Syarikat Mengikut Daerah</span>
                                         </a></li>
                                 @endif
-                                @if (Auth::user()->can('Report:view:user_agency') || Auth::user()->can('Report:view:user_agency:organization_unit_id'))
+                                @if (\App\Support\ReportAccess::allows(Auth::user(), 'Report:view:user_agency', 'Report:view:user_agency:organization_unit_id'))
                                     <li><a class="submenu-item {{ request()->is('reports/user/agency') ? 'active' : '' }}" href="{{ asset('reports/user/agency') }}">
                                             <div class="submenu-icon" style="{{ request()->is('reports/user/agency') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
                                             <span class="{{ request()->is('reports/user/agency') ? 'text-white' : '' }}">Senarai Pengguna Agensi</span>
                                         </a></li>
                                 @endif
-                                @if (Auth::user()->can('Report:view:user_agency') || Auth::user()->can('Report:view:user_active:organization_unit_id'))
+                                @if (\App\Support\ReportAccess::allows(Auth::user(), 'Report:view:user_agency', 'Report:view:user_agency:organization_unit_id', 'Report:view:user_active:organization_unit_id'))
                                     <li><a class="submenu-item {{ request()->is('reports/user/active') ? 'active' : '' }}" href="{{ asset('reports/user/active') }}">
                                             <div class="submenu-icon" style="{{ request()->is('reports/user/active') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
                                             <span class="{{ request()->is('reports/user/active') ? 'text-white' : '' }}">Senarai Status Pengguna Mengikut Agensi</span>
                                         </a></li>
                                 @endif
-                                @if (Auth::user()->can('Report:view:user_activity'))
+                                @if (\App\Support\ReportAccess::allows(Auth::user(), 'Report:view:user_activity'))
                                     <li><a class="submenu-item {{ request()->is('reports/user/activity') ? 'active' : '' }}" href="{{ asset('reports/user/activity') }}">
                                             <div class="submenu-icon" style="{{ request()->is('reports/user/activity') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
                                             <span class="{{ request()->is('reports/user/activity') ? 'text-white' : '' }}">Laporan Aktiviti Staf</span>
@@ -1153,7 +1151,7 @@
                                             <span class="{{ request()->is('reports/vendor/registration') ? 'text-white' : '' }}">Laporan Pendaftaran Pengguna Sistem</span>
                                         </a></li>
                                 @endif
-                                @if (Auth::user()->can('Report:view:staff_activity'))
+                                @if (\App\Support\ReportAccess::allows(Auth::user(), 'Report:view:staff_activity'))
                                     <li><a class="submenu-item {{ request()->is('reports/staff/activity') ? 'active' : '' }}" href="{{ asset('reports/staff/activity') }}">
                                             <div class="submenu-icon" style="{{ request()->is('reports/staff/activity') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
                                             <span class="{{ request()->is('reports/staff/activity') ? 'text-white' : '' }}">Laporan Aktiviti Pengguna Sistem</span>

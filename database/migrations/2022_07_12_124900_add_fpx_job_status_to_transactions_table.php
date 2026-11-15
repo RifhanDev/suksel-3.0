@@ -15,7 +15,9 @@ return new class extends Migration
     {
         if (Schema::hasTable('transactions')) {
             Schema::table('transactions', function (Blueprint $table) {
+                if (! Schema::hasColumn('transactions', 'fpx_job_status')) {
                 $table->integer('fpx_job_status')->nullable()->default(0)->after('status');
+                }
             });
         }
         // Schema::table('transactions', function (Blueprint $table) {

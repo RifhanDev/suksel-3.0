@@ -13,9 +13,13 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('smtp_mails', function (Blueprint $table) {
+                if (Schema::hasTable('smtp_mails')) {
+Schema::table('smtp_mails', function (Blueprint $table) {
+            if (! Schema::hasColumn('smtp_mails', 'mail_crypto')) {
             $table->integer('mail_crypto')->nullable()->after('mail_port');
+            }
         });
+        }
     }
 
     /**

@@ -8,7 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('lembaran_imbangans', function (Blueprint $table) {
+                if (! Schema::hasTable('lembaran_imbangans')) {
+Schema::create('lembaran_imbangans', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->unsignedInteger('tender_id')->unique();
@@ -24,6 +25,7 @@ return new class extends Migration
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();
         });
+        }
     }
 
     public function down(): void

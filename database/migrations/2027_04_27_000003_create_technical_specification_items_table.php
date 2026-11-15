@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('technical_specification_items', function (Blueprint $table) {
+                if (! Schema::hasTable('technical_specification_items')) {
+Schema::create('technical_specification_items', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->unsignedBigInteger('technical_specification_document_id');
@@ -27,6 +28,7 @@ return new class extends Migration
                 ->on('technical_specification_documents')
                 ->cascadeOnDelete();
         });
+        }
     }
 
     /**

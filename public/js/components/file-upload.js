@@ -87,6 +87,29 @@ var FileUpload = (function ($) {
         // Accumulated files — keeps the input in sync for form submission
         var dt = new DataTransfer();
 
+        function validateFile(file) {
+            var maxFileSize = Number(opts.maxFileSize || 0);
+            if (maxFileSize > 0 && file.size > maxFileSize) {
+                if (typeof opts.onInvalidFile === 'function') {
+                    opts.onInvalidFile(file, 'size');
+                }
+                return false;
+            }
+
+            var allowedExtensions = opts.allowedExtensions || [];
+            if (allowedExtensions.length) {
+                var extension = file.name.split('.').pop().toLowerCase();
+                if (allowedExtensions.indexOf(extension) === -1) {
+                    if (typeof opts.onInvalidFile === 'function') {
+                        opts.onInvalidFile(file, 'type');
+                    }
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         function syncInput() {
             if ($input[0]) {
                 $input[0].files = dt.files;
@@ -103,6 +126,7 @@ var FileUpload = (function ($) {
 
         function addFiles(files) {
             $.each(files, function (i, file) {
+                if (!validateFile(file)) return;
                 dt.items.add(file);
                 var url = URL.createObjectURL(file);
                 $chipList.append(buildFileChip(file, url, function (removedFile) {

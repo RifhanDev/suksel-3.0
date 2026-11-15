@@ -13,6 +13,8 @@ class PenyataBankFile extends Model
         'uuid',
         'penyata_bank_id',
         'vendor_id',
+        'account_uuid',
+        'account_index',
         'file_type',
         'original_name',
         'stored_name',
@@ -20,6 +22,10 @@ class PenyataBankFile extends Model
         'mime_type',
         'size',
         'uploaded_by',
+    ];
+
+    protected $casts = [
+        'account_index' => 'integer',
     ];
 
     public function getRouteKeyName(): string

@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Migrations\Migration;
 
 class CreateRevisionsTable extends Migration
@@ -11,7 +12,8 @@ class CreateRevisionsTable extends Migration
      */
     public function up()
     {
-        Schema::create('revisions', function ($table) {
+                if (! Schema::hasTable('revisions')) {
+Schema::create('revisions', function ($table) {
             $table->increments('id');
             $table->string('revisionable_type');
             $table->integer('revisionable_id');
@@ -23,6 +25,7 @@ class CreateRevisionsTable extends Migration
 
             $table->index(array('revisionable_id', 'revisionable_type'));
         });
+        }
     }
 
     /**

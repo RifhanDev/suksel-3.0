@@ -40,7 +40,9 @@ class VersionHistory extends Model
 
     public static function canList(): bool
     {
-        return auth()->check() && auth()->user()->ability(['Admin'], []);
+        // Agency Admin may view Sejarah Sistem; mutate stays Admin-only.
+        return auth()->check()
+            && auth()->user()->ability(['Admin', 'Agency Admin'], ['System:histories']);
     }
 
     public static function canCreate(): bool

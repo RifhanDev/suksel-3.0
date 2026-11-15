@@ -8,14 +8,26 @@ use Excel;
 use App\Exports\VendorDistrict;
 use App\Vendor;
 
+use App\Http\Controllers\Concerns\AuthorizesReportAccess;
+
 class ReportVendorDistrictController extends Controller
 {
+	use AuthorizesReportAccess;
+
 	public function index() {
+		if ($denied = $this->denyUnlessReport('Report:view:vendor_district')) {
+			return $denied;
+		}
+
        
       return view('reports.vendor.district.index');
    }
 
    public function view(Request $request) {
+		if ($denied = $this->denyUnlessReport('Report:view:vendor_district')) {
+			return $denied;
+		}
+
 
 		$district   = $request->input('district', []);
 		$districtOpts = array_keys(array_merge(['all' => 'Semua'] + Vendor::$districts));
@@ -51,6 +63,10 @@ class ReportVendorDistrictController extends Controller
 	}
 
    public function excel(Request $request) {
+		if ($denied = $this->denyUnlessReport('Report:view:vendor_district')) {
+			return $denied;
+		}
+
         	$district = $request->input('district', []);
         	$vendors    = Vendor::orderBy('name', 'asc');
 

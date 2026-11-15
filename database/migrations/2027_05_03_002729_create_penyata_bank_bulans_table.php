@@ -8,7 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('penyata_bank_bulans', function (Blueprint $table) {
+                if (! Schema::hasTable('penyata_bank_bulans')) {
+Schema::create('penyata_bank_bulans', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->foreignId('penyata_bank_id')->index()->constrained('penyata_banks')->cascadeOnDelete();
@@ -19,6 +20,7 @@ return new class extends Migration
 
             $table->unique(['penyata_bank_id', 'bulan', 'tahun']);
         });
+        }
     }
 
     public function down(): void

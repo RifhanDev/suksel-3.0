@@ -223,13 +223,16 @@
                             <th class="text-center" style="width: 110px;">Status</th>
                             <th class="text-center" style="width: 110px;">Dokumen</th>
                             <th class="text-center" style="width: 110px;">Tindakan</th>
+                            @if ($physicalSubmissionEnabled)
+                                <th class="text-center" style="min-width: 145px;">Serahan Tangan?</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody id="tbl-kewangan-body">
                         <!-- Rows populated via JS initialRows -->
                         <!-- EMPTY STATE ROW (shown when all rows deleted) -->
                         <tr id="tbl-empty-row" class="d-none">
-                            <td colspan="8" class="text-center text-muted py-4 small">Tiada Data</td>
+                            <td colspan="{{ $physicalSubmissionEnabled ? 9 : 8 }}" class="text-center text-muted py-4 small">Tiada Data</td>
                         </tr>
                     </tbody>
                     <tfoot>
@@ -243,7 +246,7 @@
                                     class="form-control form-control-sm text-center fw-bold" value="{{ $checklistData['max_score'] ?? 0 }}" readonly
                                     style="max-width: 68px; margin: 0 auto; background: #fff; border-color: #e2e8f0;">
                             </td>
-                            <td colspan="3"></td>
+                            <td colspan="{{ $physicalSubmissionEnabled ? 4 : 3 }}"></td>
                         </tr>
                     </tfoot>
                 </table>
@@ -489,6 +492,16 @@
             var checklistItems   = @json($checklistData['items'] ?? []);
             var sokonganFiles   = @json($checklistData['files'] ?? []);
             var IS_SUBMITTED    = @json(($checklistData['status'] ?? null) === 'submitted');
+            var PHYSICAL_SUBMISSION_ENABLED = @json($physicalSubmissionEnabled);
+
+            function physicalSubmissionCell(value, locked, mechanism, isSpecification) {
+                if (!PHYSICAL_SUBMISSION_ENABLED) return '';
+                var handover = !isSpecification && mechanism === 'serahan_tangan';
+                var checked = isSpecification
+                    ? (value === true || value === 1 || value === '1')
+                    : (handover || value === true || value === 1 || value === '1');
+                return '<td class="text-center"><input type="checkbox" class="form-check-input physical-submission-check" aria-label="Serahan tangan diperlukan untuk item ini" title="Petender perlu menyerahkan item ini secara fizikal"' + (checked ? ' checked' : '') + (locked || handover ? ' disabled' : '') + '></td>';
+            }
 
             var statusLabelMap = {
                 'submitted': { label: 'Selesai', cls: 'badge-status-success' },
@@ -518,7 +531,7 @@
 
             function normalizeMechanism(mechanism) {
                 mechanism = valueOr(mechanism, 'petender_muat_naik');
-                return ['petender_muat_naik', 'ptj_muat_naik'].indexOf(mechanism) !== -1
+                return ['petender_muat_naik', 'ptj_muat_naik'].indexOf(mechanism) !== -1 || (PHYSICAL_SUBMISSION_ENABLED && mechanism === 'serahan_tangan')
                     ? mechanism
                     : 'petender_muat_naik';
             }
@@ -628,6 +641,7 @@
                         EDIT_ICON +
                         '</a>' +
                     '</td>' +
+                    physicalSubmissionCell(data.penghantaran_fizikal, data.physicalSubmissionLocked || isSpec, data.mechanism, isSpec) +
                     '</tr>'
                 );
             }
@@ -642,7 +656,8 @@
                     : '<span class="small fw-semibold">' + $('<span>').text(valueOr(item.title, '')).html() + '</span>';
                 var mekOptions =
                     '<option value="petender_muat_naik"' + (mek === 'petender_muat_naik' ? ' selected' : '') + '>Petender Muat Naik</option>' +
-                    '<option value="ptj_muat_naik"'      + (mek === 'ptj_muat_naik'      ? ' selected' : '') + '>PTJ Muat Naik</option>';
+                    '<option value="ptj_muat_naik"'      + (mek === 'ptj_muat_naik'      ? ' selected' : '') + '>PTJ Muat Naik</option>' +
+                    (PHYSICAL_SUBMISSION_ENABLED ? '<option value="serahan_tangan"' + (mek === 'serahan_tangan' ? ' selected' : '') + '>Serahan Tangan</option>' : '');
                 return $(
                     '<tr class="row-kewangan-tambah"' +
                     ' data-row-uuid="'          + (item.uuid               || '') + '"' +
@@ -663,6 +678,7 @@
                     '<td class="text-center"><span class="badge-status ' + statusMeta(item.status).cls + '">' + statusMeta(item.status).label + '</span></td>' +
                     '<td class="text-center rujukan-cell">'  + buildDokumenCell(mek) + '</td>' +
                     '<td class="text-center tindakan-cell">' + buildTindakanCell(mek) + '</td>' +
+                    physicalSubmissionCell(item.penghantaran_fizikal, false, mek) +
                     '</tr>'
                 );
             }
@@ -693,7 +709,6 @@
                     $('#tbl-kewangan-body').append(buildInitialRow({
                         uuid:                item.uuid,
                         source_type:         item.source_type,
-                        mechanism:           item.mechanism,
                         standard_item_uuid:  item.standard_item_uuid  || '',
                         technical_item_uuid: item.technical_item_uuid || '',
                         tajuk:               item.title,
@@ -705,6 +720,9 @@
                         statusClass:         s.cls,
                         dokumen:             '—',
                         tindakanUrl:         tindakanUrl,
+                        mechanism:           item.mechanism,
+                        penghantaran_fizikal: item.penghantaran_fizikal,
+                        physicalSubmissionLocked: item.physical_submission_locked === true || item.source_type === 'specification_document',
                     }));
                 } else {
                     var $row = buildEditableRow(item);
@@ -750,6 +768,8 @@
                 mekanisma = normalizeMechanism(mekanisma);
                 vendorAction = valueOr(vendorAction, 'muat_turun');
 
+                if (mekanisma === 'serahan_tangan') return '<span class="small">Serahan Tangan</span>';
+
                 if (mekanisma === 'ptj_muat_naik') {
                     return '<select name="tindakan_pembekal[]" class="form-select form-select-sm tindakan-pembekal-select" style="font-size:0.78rem;">' +
                         '<option value="muat_turun"' + (vendorAction === 'muat_turun' ? ' selected' : '') + '>Muat Turun</option>' +
@@ -764,6 +784,8 @@
             // PTJ Muat Naik always starts with an upload button regardless of tindakan pembekal selection.
             function buildTindakanCell(mekanisma) {
                 mekanisma = normalizeMechanism(mekanisma);
+
+                if (mekanisma === 'serahan_tangan') return '<span class="text-muted small">—</span>';
 
                 if (mekanisma === 'ptj_muat_naik') {
                     return PTJ_UPLOAD_BTN;
@@ -792,6 +814,7 @@
                     '<select name="mekanisma[]" class="form-select form-select-sm mekanisma-select" style="font-size:0.78rem;">' +
                     '<option value="petender_muat_naik" selected>Petender Muat Naik</option>' +
                     '<option value="ptj_muat_naik">PTJ Muat Naik</option>' +
+                    (PHYSICAL_SUBMISSION_ENABLED ? '<option value="serahan_tangan">Serahan Tangan</option>' : '') +
                     '</select>' +
                     '</td>' +
                     '<td class="text-center tindakan-pembekal">' + buildTindakanPembekalCell(defaultMekanisma) + '</td>' +
@@ -801,6 +824,7 @@
                     '<td class="text-center"><span class="badge-status badge-status-warning">Draf</span></td>' +
                     '<td class="text-center rujukan-cell">' + buildDokumenCell(defaultMekanisma) + '</td>' +
                     '<td class="text-center tindakan-cell">' + buildTindakanCell(defaultMekanisma) + '</td>' +
+                    physicalSubmissionCell(false, false, defaultMekanisma) +
                     '</tr>'
                 );
                 if (title) {
@@ -866,6 +890,8 @@
                     var vendorAction = null;
                     if (mechanism === 'ptj_muat_naik') {
                         vendorAction = $tr.find('.tindakan-pembekal-select').val() || 'muat_turun';
+                    } else if (mechanism === 'serahan_tangan') {
+                        vendorAction = 'serahan_tangan';
                     } else if (mechanism === 'petender_muat_naik') {
                         vendorAction = 'muat_naik';
                     }
@@ -881,6 +907,7 @@
                         sort_order:          idx,
                         standard_item_uuid:  $tr.data('standard-item-uuid') || null,
                         technical_item_uuid: $tr.data('technical-item-uuid') || null,
+                        penghantaran_fizikal: PHYSICAL_SUBMISSION_ENABLED && $tr.find('.physical-submission-check').prop('checked') === true,
                     });
                     idx++;
                 });
@@ -997,7 +1024,13 @@
                 $row.find('.tindakan-pembekal').html(buildTindakanPembekalCell(val));
                 $row.find('.rujukan-cell').html(buildDokumenCell(val));
                 $row.find('.tindakan-cell').html(buildTindakanCell(val));
+                var physicalChecked = $row.find('.physical-submission-check').prop('checked') === true;
+                $row.find('.physical-submission-check').closest('td').replaceWith(physicalSubmissionCell(physicalChecked || val === 'serahan_tangan', false, val));
                 updateRowCompletionStatus($row);
+                autoSave();
+            });
+
+            $('#tbl-kewangan').on('change', '.physical-submission-check:not(:disabled)', function() {
                 autoSave();
             });
 
@@ -1140,6 +1173,7 @@
                     '<td class="text-center"><span class="badge-status badge-status-warning">Draf</span></td>' +
                     '<td class="text-center text-muted small">—</td>' +
                     '<td class="text-center">' + buildBorangAtasTalianActionCell(routeUrl) + '</td>' +
+                    physicalSubmissionCell(false, false) +
                     '</tr>'
                 );
                 if (standardItemUuid) {
@@ -1160,6 +1194,7 @@
                         '<select name="mekanisma[]" class="form-select form-select-sm mekanisma-select" style="font-size:0.78rem;">' +
                         '<option value="petender_muat_naik" selected>Petender Muat Naik</option>' +
                         '<option value="ptj_muat_naik">PTJ Muat Naik</option>' +
+                        (PHYSICAL_SUBMISSION_ENABLED ? '<option value="serahan_tangan">Serahan Tangan</option>' : '') +
                         '</select>' +
                     '</td>' +
                     '<td class="text-center tindakan-pembekal">' + buildTindakanPembekalCell(defaultMekanisma) + '</td>' +
@@ -1169,6 +1204,7 @@
                     '<td class="text-center"><span class="badge-status badge-status-warning">Draf</span></td>' +
                     '<td class="text-center rujukan-cell">' + buildDokumenCell(defaultMekanisma) + '</td>' +
                     '<td class="text-center tindakan-cell">' + buildTindakanCell(defaultMekanisma) + '</td>' +
+                    physicalSubmissionCell(false, false, defaultMekanisma) +
                     '</tr>'
                 );
                 if (standardItemUuid) {

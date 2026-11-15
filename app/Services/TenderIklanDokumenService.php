@@ -6,7 +6,6 @@ use App\Models\TenderIklanDokumen;
 use App\Tender;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -148,8 +147,8 @@ class TenderIklanDokumenService
 
     private function deleteStoredFile(?string $path): void
     {
-        if ($path && Storage::disk('local')->exists($path)) {
-            Storage::disk('local')->delete($path);
+        if ($path) {
+            \App\Support\AttachmentStorage::delete($path);
         }
     }
 }

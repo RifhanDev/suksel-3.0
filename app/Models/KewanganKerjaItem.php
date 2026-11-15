@@ -17,6 +17,7 @@ class KewanganKerjaItem extends Model
         'title',
         'mechanism',
         'vendor_action',
+        'penghantaran_fizikal',
         'score',
         'status',
         'sort_order',
@@ -24,6 +25,7 @@ class KewanganKerjaItem extends Model
 
     protected $casts = [
         'score' => 'decimal:2',
+        'penghantaran_fizikal' => 'boolean',
     ];
 
     public function getRouteKeyName(): string

@@ -445,6 +445,13 @@
 								</tr>
 							@endif
 
+							@if ($tender->hasDaerahLiputanProjek())
+								<tr>
+									<th class="col-xs-3">Daerah Liputan Projek</th>
+									<td>{{ $tender->getDaerahLiputanProjek() }}</td>
+								</tr>
+							@endif
+
 							<tr>
 								<th class="col-xs-3">Harga Dokumen</th>
 								<td>RM {{ number_format($tender->price, 2) }}</td>
@@ -569,7 +576,7 @@
 							<tbody>
 								@foreach ($tender->tableFiles as $upload)
 									<tr>
-										<td>{{ $upload->label }}</td>
+										<td>{{ method_exists($upload, 'displayName') ? $upload->displayName() : ($upload->label ?: $upload->name) }}</td>
 										<td>{{ $upload->size }}</td>
 										<td>{{ $upload->type }}</td>
 										<td>
@@ -597,7 +604,7 @@
 									<tbody>
 										@foreach ($tender->tenderFiles as $upload)
 											<tr>
-												<td>{{ $upload->label }}</td>
+												<td>{{ method_exists($upload, 'displayName') ? $upload->displayName() : ($upload->label ?: $upload->name) }}</td>
 												<td>{{ $upload->size }}</td>
 												<td>{{ $upload->type }}</td>
 												<td>

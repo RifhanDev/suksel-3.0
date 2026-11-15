@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\RestrictsTenderByRole;
 use App\Models\Tender;
 use App\Services\StosBackendClient;
 use Illuminate\Http\Request;
@@ -11,6 +12,21 @@ use Illuminate\Support\Str;
 
 class SpecificationPricingController extends Controller
 {
+	use RestrictsTenderByRole;
+
+	public function __construct()
+	{
+		$this->middleware(function ($request, $next) {
+			$identifier = $request->route('spesifikasiUuid');
+			if ($identifier) {
+				$tender = $this->resolveTender((string) $identifier);
+				$this->assertOwnAgency($tender ? \App\Tender::query()->find($tender->id) : null);
+			}
+
+			return $next($request);
+		});
+	}
+
     public function index(string $spesifikasiUuid)
     {
         $this->ensureAccess();

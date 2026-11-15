@@ -41,8 +41,8 @@
     {{-- PAGE HEADER --}}
     <div class="d-flex flex-column flex-lg-row justify-content-start align-items-start align-items-lg-center mb-4">
         <div>
-            <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Senarai Semak Kewangan</h3>
-            <p class="text-muted small m-0">Paparan senarai semak bahagian kewangan bagi tender / sebutharga (Kerja).</p>
+            <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Senarai Semak Dokumen {{ $procurementLabel }}</h3>
+            <p class="text-muted small m-0">Paparan senarai semak dokumen {{ $procurementLabel }} (Kerja).</p>
         </div>
     </div>
 
@@ -51,7 +51,7 @@
         <div class="content-card-body p-4">
             <div class="mb-3 pb-3 border-bottom">
                 <span class="text-muted fw-semibold text-uppercase d-block mb-1"
-                    style="font-size:0.67rem;letter-spacing:0.5px;">Tajuk Tender</span>
+                    style="font-size:0.67rem;letter-spacing:0.5px;">Tajuk {{ $procurementLabel }}</span>
                 <h5 class="fw-bold text-dark mb-0" style="line-height:1.45;font-size:1rem;">
                     {{ $tender->name ?? '-' }}
                     <span class="fw-normal text-muted fst-italic" style="font-size:0.85rem;">(Kerja)</span>
@@ -60,7 +60,7 @@
             <div class="row g-3">
                 <div class="col-6 col-md-3">
                     <span class="text-muted fw-semibold text-uppercase d-block mb-1"
-                        style="font-size:0.67rem;letter-spacing:0.5px;">No. Tender</span>
+                        style="font-size:0.67rem;letter-spacing:0.5px;">No. {{ $procurementLabel }}</span>
                     <span class="fw-semibold text-dark" style="font-size:0.875rem;">
                         {{ $tender->no_tender ?: ($tender->ref_number ?? '-') }}
                     </span>
@@ -108,8 +108,8 @@
                     </svg>
                 </div>
                 <div>
-                    <h3 class="content-card-title mb-0" style="font-size:1rem;">Penyediaan Spesifikasi &amp; Skor</h3>
-                    <p class="text-muted mb-0" style="font-size:0.78rem;">Senarai Semak Kewangan — Kerja</p>
+                    <h3 class="content-card-title mb-0" style="font-size:1rem;">Penyediaan Senarai Semak Dokumen {{ $procurementLabel }}</h3>
+                    <p class="text-muted mb-0" style="font-size:0.78rem;">Senarai Semak Dokumen {{ $procurementLabel }}</p>
                 </div>
             </div>
         </div>
@@ -187,6 +187,7 @@
             </div>
 
             {{-- Main Table --}}
+            <p class="small text-muted mb-2">Bagi setiap item dengan mekanisma <strong>PTJ Muat Naik</strong>, muat naik satu dokumen sahaja (maksimum 25 MB) sebelum menekan <strong>Hantar</strong>.</p>
             <div class="table-responsive">
                 <table id="tbl-kewangan" class="table table-modern w-100 mb-0">
                     <thead>
@@ -201,11 +202,14 @@
                             <th class="text-center" style="width:110px;">Status</th>
                             <th class="text-center rujukan-cell">Dokumen</th>
                             <th class="text-center" style="width:110px;">Tindakan</th>
+                            @if ($physicalSubmissionEnabled)
+                                <th class="text-center" style="min-width:150px;">Serahan Tangan?</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody id="tbl-kewangan-body">
                         <tr id="tbl-empty-row">
-                            <td colspan="8" class="text-center text-muted py-4 small">Tiada Data</td>
+                            <td colspan="{{ $physicalSubmissionEnabled ? 9 : 8 }}" class="text-center text-muted py-4 small">Tiada Data</td>
                         </tr>
                     </tbody>
                     <tfoot>
@@ -218,7 +222,7 @@
                                     class="form-control form-control-sm text-center fw-bold" value="0" readonly
                                     style="max-width:68px;margin:0 auto;background:#fff;border-color:#e2e8f0;">
                             </td>
-                            <td colspan="3"></td>
+                            <td colspan="{{ $physicalSubmissionEnabled ? 4 : 3 }}"></td>
                         </tr>
                     </tfoot>
                 </table>
@@ -275,12 +279,13 @@
                         <div class="d-flex align-items-center gap-2">
                             <input type="number" id="input-penilaian" name="input_penilaian"
                                 class="form-control form-control-sm text-center fw-semibold"
-                                style="max-width:80px;font-size:1rem;" placeholder="0" min="0"
-                                value="{{ floatval($checklistData['passing_score'] ?? 0) }}">
+                                style="max-width:80px;font-size:1rem;" placeholder="" min="0.01" step="0.01" aria-required="true"
+                                value="{{ floatval($checklistData['passing_score'] ?? 0) > 0 ? floatval($checklistData['passing_score']) : '' }}">
                             <span class="text-muted small">daripada</span>
                             <span class="fw-bold text-dark" id="penilaian-kewangan-total" style="font-size:1rem;">0</span>
                             <span class="text-muted small">markah</span>
                         </div>
+                        <div class="small text-muted mt-2">Wajib diisi sebelum senarai semak dihantar.</div>
                     </div>
                 </div>
                 <div class="col-12 col-md-6">
@@ -424,6 +429,7 @@
 
 @section('scripts')
 <script src="{{ asset('js/components/file-upload.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 $(document).ready(function () {
 
@@ -431,6 +437,7 @@ $(document).ready(function () {
     $.ajaxSetup({ headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') } });
 
     // ── Constants ─────────────────────────────────────────────────────────────
+    const PHYSICAL_SUBMISSION_ENABLED = @json($physicalSubmissionEnabled);
     const TENDER_UUID  = @json($tender->uuid);
     const SAVE_URL     = @json(route('senaraiKewanganKerja.store', $tender->uuid));
     const SUBMIT_URL   = @json(route('senaraiKewanganKerja.submit', $tender->uuid));
@@ -450,11 +457,12 @@ $(document).ready(function () {
     }
     const USER_ID      = @json(auth()->id());
     const IS_SUBMITTED = @json(($checklistData['status'] ?? null) === 'submitted');
+    const MAX_PTJ_FILE_BYTES = 25 * 1024 * 1024;
 
     var serverData     = @json($checklistData ?? null);
 
     var EDIT_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
-    var PTJ_UPLOAD_BTN = '<label class="btn btn-sm btn-primary d-inline-flex align-items-center justify-content-center p-1 mb-0 btn-ptj-upload" style="width:30px;height:30px;cursor:pointer;" title="Muat Naik"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg><input type="file" name="dokumen_ptj[]" hidden></label>';
+    var PTJ_UPLOAD_BTN = '<label class="btn btn-sm btn-primary d-inline-flex align-items-center justify-content-center p-1 mb-0 btn-ptj-upload" style="width:30px;height:30px;cursor:pointer;" title="Muat Naik satu dokumen (maksimum 25 MB)"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg><input type="file" name="dokumen_ptj[]" accept=".pdf,.png,.jpg,.jpeg,.xls,.xlsx,.doc,.docx" hidden></label>';
 
     // ── Init ──────────────────────────────────────────────────────────────────
     if (serverData && serverData.items && serverData.items.length > 0) {
@@ -471,6 +479,11 @@ $(document).ready(function () {
     function loadData(items) {
         $('#tbl-empty-row').addClass('d-none');
         items.forEach(function (item) {
+            if (!PHYSICAL_SUBMISSION_ENABLED && (item.mechanism === 'serahan_tangan' || item.vendor_action === 'serahan_tangan')) {
+                item.mechanism = 'petender_muat_naik';
+                item.vendor_action = 'muat_naik';
+                item.penghantaran_fizikal = false;
+            }
             var $tr;
             var isPtjFixed = (item.title === 'Spesifikasi Komponen Mekanikal/Elektrikal') ||
                 (item.source_type === 'borang_atas_talian' && (item.mechanism === 'ptj_muat_naik' || item.vendor_action === 'muat_turun_naik' || !item.action_url));
@@ -489,7 +502,8 @@ $(document).ready(function () {
                     standard_item_uuid:    item.standard_item_uuid || '',
                     spesifikasi_item_uuid: item.spesifikasi_item_uuid || '',
                     statusKey:             item.status || 'draft',
-                    form_updated:          item.form_updated ?? true,
+                    form_updated:          item.form_updated ?? (item.title !== 'Penyata Bulanan / Akaun Bank'),
+                    penghantaran_fizikal:   item.penghantaran_fizikal ?? false,
                 });
             } else if (isPtjFixed) {
                 $tr = buildInitialPtjRow(item);
@@ -502,8 +516,18 @@ $(document).ready(function () {
         updateSkemaMaksima();
     }
 
+    // Requirement for this checklist item, not confirmation of vendor receipt.
+    function buildPhysicalSubmissionCell(value, mechanism) {
+        if (!PHYSICAL_SUBMISSION_ENABLED) return '';
+        var locked = mechanism === 'serahan_tangan';
+        var checked = locked || value === true || value === 1 || value === '1';
+        return '<td class="text-center"><input type="checkbox" class="form-check-input physical-submission-check" aria-label="Serahan tangan diperlukan untuk item ini" title="Petender perlu menghantar item ini secara fizikal"' + (checked ? ' checked' : '') + (locked ? ' disabled' : '') + '></td>';
+    }
     function buildInitialRow(data) {
         var statusVal = data.statusKey || 'draft';
+        var isPenyataBankRow = (data.tajuk || '').trim() === 'Penyata Bulanan / Akaun Bank';
+        var scoreValue = data.score;
+        if (isPenyataBankRow && (parseFloat(scoreValue) || 0) <= 0) scoreValue = '';
 
         var kemaskiniButton = '-';
 
@@ -518,18 +542,21 @@ $(document).ready(function () {
         
         var formUpdatedAttr = (data.form_updated !== undefined) ? ' data-form-updated="' + data.form_updated + '"' : '';
 
-        return $(
+        var $row = $(
             '<tr class="initial-row" data-uuid="' + (data.uuid || '') + '" data-source="borang_atas_talian" data-standard-item-uuid="' + (data.standard_item_uuid || '') + '" data-spesifikasi-item-uuid="' + (data.spesifikasi_item_uuid || '') + '" data-status="' + statusVal + '"' + formUpdatedAttr + '>' +
             '<td class="text-center"><span class="text-muted" style="font-size:0.75rem;" title="Item sistem">—</span></td>' +
             '<td><span class="small fw-semibold">' + htmlEscape(data.tajuk) + '</span></td>' +
             '<td class="text-center"><span class="small fw-semibold text-muted">' + data.mekanisma + '</span></td>' +
             '<td class="text-center small">' + data.tindakanPembekal + '</td>' +
-            '<td class="text-center"><input type="number" name="skema[]" class="form-control form-control-sm text-center skema-input fw-semibold" value="' + data.score + '" min="0" style="max-width:90px;margin:0 auto;"></td>' +
+            '<td class="text-center"><input type="number" name="skema[]" class="form-control form-control-sm text-center skema-input fw-semibold" value="' + (scoreValue ?? '') + '" min="' + (isPenyataBankRow ? '0.01' : '0') + '" step="' + (isPenyataBankRow ? '0.01' : '1') + '" style="max-width:90px;margin:0 auto;"></td>' +
             '<td class="text-center"><span class="badge-status ' + data.statusClass + '">' + data.status + '</span></td>' +
             '<td class="text-center text-muted small rujukan-cell">—</td>' +
             '<td class="text-center">' + kemaskiniButton + '</td>' +
+            buildPhysicalSubmissionCell(data.penghantaran_fizikal, 'borang_atas_talian') +
             '</tr>'
         );
+        if (isPenyataBankRow) updateRowStatus($row);
+        return $row;
     }
 
     function buildInitialPtjRow(item) {
@@ -553,6 +580,7 @@ $(document).ready(function () {
             '<td class="text-center"><span class="badge-status ' + statusClass + '">' + statusLabel + '</span></td>' +
             '<td class="text-center rujukan-cell">' + buildDokumenCell('ptj_muat_naik') + '</td>' +
             '<td class="text-center tindakan-cell">' + buildTindakanCell('ptj_muat_naik') + '</td>' +
+            buildPhysicalSubmissionCell(item.penghantaran_fizikal, item.mechanism) +
             '</tr>'
         );
 
@@ -569,6 +597,9 @@ $(document).ready(function () {
         item = item || {};
         var uuid      = item.uuid || '';
         var mechanism = item.mechanism || 'petender_muat_naik';
+        if (!PHYSICAL_SUBMISSION_ENABLED && mechanism === 'serahan_tangan') {
+            mechanism = 'petender_muat_naik';
+        }
         var score     = item.score || 0;
         var status    = item.status || 'draft';
         var standardItemUuid = item.standard_item_uuid || '';
@@ -587,6 +618,7 @@ $(document).ready(function () {
                 '<select name="mekanisma[]" class="form-select form-select-sm mekanisma-select" style="font-size:0.78rem;">' +
                     '<option value="petender_muat_naik"' + (mechanism === 'petender_muat_naik' ? ' selected' : '') + '>Petender Muat Naik</option>' +
                     '<option value="ptj_muat_naik"' + (mechanism === 'ptj_muat_naik' ? ' selected' : '') + '>PTJ Muat Naik</option>' +
+                    (PHYSICAL_SUBMISSION_ENABLED ? '<option value="serahan_tangan"' + (mechanism === 'serahan_tangan' ? ' selected' : '') + '>Serahan Tangan</option>' : '') +
                 '</select>' +
             '</td>' +
             '<td class="text-center tindakan-pembekal">' + buildTindakanPembekalCell(mechanism) + '</td>' +
@@ -594,6 +626,7 @@ $(document).ready(function () {
             '<td class="text-center"><span class="badge-status ' + (status === 'submitted' ? 'badge-status-success' : 'badge-status-warning') + '">' + (status === 'submitted' ? 'Selesai' : 'Draf') + '</span></td>' +
             '<td class="text-center rujukan-cell">' + buildDokumenCell(mechanism) + '</td>' +
             '<td class="text-center tindakan-cell">' + buildTindakanCell(mechanism) + '</td>' +
+            buildPhysicalSubmissionCell(item.penghantaran_fizikal, item.mechanism) +
             '</tr>'
         );
 
@@ -604,6 +637,10 @@ $(document).ready(function () {
             });
         }
 
+        if (mechanism === 'ptj_muat_naik' && item.vendor_action) {
+            $tr.find('[name="tindakan_pembekal[]"]').val(item.vendor_action);
+        }
+        applyDownloadOnlyRules($tr);
         return $tr;
     }
 
@@ -641,6 +678,7 @@ $(document).ready(function () {
             deleteFile(fileData.uuid, $chip);
         });
         $cell.find('.dokumen-ptj-list').append($chip);
+        updatePtjUploadAvailability($cell.closest('tr'));
     }
 
     // ── Mechanism cell helpers ─────────────────────────────────────────────────
@@ -650,6 +688,9 @@ $(document).ready(function () {
                 '<option value="muat_turun">Muat Turun</option>' +
                 '<option value="muat_turun_naik">Muat Turun &amp; Muat Naik</option>' +
                 '</select>';
+        }
+        if (mechanism === 'serahan_tangan') {
+            return '<span class="small">Serahan Tangan</span>';
         }
         return '<span class="small">Muat Naik</span>';
     }
@@ -676,6 +717,11 @@ $(document).ready(function () {
             var title  = $tr.find('[name="tajuk_dokumen[]"]').val() || $tr.find('td:eq(1) span').text().trim();
             var mech   = $tr.find('[name="mekanisma[]"]').val() || $tr.data('mechanism') || (source === 'borang_atas_talian' ? 'borang_atas_talian' : null);
             var vendorAct = $tr.find('[name="tindakan_pembekal[]"]').val() || $tr.data('vendor-action') || null;
+            if (!PHYSICAL_SUBMISSION_ENABLED && (mech === 'serahan_tangan' || vendorAct === 'serahan_tangan')) {
+                mech = 'petender_muat_naik';
+                vendorAct = 'muat_naik';
+            }
+            if (mech === 'serahan_tangan') vendorAct = 'serahan_tangan';
             var score  = parseFloat($tr.find('.skema-input').val()) || 0;
             var standardItemUuid = $tr.data('standard-item-uuid') || null;
             var spesifikasiItemUuid = $tr.data('spesifikasi-item-uuid') || null;
@@ -689,6 +735,7 @@ $(document).ready(function () {
                 title:                 title,
                 mechanism:             mech,
                 vendor_action:         vendorAct,
+                penghantaran_fizikal:   !isDownloadOnlyRow($tr) && PHYSICAL_SUBMISSION_ENABLED && (mech === 'serahan_tangan' || $tr.find('.physical-submission-check').prop('checked') === true),
                 score:                 score,
                 sort_order:            idx,
                 standard_item_uuid:    standardItemUuid,
@@ -706,8 +753,35 @@ $(document).ready(function () {
             showToast('Sila tambah sekurang-kurangnya satu item senarai semak sebelum menghantar.', 'danger');
             return false;
         }
+        var passingScoreValue = $.trim($('#input-penilaian').val() || '');
+        if (passingScoreValue === '' || !isFinite(Number(passingScoreValue)) || Number(passingScoreValue) < 0.01) {
+            showToast('Sila lengkapkan Penetapan Penanda Aras Tahap Lulus sebelum menghantar.', 'danger');
+            $('#input-penilaian').addClass('is-invalid').trigger('focus');
+            return false;
+        }
+        var missingPtjDocuments = [];
+        var multiplePtjDocuments = [];
+        rows.each(function () {
+            var $row = $(this);
+            var documentCount = $row.find('.rujukan-cell .file-chip').length;
+            if (isPtjUploadRequired($row) && documentCount === 0) {
+                var title = $row.find('[name="tajuk_dokumen[]"]').val() || $row.find('td:eq(1) span').text().trim() || 'Item senarai';
+                missingPtjDocuments.push(title);
+            } else if (isPtjUploadRequired($row) && documentCount > 1) {
+                var title = $row.find('[name="tajuk_dokumen[]"]').val() || $row.find('td:eq(1) span').text().trim() || 'Item senarai';
+                multiplePtjDocuments.push(title);
+            }
+        });
+        if (missingPtjDocuments.length > 0) {
+            showToast('Sila muat naik satu dokumen (maksimum 25 MB) bagi setiap item PTJ Muat Naik: ' + missingPtjDocuments.join(', '), 'danger');
+            return false;
+        }
+        if (multiplePtjDocuments.length > 0) {
+            showToast('Setiap item PTJ Muat Naik hanya boleh mempunyai satu dokumen. Padam dokumen tambahan untuk: ' + multiplePtjDocuments.join(', '), 'danger');
+            return false;
+        }
         var maxScore    = parseFloat($('#skema-maksima-display').val()) || 0;
-        var passingScore = parseFloat($('#input-penilaian').val()) || 0;
+        var passingScore = Number(passingScoreValue);
         if (maxScore > 0 && passingScore > maxScore) {
             showToast('Skor lulus tidak boleh melebihi skor maksima (' + maxScore + ').', 'danger');
             $('#input-penilaian').addClass('is-invalid');
@@ -760,9 +834,46 @@ $(document).ready(function () {
     }
 
     // ── Submit ────────────────────────────────────────────────────────────────
-    function submitChecklist() {
+    function confirmChecklistSubmission() {
+        var title = 'Hantar senarai kewangan ini?';
+        var message = 'Selepas menghantar, borang tidak boleh diedit.';
+
+        if (window.Swal && typeof window.Swal.fire === 'function') {
+            return window.Swal.fire({
+                title: title,
+                text: message,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Hantar',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#16a34a',
+                cancelButtonColor: '#64748b',
+                reverseButtons: true,
+                focusCancel: true,
+                heightAuto: false,
+                scrollbarPadding: false
+            }).then(function (result) {
+                return result.isConfirmed;
+            });
+        }
+
+        if (typeof window.showConfirmModal === 'function') {
+            return window.showConfirmModal({
+                title: title,
+                message: message,
+                icon: 'warning',
+                confirmText: 'Ya, Hantar',
+                cancelText: 'Batal'
+            });
+        }
+
+        return Promise.resolve(window.confirm(title + '\n' + message));
+    }
+
+    async function submitChecklist() {
         if (!validateBeforeSubmit()) return;
-        if (!confirm('Hantar senarai kewangan ini? Selepas menghantar, borang tidak boleh diedit.')) return;
+
+        if (!await confirmChecklistSubmission()) return;
 
         saveDraft(function () {
             var passingScore = parseFloat($('#input-penilaian').val()) || 0;
@@ -790,7 +901,8 @@ $(document).ready(function () {
                 },
                 error: function (xhr) {
                     var errors = xhr.responseJSON && xhr.responseJSON.errors;
-                    var msg    = errors && errors.passing_score ? errors.passing_score[0] : 'Gagal menghantar. Sila cuba lagi.';
+                    var firstError = errors ? Object.keys(errors).map(function (key) { return errors[key] && errors[key][0]; }).filter(Boolean)[0] : null;
+                    var msg = firstError || (xhr.responseJSON && xhr.responseJSON.message) || 'Gagal menghantar. Sila cuba lagi.';
                     showToast(msg, 'danger');
                     setBusy('#btn-hantar', false, 'Hantar');
                 }
@@ -805,7 +917,9 @@ $(document).ready(function () {
             method: 'DELETE',
             success: function (response) {
                 if (response && response.success) {
+                    var $row = $chip.closest('tr');
                     $chip.remove();
+                    updatePtjUploadAvailability($row);
                     showToast('Fail berjaya dipadam.', 'success');
                 } else {
                     showToast('Gagal memadam fail.', 'danger');
@@ -816,6 +930,52 @@ $(document).ready(function () {
     }
 
     // ── UI Helpers ─────────────────────────────────────────────────────────────
+    function isDownloadOnlyRow($row) {
+        var mechanism = $row.find('[name="mekanisma[]"]').val() || $row.data('mechanism');
+        var action = $row.find('[name="tindakan_pembekal[]"]').val() || $row.data('vendor-action');
+        return mechanism === 'ptj_muat_naik' && action === 'muat_turun';
+    }
+
+    function isPtjUploadRequired($row) {
+        return ($row.find('[name="mekanisma[]"]').val() || $row.data('mechanism')) === 'ptj_muat_naik';
+    }
+
+    function updatePtjUploadAvailability($row) {
+        if (!$row || !$row.length) return;
+        var hasDocument = $row.find('.rujukan-cell .file-chip').length > 0;
+        var $uploadButton = $row.find('.tindakan-cell .btn-ptj-upload');
+        if (!$uploadButton.length) return;
+        $uploadButton.toggle(!hasDocument && !IS_SUBMITTED);
+        $uploadButton.find('input[type="file"]').prop('disabled', hasDocument || IS_SUBMITTED);
+    }
+
+    function applyDownloadOnlyRules($row) {
+        var downloadOnly = isDownloadOnlyRow($row);
+        var wasDownloadOnly = $row.data('download-only') === true;
+        var $score = $row.find('.skema-input');
+        var $physical = $row.find('.physical-submission-check');
+        if (!$score.siblings('.download-only-dash').length) {
+            $score.after('<span class="download-only-dash text-muted" hidden>—</span>');
+        }
+        $score.prop('hidden', downloadOnly);
+        $score.siblings('.download-only-dash').prop('hidden', !downloadOnly);
+        if (downloadOnly) {
+            $score.val(0);
+            $physical.prop('checked', false).prop('disabled', true);
+        } else if (wasDownloadOnly) {
+            // The automatic zero for download-only rows is not an entered score.
+            $score.val('');
+        }
+        $row.data('download-only', downloadOnly);
+        var mechanism = $row.find('[name="mekanisma[]"]').val() || $row.data('mechanism');
+        $physical.prop('hidden', downloadOnly).prop('disabled', IS_SUBMITTED || downloadOnly || mechanism === 'serahan_tangan');
+        if (!$physical.siblings('.download-only-dash').length) {
+            $physical.after('<span class="download-only-dash text-muted" hidden>—</span>');
+        }
+        $physical.siblings('.download-only-dash').prop('hidden', !downloadOnly);
+        updateRowStatus($row);
+        updateSkemaMaksima();
+    }
     function updateRowStatus($row) {
         var scoreVal = $row.find('.skema-input').val();
         var isFilled = (scoreVal !== undefined && scoreVal !== null && scoreVal.trim() !== '');
@@ -824,9 +984,11 @@ $(document).ready(function () {
 
         var isComplete = false;
 
-        if (title === 'Penyata Bulanan / Akaun Bank') {
+        if (isDownloadOnlyRow($row)) {
+            isComplete = !!title.trim();
+        } else if (title === 'Penyata Bulanan / Akaun Bank') {
             var formUpdated = $row.attr('data-form-updated') === 'true';
-            isComplete = isFilled && formUpdated;
+            isComplete = isFilled && Number(scoreVal) > 0 && formUpdated;
         } else {
             isComplete = isFilled;
         }
@@ -966,13 +1128,26 @@ $(document).ready(function () {
         var val  = $(this).val();
         var $row = $(this).closest('tr');
         $row.find('.tindakan-pembekal').html(buildTindakanPembekalCell(val));
-        $row.find('.rujukan-cell').html(buildDokumenCell(val));
+        var $documentCell = $row.find('.rujukan-cell');
+        var $existingFiles = $documentCell.find('.file-chip').detach();
+        $documentCell.html(buildDokumenCell(val)).find('.dokumen-ptj-list').append($existingFiles);
         $row.find('.tindakan-cell').html(buildTindakanCell(val));
+        var $physical = $row.find('.physical-submission-check');
+        if (val === 'serahan_tangan') $physical.prop('checked', true);
+        $physical.prop('disabled', IS_SUBMITTED || val === 'serahan_tangan');
+        updatePtjUploadAvailability($row);
+        applyDownloadOnlyRules($row);
     });
 
     // PTJ tindakan pembekal change
     $('#tbl-kewangan').on('change', '.tindakan-pembekal-select', function () {
-        $(this).closest('tr').find('.tindakan-cell').html(PTJ_UPLOAD_BTN);
+        var $row = $(this).closest('tr');
+        $row.find('.tindakan-cell').html(PTJ_UPLOAD_BTN);
+        applyDownloadOnlyRules($row);
+    });
+
+    $('#tbl-kewangan').on('input', '[name="tajuk_dokumen[]"]', function () {
+        updateRowStatus($(this).closest('tr'));
     });
 
     // Skema input change
@@ -989,7 +1164,16 @@ $(document).ready(function () {
         var $row   = $input.closest('tr');
         $input.val('');
 
-        function doUpload(rowUuid) {
+        if ($row.find('.rujukan-cell .file-chip').length > 0) {
+            showToast('Satu dokumen sahaja dibenarkan bagi setiap item. Padam dokumen sedia ada sebelum memuat naik yang baharu.', 'danger');
+            return;
+        }
+        if (file.size > MAX_PTJ_FILE_BYTES) {
+            showToast('Saiz dokumen melebihi had maksimum 25 MB.', 'danger');
+            return;
+        }
+
+        function doUpload(rowUuid, $targetRow) {
             var fd = new FormData();
             fd.append('file', file);
             fd.append('checklist_item_uuid', rowUuid);
@@ -1005,24 +1189,34 @@ $(document).ready(function () {
                 success: function (res) {
                     var f = res && res.data ? res.data : null;
                     if (!f) return;
-                    appendFileToDokumenCell($row.find('.rujukan-cell'), f, rowUuid);
+                    appendFileToDokumenCell($targetRow.find('.rujukan-cell'), f, rowUuid);
                     showToast('Fail berjaya dimuat naik.', 'success');
                 },
-                error: function () {
-                    showToast('Gagal memuat naik fail. Sila cuba lagi.', 'danger');
+                error: function (xhr) {
+                    var errors = xhr.responseJSON && xhr.responseJSON.errors;
+                    var message = (errors && errors.file && errors.file[0])
+                        || (xhr.responseJSON && xhr.responseJSON.message)
+                        || 'Gagal memuat naik fail. Sila cuba lagi.';
+                    showToast(message, 'danger');
                 }
             });
         }
 
         var rowUuid = $row.data('uuid') || $row.attr('data-uuid');
         if (rowUuid) {
-            doUpload(rowUuid);
+            doUpload(rowUuid, $row);
         } else {
+            var rowSortOrder = -1;
+            $('#tbl-kewangan-body tr[data-uuid], #tbl-kewangan-body .row-kewangan-tambah').each(function (index) {
+                if (this === $row[0]) rowSortOrder = index;
+            });
             saveDraft(function (response) {
-                var index = $('#tbl-kewangan-body tr').index($row);
-                var newUuid = (response.data && response.data.items && response.data.items[index]) ? response.data.items[index].uuid : null;
-                if (newUuid) {
-                    doUpload(newUuid);
+                var savedItems = response.data && response.data.items ? response.data.items : [];
+                var savedItem = savedItems.find(function (item) { return Number(item.sort_order) === rowSortOrder; })
+                    || savedItems[rowSortOrder];
+                if (savedItem && savedItem.uuid) {
+                    var $savedRow = $('#tbl-kewangan-body tr[data-uuid="' + savedItem.uuid + '"]');
+                    doUpload(savedItem.uuid, $savedRow);
                 } else {
                     showToast('Gagal mendapatkan ID baris. Sila simpan semula dan cuba lagi.', 'danger');
                 }

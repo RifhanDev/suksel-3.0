@@ -17,7 +17,9 @@ return new class extends Migration
 
         if (! Schema::hasColumn('jawatankuasa_perolehan_meetings', 'masa')) {
             Schema::table('jawatankuasa_perolehan_meetings', function (Blueprint $table) {
+                if (! Schema::hasColumn('jawatankuasa_perolehan_meetings', 'masa')) {
                 $table->string('masa', 10)->nullable()->after('tarikh_mesyuarat');
+                }
             });
         }
     }

@@ -400,7 +400,17 @@ $(document).ready(function () {
         return (bytes / 1048576).toFixed(1) + ' MB';
     }
 
-    function buildFileChip(fileUuid, fileName, fileSize, fileUrl, $block) {
+    function newAccountUuid() {
+        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+            return window.crypto.randomUUID();
+        }
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            var r = Math.random() * 16 | 0;
+            return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+    }
+
+    function buildFileChip(fileUuid, fileName, fileSize, fileUrl, $block, isPenyataBankFile) {
         var ext = fileName ? fileName.split('.').pop().toLowerCase() : '';
         var safeName = $('<span>').text(fileName || 'Dokumen').html();
         var viewUrl = '';
@@ -431,13 +441,13 @@ $(document).ready(function () {
             : '<span class="file-chip-name text-muted" title="' + safeName + '">' + safeName + '</span>';
 
         var $chip = $(
-            '<div class="file-chip" data-file-uuid="' + (fileUuid || '') + '" data-file-name="' + safeName + '" data-file-size="' + (fileSize || 0) + '" data-file-url="' + (viewUrl || '') + '">' +
+            '<div class="file-chip" data-file-uuid="' + (fileUuid || '') + '" data-penyata-bank-file="' + (isPenyataBankFile ? '1' : '0') + '" data-file-name="' + safeName + '" data-file-size="' + (fileSize || 0) + '" data-file-url="' + (viewUrl || '') + '">' +
                 '<span class="file-chip-ext ext-' + ext + '">' + ext + '</span>' +
                 '<div class="file-chip-body">' +
                     nameHtml +
                     '<span class="file-chip-size">' + (fileSize ? formatBytes(fileSize) : '—') + '</span>' +
                 '</div>' +
-                (VIEW_ONLY ? '' :
+                ((VIEW_ONLY || !isPenyataBankFile) ? '' :
                     '<button type="button" class="file-chip-remove" title="Buang fail">' +
                         '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">' +
                         '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +
@@ -461,8 +471,9 @@ $(document).ready(function () {
     function buildAkaunBlock(index, data) {
         data = data || {};
         var canDelete = index > 0;
+        var accountUuid = data.account_uuid || data.accountUuid || newAccountUuid();
         var $block = $(
-            '<div class="penyata-akaun-block" data-akaun-index="' + index + '">' +
+            '<div class="penyata-akaun-block" data-akaun-index="' + index + '" data-account-uuid="' + accountUuid + '">' +
                 '<div class="d-flex justify-content-between align-items-center mb-3">' +
                     '<span class="akaun-heading">Akaun ' + (index + 1) + '</span>' +
                     (canDelete && !VIEW_ONLY
@@ -474,6 +485,15 @@ $(document).ready(function () {
                         : '') +
                 '</div>' +
                 '<p class="borang-subtitle mb-3">Perlu diisi oleh Petender</p>' +
+                (SHOW_VENDOR
+                    ? '<div class="mb-3">' +
+                        '<label class="form-label fw-semibold small mb-1">Nama Bank <span class="text-danger">*</span></label>' +
+                        (VIEW_ONLY
+                            ? '<div class="form-control form-control-sm bg-light akaun-bank-name-display" aria-label="Nama bank"></div>'
+                            : '<input type="text" class="form-control form-control-sm akaun-bank-name" maxlength="255" placeholder="Contoh: Maybank" required>' +
+                              '<div class="invalid-feedback">Sila masukkan nama bank bagi akaun ini.</div>') +
+                      '</div>'
+                    : '') +
                 '<div class="row g-4 akaun-vendor-section">' +
                     '<div class="col-12 col-md-6">' +
                         '<div class="akaun-bulan-rows"></div>' +
@@ -489,7 +509,7 @@ $(document).ready(function () {
                         '</div>' +
                     '</div>' +
                     '<div class="col-12 col-md-6">' +
-                        '<label class="form-label fw-semibold small mb-2">Dokumen Sokongan <span class="fw-normal text-muted">(untuk rujukan Pemilik Projek)</span></label>' +
+                        '<label class="form-label fw-semibold small mb-2">Penyata Bank <span class="text-danger">*</span> <span class="fw-normal text-muted">(muat naik satu atau lebih fail bagi akaun ini)</span></label>' +
                         (VIEW_ONLY
                             ? '<div class="file-chip-list akaun-file-list"></div>'
                             : '<label class="upload-zone w-100 akaun-upload-zone">' +
@@ -502,12 +522,19 @@ $(document).ready(function () {
                                 '<input type="file" class="akaun-file-input" multiple hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg">' +
                               '</label>' +
                               '<div class="file-chip-list akaun-file-list"></div>') +
+                        '<div class="akaun-file-required-error d-none small text-danger mt-1">Sila muat naik sekurang-kurangnya satu penyata bank bagi akaun ini.</div>' +
                     '</div>' +
                 '</div>' +
             '</div>'
         );
 
         $('#penyata-akaun-container').append($block);
+        $block.data('account-uuid', accountUuid);
+        if (SHOW_VENDOR) {
+            var bankName = data.bank_name || data.bank_institusi || data.bank || '';
+            $block.find('.akaun-bank-name').val(bankName);
+            $block.find('.akaun-bank-name-display').text(bankName || 'Nama bank belum dinyatakan');
+        }
         rebuildAkaunBulanRows($block);
         if (data.bulans && data.bulans.length) {
             setTimeout(function () {
@@ -523,7 +550,7 @@ $(document).ready(function () {
         if (data.files && data.files.length) {
             data.files.forEach(function (f) {
                 var fileUrl = f.url || (f.uuid ? '{{ url("/tenders/dokumen-files") }}/' + encodeURIComponent(f.uuid) + '/download' : '');
-                $block.find('.akaun-file-list').append(buildFileChip(f.uuid, f.original_name || f.name, f.size, fileUrl, $block));
+                $block.find('.akaun-file-list').append(buildFileChip(f.uuid, f.original_name || f.name, f.size, fileUrl, $block, Boolean(f.penyata_bank_file)));
             });
         } else if (VIEW_ONLY) {
             $block.find('.akaun-file-list').append(
@@ -649,7 +676,7 @@ $(document).ready(function () {
 
     function renumberAkaun() {
         $('#penyata-akaun-container .penyata-akaun-block').each(function (i) {
-            $(this).attr('data-akaun-index', i);
+            $(this).attr('data-akaun-index', i).data('akaun-index', i);
             $(this).find('.akaun-heading').text('Akaun ' + (i + 1));
             $(this).find('.btn-hapus-akaun').toggle(i > 0 && !VIEW_ONLY);
         });
@@ -692,14 +719,6 @@ $(document).ready(function () {
         $('#penyata-dari-bulan, #penyata-dari-tahun').on('change', updateGlobalPeriod);
 
         if (SHOW_VENDOR) {
-        if (!VIEW_ONLY) {
-            $('#btn-tambah-akaun').on('click', function () {
-                buildAkaunBlock(akaunCounter, {});
-                akaunCounter++;
-                renumberAkaun();
-            });
-        }
-
         $('#penyata-akaun-container').on('click', '.btn-hapus-akaun', function () {
             if ($('#penyata-akaun-container .penyata-akaun-block').length <= 1) return;
             $(this).closest('.penyata-akaun-block').remove();
@@ -708,13 +727,17 @@ $(document).ready(function () {
         $('#penyata-akaun-container').on('input change', '.penyata-bank-bulan-input', function () {
             updateAkaunTotals($(this).closest('.penyata-akaun-block'));
         });
+        $('#penyata-akaun-container').on('input', '.akaun-bank-name', function () {
+            $(this).toggleClass('is-invalid', !$(this).val().trim());
+        });
 
         // File upload per account
         var pendingUploadCount = 0;
 
         function uploadFileForAkaun(file, $block) {
-            var akaunIndex = $block.data('akaun-index');
-            var $chip = buildFileChip(null, file.name, file.size, null, $block);
+            var akaunIndex = parseInt($block.attr('data-akaun-index'), 10) || 0;
+            var accountUuid = $block.attr('data-account-uuid');
+            var $chip = buildFileChip(null, file.name, file.size, null, $block, true);
             $chip.find('.file-chip-size').text('Memuat naik...');
             $block.find('.akaun-file-list').find('.empty-files-notice').remove();
             $block.find('.akaun-file-list').append($chip);
@@ -725,6 +748,7 @@ $(document).ready(function () {
             var fd = new FormData();
             fd.append('file', file);
             fd.append('account_index', akaunIndex);
+            fd.append('account_uuid', accountUuid);
             $.ajax({
                 url: UPLOAD_URL, method: 'POST', data: fd,
                 processData: false, contentType: false,
@@ -744,17 +768,19 @@ $(document).ready(function () {
                         : '<i class="bi bi-download ms-1 text-primary extra-small"></i>';
 
                     $chip.attr('data-file-uuid', uuid).data('file-uuid', uuid);
+                    $chip.attr('data-penyata-bank-file', '1');
                     $chip.attr('data-file-name', file.name).data('file-name', file.name);
-                    $chip.attr('data-file-size', sz).data('file-size', sz);
+                    $chip.attr('data-file-size', file.size).data('file-size', file.size);
                     $chip.attr('data-file-url', viewUrl).data('file-url', viewUrl);
-                    $chip.find('.file-chip-size').text(formatBytes(sz));
+                    $chip.find('.file-chip-size').text(formatBytes(file.size));
+                    $block.find('.akaun-file-required-error').addClass('d-none');
 
                     if (viewUrl && viewUrl !== '#') {
                         $chip.find('.file-chip-body').html(
                             '<a href="' + viewUrl + '" ' + linkAttrs + ' class="file-chip-name text-decoration-none text-dark fw-semibold" title="' + (isPdf ? 'Klik untuk lihat ' : 'Klik untuk muat turun ') + safeName + '">' +
                                 safeName + ' ' + actionIcon +
                             '</a>' +
-                            '<span class="file-chip-size">' + formatBytes(sz) + '</span>'
+                            '<span class="file-chip-size">' + formatBytes(file.size) + '</span>'
                         );
                     }
                 } else {
@@ -977,7 +1003,7 @@ $(document).ready(function () {
                 var $block = $(this);
                 var bulans = collectAccountBulans($block);
                 var files = [];
-                $block.find('.akaun-file-list .file-chip').each(function () {
+                $block.find('.akaun-file-list .file-chip[data-penyata-bank-file="1"]').each(function () {
                     var uuid = $(this).attr('data-file-uuid') || $(this).data('file-uuid') || null;
                     var name = $(this).attr('data-file-name') || $(this).data('file-name') || $(this).find('.file-chip-name').text() || 'Dokumen Sokongan';
                     var size = $(this).attr('data-file-size') || $(this).data('file-size') || 0;
@@ -985,6 +1011,8 @@ $(document).ready(function () {
                     if (uuid || name) {
                         files.push({
                             uuid: uuid || null,
+                            account_uuid: $block.attr('data-account-uuid'),
+                            account_index: parseInt($block.attr('data-akaun-index'), 10) || 0,
                             original_name: name,
                             name: name,
                             size: parseInt(size, 10) || 0,
@@ -993,6 +1021,8 @@ $(document).ready(function () {
                     }
                 });
                 accounts.push({
+                    account_uuid:       $block.attr('data-account-uuid'),
+                    bank_name:          ($block.find('.akaun-bank-name').val() || '').trim(),
                     dari_bulan:         period.dm,
                     dari_tahun:         period.dy,
                     hingga_bulan:       period.hm,
@@ -1052,6 +1082,29 @@ $(document).ready(function () {
             return;
         }
 
+        if (SHOW_VENDOR) {
+            var $emptyBankName = $('#penyata-akaun-container .akaun-bank-name').filter(function () {
+                return !$(this).val().trim();
+            }).first();
+            if ($emptyBankName.length) {
+                $emptyBankName.addClass('is-invalid').trigger('focus');
+                alert('Sila masukkan nama bank bagi setiap akaun.');
+                return;
+            }
+
+            var $accountWithoutFile = $('#penyata-akaun-container .penyata-akaun-block').filter(function () {
+                return $(this).find('.akaun-file-list .file-chip').filter(function () {
+                    return $(this).attr('data-penyata-bank-file') === '1' && Boolean($(this).attr('data-file-uuid'));
+                }).length === 0;
+            }).first();
+            if ($accountWithoutFile.length) {
+                $accountWithoutFile.find('.akaun-file-required-error').removeClass('d-none');
+                $accountWithoutFile.get(0).scrollIntoView({ behavior: 'smooth', block: 'center' });
+                alert('Sila muat naik sekurang-kurangnya satu penyata bank bagi setiap akaun.');
+                return;
+            }
+        }
+
         if (ADMIN_PERIOD) {
             var period = globalPeriod();
             if (!period.dm || !period.dy) {
@@ -1082,9 +1135,19 @@ $(document).ready(function () {
                 alert(res.message || 'Ralat semasa menyimpan.');
             }
         })
-        .fail(function () {
+        .fail(function (xhr) {
             unblockUI();
-            alert('Ralat semasa menyimpan. Sila cuba lagi.');
+            var response = xhr && xhr.responseJSON ? xhr.responseJSON : {};
+            var errors = response.errors || {};
+            var firstError = null;
+            Object.keys(errors).some(function (key) {
+                if (Array.isArray(errors[key]) && errors[key].length) {
+                    firstError = errors[key][0];
+                    return true;
+                }
+                return false;
+            });
+            alert(firstError || response.message || 'Ralat semasa menyimpan. Sila cuba lagi.');
         });
     });
 

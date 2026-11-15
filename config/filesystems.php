@@ -73,19 +73,19 @@ return [
 
         // Keep files on this app until ATTACHMENT_REMOTE_ENABLED=true on production.
         // Local/staging always stay local even if the flag is set by mistake.
+        // New uploads → ATTACHMENT_ROOT (/data/laravel/perolehan_attachment).
+        // Old 2.0 / back-year files → ATTACHMENT_LEGACY_ROOT (/data/laravel/uploads) read fallback.
         'attachments' => (
             env('APP_ENV') === 'production'
             && filter_var(env('ATTACHMENT_REMOTE_ENABLED', false), FILTER_VALIDATE_BOOLEAN)
         )
             ? [
-                'driver' => env('ATTACHMENT_DRIVER', 'ftp'),
+                'driver' => env('ATTACHMENT_DRIVER', 'sftp'),
                 'host' => env('ATTACHMENT_HOST', '172.16.2.147'),
                 'username' => env('ATTACHMENT_USERNAME'),
                 'password' => env('ATTACHMENT_PASSWORD'),
-                'port' => (int) env('ATTACHMENT_PORT', 21),
-                'root' => env('ATTACHMENT_ROOT', '/perolehan-attachment'),
-                'passive' => filter_var(env('ATTACHMENT_PASSIVE', true), FILTER_VALIDATE_BOOLEAN),
-                'ssl' => filter_var(env('ATTACHMENT_SSL', false), FILTER_VALIDATE_BOOLEAN),
+                'port' => (int) env('ATTACHMENT_PORT', 8822),
+                'root' => env('ATTACHMENT_ROOT', '/data/laravel/perolehan_attachment'),
                 'timeout' => (int) env('ATTACHMENT_TIMEOUT', 30),
                 'throw' => false,
             ]
@@ -93,6 +93,28 @@ return [
                 'driver' => 'local',
                 'root' => storage_path('app/public'),
                 'url' => env('APP_URL').'/storage',
+                'visibility' => 'public',
+                'throw' => false,
+            ],
+
+        'attachments_legacy' => (
+            env('APP_ENV') === 'production'
+            && filter_var(env('ATTACHMENT_REMOTE_ENABLED', false), FILTER_VALIDATE_BOOLEAN)
+        )
+            ? [
+                'driver' => env('ATTACHMENT_DRIVER', 'sftp'),
+                'host' => env('ATTACHMENT_HOST', '172.16.2.147'),
+                'username' => env('ATTACHMENT_USERNAME'),
+                'password' => env('ATTACHMENT_PASSWORD'),
+                'port' => (int) env('ATTACHMENT_PORT', 8822),
+                'root' => env('ATTACHMENT_LEGACY_ROOT', '/data/laravel/uploads'),
+                'timeout' => (int) env('ATTACHMENT_TIMEOUT', 30),
+                'throw' => false,
+            ]
+            : [
+                'driver' => 'local',
+                'root' => public_path('uploads'),
+                'url' => env('APP_URL').'/uploads',
                 'visibility' => 'public',
                 'throw' => false,
             ],

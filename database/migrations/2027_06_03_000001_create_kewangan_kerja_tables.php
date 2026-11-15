@@ -9,7 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         // ── Header ────────────────────────────────────────────────────────────
-        Schema::create('kewangan_kerja_headers', function (Blueprint $table) {
+                if (! Schema::hasTable('kewangan_kerja_headers')) {
+Schema::create('kewangan_kerja_headers', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->unsignedBigInteger('tender_id')->unique(); // one per tender
@@ -26,9 +27,11 @@ return new class extends Migration
 
             $table->index('tender_id');
         });
+        }
 
         // ── Items ─────────────────────────────────────────────────────────────
-        Schema::create('kewangan_kerja_items', function (Blueprint $table) {
+                if (! Schema::hasTable('kewangan_kerja_items')) {
+Schema::create('kewangan_kerja_items', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->foreignId('kewangan_kerja_header_id')
@@ -53,9 +56,11 @@ return new class extends Migration
             $table->index('spesifikasi_item_id');
             $table->index('standard_item_id');
         });
+        }
 
         // ── Files ─────────────────────────────────────────────────────────────
-        Schema::create('kewangan_kerja_files', function (Blueprint $table) {
+                if (! Schema::hasTable('kewangan_kerja_files')) {
+Schema::create('kewangan_kerja_files', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->foreignId('kewangan_kerja_header_id')
@@ -77,6 +82,7 @@ return new class extends Migration
             $table->index('kewangan_kerja_header_id');
             $table->index('kewangan_kerja_item_id');
         });
+        }
     }
 
     public function down(): void

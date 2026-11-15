@@ -13,6 +13,23 @@
 		$vendorCanEdit = Auth::check() && Auth::user()->vendor_id && $tender->hasParticipate(Auth::user()->vendor_id);
 		$dokumenMode = $vendorCanEdit ? 'vendor' : 'admin';
 		$dokumenList = $tenderDokumen->items($dokumenMode, $vendorCanEdit ? (int) Auth::user()->vendor_id : null);
+		// 2.0 Dokumen Sebut Harga/Tender = uploads public=0. Prefer that list when the
+		// 3.0 checklist is empty so migrated NAS files still appear like STOS 2.0.
+		$legacyTenderFileCount = $tender->files()->where('public', 0)->count();
+		$hasIklanDokumenTab = $tender->showDokumenSenaraiTab()
+			&& $tender->usesIklanDokumen()
+			&& $tender->iklanDokumens->isNotEmpty();
+		$useLegacyAsDokumenSenarai = ! $hasIklanDokumenTab
+			&& $tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id ?? null)
+			&& $legacyTenderFileCount > 0
+			&& count($dokumenList) === 0;
+		$useChecklistDokumenSenarai = ! $hasIklanDokumenTab
+			&& $tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id ?? null)
+			&& ! $useLegacyAsDokumenSenarai;
+		$usePlainLegacyTab = ! $tender->isIklanSahaja()
+			&& ! $tender->showDokumenSenaraiTab()
+			&& Auth::check()
+			&& $tender->canShowFiles(Auth::user()->vendor_id);
 	@endphp
 
 	<div class="row">
@@ -133,7 +150,7 @@
 									<span class="badge bg-primary ms-2">{{ $mejaTerkawal->count() }}</span>
 								</a>
 							@endif
-							@if ($tender->showDokumenSenaraiTab() && $tender->usesIklanDokumen() && $tender->iklanDokumens->isNotEmpty())
+							@if ($hasIklanDokumenTab)
 								<a href="#tf-dokumen-tawaran" aria-controls="settings" role="tab" data-bs-toggle="tab" class="nav-link">
 									<svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18" height="18" viewBox="0 0 24 24">
 										<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -143,7 +160,20 @@
 									{{ $tender->dokumenSenaraiTabLabel() }}
 									<span class="badge bg-primary ms-2">{{ $tender->iklanDokumens->count() }}</span>
 								</a>
-							@elseif ($tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
+							@elseif ($useLegacyAsDokumenSenarai)
+								{{-- Same source as STOS 2.0: uploads.public = 0 (files on NAS legacy root) --}}
+								<a href="#tf-doc2" aria-controls="settings" role="tab" data-bs-toggle="tab" class="nav-link">
+									<svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18" height="18" viewBox="0 0 24 24">
+										<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+											<path d="M15 3v4a1 1 0 0 0 1 1h4" />
+											<path d="M18 17h-7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4l5 5v7a2 2 0 0 1-2 2" />
+											<path d="M16 17v2a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h2" />
+										</g>
+									</svg>
+									{{ $tender->dokumenSenaraiTabLabel() }}
+									<span class="badge bg-primary ms-2">{{ $legacyTenderFileCount }}</span>
+								</a>
+							@elseif ($useChecklistDokumenSenarai)
 								<a href="#tf-dokumen-tawaran" aria-controls="settings" role="tab" data-bs-toggle="tab" class="nav-link">
 									<svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18" height="18" viewBox="0 0 24 24">
 										<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -153,7 +183,7 @@
 									<span class="badge bg-primary ms-2">{{ count($dokumenList) }}</span>
 								</a>
 							@endif
-							@if (!$tender->isIklanSahaja() && !$tender->showDokumenSenaraiTab() && Auth::check() && $tender->canShowFiles(Auth::user()->vendor_id))
+							@if ($usePlainLegacyTab)
 								<a href="#tf-doc2" aria-controls="settings" role="tab" data-bs-toggle="tab" class="nav-link">
 									<svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18" height="18" viewBox="0 0 24 24">
 										<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
@@ -163,7 +193,7 @@
 										</g>
 									</svg>
 									Dokumen {{ App\Tender::$types[$tender->type] }}
-									<span class="badge bg-primary ms-2">{{ $tender->files()->where('public', 0)->count() }}</span>
+									<span class="badge bg-primary ms-2">{{ $legacyTenderFileCount }}</span>
 								</a>
 							@endif
 							@if (Auth::check() && $tender->canUpdate() && $tender->invitation)
@@ -648,6 +678,13 @@
 											</tr>
 										@endif
 
+										@if ($tender->hasDaerahLiputanProjek())
+											<tr>
+												<th>Daerah Liputan Projek</th>
+												<td>{{ $tender->getDaerahLiputanProjek() }}</td>
+											</tr>
+										@endif
+
 										<tr>
 											<th>Harga Dokumen</th>
 											<td><strong>RM {{ number_format($tender->price, 2) }}</strong></td>
@@ -855,7 +892,7 @@
 					@endif
 
 					{{-- === TAB: Dokumen Tender/Tawaran atau Sebut Harga (senarai semak) === --}}
-					@if ($tender->showDokumenSenaraiTab() && $tender->usesIklanDokumen() && $tender->iklanDokumens->isNotEmpty())
+					@if ($hasIklanDokumenTab)
 						<div role="tabpanel" class="tab-pane" id="tf-dokumen-tawaran">
 							<div class="tender-tab-card">
 								<div class="card-header">
@@ -874,7 +911,7 @@
 								</div>
 							</div>
 						</div>
-					@elseif ($tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
+					@elseif ($useChecklistDokumenSenarai)
 						<div role="tabpanel" class="tab-pane" id="tf-dokumen-tawaran">
 							<div class="tender-tab-card">
 								<div class="card-header">
@@ -899,8 +936,8 @@
 						</div>
 					@endif
 
-					{{-- === TAB: Dokumen muat turun (legacy) === --}}
-					@if (!$tender->isIklanSahaja() && !$tender->showDokumenSenaraiTab() && Auth::check() && $tender->canShowFiles(Auth::user()->vendor_id))
+					{{-- === TAB: Dokumen muat turun (2.0 uploads public=0, also NAS legacy) === --}}
+					@if ($useLegacyAsDokumenSenarai || $usePlainLegacyTab)
 						<div role="tabpanel" class="tab-pane" id="tf-doc2">
 							@if (count($tender->tender_files) > 0)
 								<div class="tender-tab-card">
@@ -913,7 +950,7 @@
 													<path d="M16 17v2a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h2" />
 												</g>
 											</svg>
-											Dokumen {{ App\Tender::$types[$tender->type] }}
+											{{ $useLegacyAsDokumenSenarai ? $tender->dokumenSenaraiTabLabel() : 'Dokumen '.App\Tender::$types[$tender->type] }}
 										</h3>
 									</div>
 									<div class="card-body p-0">
@@ -930,11 +967,11 @@
 												<tbody>
 													@foreach ($tender->tenderFiles as $upload)
 														<tr>
-															<td>{{ $upload->label }}</td>
+															<td>{{ method_exists($upload, 'displayName') ? $upload->displayName() : ($upload->label ?: $upload->name) }}</td>
 															<td>{{ $upload->size }}</td>
 															<td>{{ $upload->type }}</td>
 															<td>
-																<a href="{{ $upload->url }}" class="btn btn-sm btn-selangor" download>
+																<a href="{{ route('tenders.files', [$tender->id, $upload->id]) }}" class="btn btn-sm btn-selangor" download>
 																	<svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="16" height="16"
 																		viewBox="0 0 24 24">
 																		<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"

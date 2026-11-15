@@ -1,0 +1,75 @@
+/* Hallmark · component: BQ upload and delete dialog · genre: modern-minimal · theme: brand · states: 8 · redesign: full · v2.0.0 */
+/* Critique: one upload destination; typography and spacing carry hierarchy; destructive actions stay secondary. */
+html, body { overflow-x: clip; }
+.bq-upload { font-family: var(--bq-font); color: var(--bq-ink); max-width: 1400px; margin-inline: auto; }
+.bq-upload-panel { position: relative; padding: 36px 28px; border: 1px dashed var(--bq-border); border-radius: 12px; background: var(--bq-surface); text-align: center; }
+.bq-upload-heading { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+.bq-upload-symbol { color: var(--bq-accent); display: grid; place-items: center; width: 48px; height: 48px; }
+.bq-upload-symbol svg { width: 40px; height: 40px; }
+.bq-upload-title { margin: 0 0 8px; font-size: 18px; line-height: 1.5; font-weight: 600; color: var(--bq-ink); min-width: 0; overflow-wrap: break-word; }
+.bq-upload-help { margin: 0; color: var(--bq-muted); font-size: 14px; line-height: 1.6; }
+.bq-upload-action, .bq-dialog-button { position: relative; display: inline-flex; justify-content: center; align-items: center; gap: 8px; min-height: 44px; padding: 10px 20px; border: 1px solid var(--bq-accent); border-radius: 7px; background: var(--bq-accent); color: var(--bq-paper); font: 600 14px/1.5 var(--bq-font); cursor: pointer; text-decoration: none; }
+.bq-upload-action svg { width: 17px; height: 17px; }
+.bq-upload-action input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.bq-upload-action:has(input:focus-visible), .bq-upload :is(a, button):focus-visible, .bq-dialog-button:focus-visible, .bq-upload-action.is-focus { outline: 3px solid var(--bq-accent); outline-offset: 4px; transition: none; }
+.bq-upload-action:active, .bq-dialog-button:active, .bq-file-actions .btn:active, .bq-upload-action.is-active { transform: translateY(1px); }
+.bq-upload-action:has(input:disabled), .bq-dialog-button:disabled, .bq-upload-action.is-disabled { opacity: .5; cursor: not-allowed; }
+.bq-upload-action input:disabled { cursor: not-allowed; }
+.bq-upload-panel.is-dragging, .bq-upload-panel.is-hover { border-color: var(--bq-accent); background: var(--bq-accent-soft); }
+.bq-upload-panel[aria-busy="true"] { border-style: solid; border-color: var(--bq-accent); }
+.bq-upload-panel[aria-busy="true"] .bq-upload-symbol { opacity: .5; }
+.bq-upload-rules { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 20px; margin-top: 12px; font-size: 12px; line-height: 1.6; color: var(--bq-muted); }
+.bq-document-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin: 28px 0 12px; }
+.bq-document-heading h4 { margin: 0; font-size: 14px; font-weight: 600; color: var(--bq-ink); }
+.bq-document-count { padding: 4px 9px; border-radius: 5px; background: var(--bq-surface); color: var(--bq-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.bq-upload-file { display: flex; align-items: center; gap: 16px; padding: 18px 0; border-block: 1px solid var(--bq-border); }
+.bq-file-symbol { display: grid; place-items: center; flex-shrink: 0; width: 44px; height: 48px; color: var(--bq-muted); }
+.bq-file-symbol svg { width: 28px; height: 28px; }
+.bq-file-info { min-width: 0; flex: 1; }
+.bq-file-name { overflow-wrap: anywhere; color: var(--bq-ink); font-size: 14px; font-weight: 600; text-decoration: none; }
+.bq-file-meta { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 5px; color: var(--bq-muted); font-size: 12px; line-height: 1.5; }
+.bq-file-actions { display: flex; flex-shrink: 0; gap: 8px; }
+.bq-file-actions .btn { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 8px 12px; border: 1px solid var(--bq-border); border-radius: 7px; background: var(--bq-paper); color: var(--bq-ink); font: 500 13px/1.5 var(--bq-font); transition: none; box-shadow: none; }
+.bq-file-actions svg { width: 16px; height: 16px; }
+.bq-file-actions #btn-delete-bq-template { border-color: var(--bq-paper); color: var(--bq-accent); }
+.bq-file-actions .btn:disabled { opacity: .45; cursor: not-allowed; }
+.bq-upload-empty { margin: 0; padding: 20px 0; border-block: 1px solid var(--bq-border); font-size: 14px; color: var(--bq-muted); }
+.bq-replacement-note { margin: 14px 0 0; max-width: 76ch; font-size: 12px; line-height: 1.8; color: var(--bq-muted); }
+#bq-template-feedback { padding: 12px 14px; border-radius: 7px; background: var(--bq-surface); color: var(--bq-ink); font-size: 14px; }
+#bq-template-feedback:empty { display: none; }
+#bq-template-feedback.text-danger { color: var(--bq-accent) !important; background: var(--bq-accent-soft); }
+#bq-template-feedback.text-success { color: var(--bq-success) !important; background: var(--bq-success-soft); }
+.bq-dialog-container.swal2-backdrop-show,
+.bq-dialog-container.bq-backdrop-fade-in,
+.bq-dialog-container.bq-backdrop-fade-out { background: var(--bq-overlay); }
+.bq-dialog.bq-dialog-fade-in,
+.bq-dialog-container.bq-backdrop-fade-in { animation: bq-dialog-appear 220ms ease-out both; }
+.bq-dialog.bq-dialog-fade-out,
+.bq-dialog-container.bq-backdrop-fade-out { animation: bq-dialog-disappear 180ms ease-in both; }
+@keyframes bq-dialog-appear { from { opacity: 0; } to { opacity: 1; } }
+@keyframes bq-dialog-disappear { from { opacity: 1; } to { opacity: 0; } }
+.bq-dialog.swal2-popup { padding: 32px; width: min(480px, calc(100% - 32px)); border: 1px solid var(--bq-border); border-radius: 16px; background: var(--bq-paper); color: var(--bq-ink); font-family: var(--bq-font); box-shadow: var(--bq-shadow); text-align: left; }
+.bq-dialog .swal2-title { padding: 0; margin: 20px 0 0; text-align: left; font-size: 22px; line-height: 1.4; font-weight: 600; color: var(--bq-ink); overflow-wrap: break-word; min-width: 0; }
+.bq-dialog .swal2-html-container { margin: 12px 0 0; padding: 0; text-align: left; font-size: 14px; line-height: 1.8; color: var(--bq-muted); overflow-wrap: anywhere; }
+.bq-dialog .swal2-icon { margin: 0; width: 48px; height: 48px; border-width: 1px; font-size: 12px; color: var(--bq-accent); border-color: var(--bq-accent); }
+.bq-dialog .swal2-icon.swal2-success { color: var(--bq-success); border-color: var(--bq-success); }
+.bq-dialog .swal2-actions { width: 100%; justify-content: flex-end; gap: 10px; margin: 28px 0 0; padding-top: 20px; border-top: 1px solid var(--bq-border); }
+.bq-dialog-button { margin: 0; }
+.bq-dialog-cancel { border-color: var(--bq-border); background: var(--bq-paper); color: var(--bq-ink); }
+@media (hover: hover) {
+    .bq-upload-action:hover, .bq-dialog-button:hover, .bq-upload-action.is-hover { background: var(--bq-accent-hover); }
+    .bq-dialog-cancel:hover, .bq-file-actions .btn:hover { background: var(--bq-surface); }
+    .bq-file-actions #btn-delete-bq-template:hover { background: var(--bq-accent-soft); }
+    .bq-file-name:hover { color: var(--bq-accent); text-decoration: underline; }
+}
+@media (max-width: 575.98px) {
+    .bq-upload-panel { padding: 28px 16px; }
+    .bq-upload-file { flex-wrap: wrap; gap: 12px; }
+    .bq-file-actions { width: 100%; padding-left: 56px; flex-wrap: wrap; }
+    .bq-dialog.swal2-popup { padding: 24px; }
+    .bq-dialog .swal2-actions { display: flex; flex-wrap: wrap; }
+    .bq-dialog-button { flex: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .bq-upload *, .bq-dialog-container, .bq-dialog, .bq-dialog * { animation: none !important; transition: none !important; }
+}

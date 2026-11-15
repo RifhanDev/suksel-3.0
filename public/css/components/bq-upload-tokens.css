@@ -1,0 +1,17 @@
+/* Hallmark · component: BQ upload tokens · genre: modern-minimal · theme: brand · v2.0.0 */
+/* Critique: preserve Selangor red; use neutral surfaces and restrained destructive states. */
+:root {
+    --bq-paper: #ffffff;
+    --bq-surface: #f7f8fa;
+    --bq-ink: #243247;
+    --bq-muted: #59677b;
+    --bq-border: #d7dee7;
+    --bq-accent: var(--sg-red, #c41e3a);
+    --bq-accent-hover: var(--sg-red-dark, #8b1428);
+    --bq-accent-soft: #fff3f5;
+    --bq-success: #166344;
+    --bq-success-soft: #eef8f2;
+    --bq-overlay: rgba(20, 30, 46, .42);
+    --bq-shadow: 0 24px 80px rgba(20, 30, 46, .18);
+    --bq-font: 'Inter', system-ui, sans-serif;
+}

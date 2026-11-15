@@ -11,6 +11,7 @@ use App\Services\TenderIklanDokumenService;
 use App\Support\PenyediaanIklanAccess;
 use App\Support\TenderProcessStatus;
 use App\Support\TenderDokumenPresenter;
+use App\Support\TenderListingFilters;
 use App\Support\TenderReviewPresenter;
 use App\Tender;
 use App\User;
@@ -38,7 +39,7 @@ class PenyediaanIklanController extends Controller
         });
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $query = Tender::query()
             ->where('status_process_id', TenderProcessStatus::penyediaanIklanListStatus())
@@ -46,6 +47,16 @@ class PenyediaanIklanController extends Controller
             ->orderByDesc('id');
 
         PenyediaanIklanAccess::scopeVisible($query, auth()->user());
+
+        TenderListingFilters::apply($query, $request);
+
+        if ($request->filled('status')) {
+            if ($request->input('status') === 'penyediaan_iklan') {
+                $query->where('tenders.status_process_id', TenderProcessStatus::penyediaanIklanListStatus());
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        }
 
         $tenders = $query
             ->get()
@@ -99,7 +110,7 @@ class PenyediaanIklanController extends Controller
         }
 
         $tender->load(['tenderer', 'codes.code', 'creator.organizationunit', 'officer.organizationunit', 'siteVisits', 'kaedahDokumen', 'iklanDokumens']);
-        $this->checklistSync->syncForTender($tender);
+        $this->checklistSync->syncForTenderOnView($tender);
         $tenderReview = TenderReviewPresenter::for($tender);
         $tenderDokumen = TenderDokumenPresenter::for($tender);
         $pegawaiPilihan = $this->pegawaiPilihanForTender($tender);
@@ -370,14 +381,15 @@ class PenyediaanIklanController extends Controller
         $files = (array) $request->file('kelulusan_dokumen', []);
 
         $rows = [];
-        $fileIndex = 0;
 
         foreach ($fixedLabels as $i => $label) {
             $existingPath = $request->input("kelulusan_existing_dokumen.{$i}");
-            $dokumen = $this->resolveKelulusanFile($files[$fileIndex] ?? null, $tenderId, $existingPath);
-            if (isset($files[$fileIndex])) {
-                $fileIndex++;
-            }
+            $dokumen = $this->resolveKelulusanFile(
+                $this->validKelulusanUpload($files[$i] ?? null),
+                $tenderId,
+                is_string($existingPath) ? $existingPath : null,
+                $request->input("kelulusan_existing_name.{$i}")
+            );
 
             $rows[] = [
                 'jenis' => $label,
@@ -391,10 +403,12 @@ class PenyediaanIklanController extends Controller
         foreach ($jenisDynamic as $j => $jenis) {
             $idx = $dynamicOffset + $j;
             $existingPath = $request->input("kelulusan_existing_dokumen.{$idx}");
-            $dokumen = $this->resolveKelulusanFile($files[$fileIndex] ?? null, $tenderId, $existingPath);
-            if (isset($files[$fileIndex])) {
-                $fileIndex++;
-            }
+            $dokumen = $this->resolveKelulusanFile(
+                $this->validKelulusanUpload($files[$idx] ?? null),
+                $tenderId,
+                is_string($existingPath) ? $existingPath : null,
+                $request->input("kelulusan_existing_name.{$idx}")
+            );
 
             $rows[] = [
                 'jenis' => trim((string) $jenis),
@@ -407,16 +421,27 @@ class PenyediaanIklanController extends Controller
         return PenyediaanIklan::normalizeKelulusanRows($rows);
     }
 
-    protected function resolveKelulusanFile(?UploadedFile $file, int $tenderId, ?string $existingPath): ?array
+    protected function validKelulusanUpload(mixed $file): ?UploadedFile
+    {
+        if (! $file instanceof UploadedFile || ! $file->isValid()) {
+            return null;
+        }
+
+        return $file;
+    }
+
+    protected function resolveKelulusanFile(?UploadedFile $file, int $tenderId, ?string $existingPath, mixed $existingName = null): ?array
     {
         if ($file instanceof UploadedFile) {
             return $this->storeKelulusanUpload($file, $tenderId);
         }
 
         if ($existingPath) {
+            $name = trim((string) $existingName);
+
             return [
                 'path' => $existingPath,
-                'original_name' => basename($existingPath),
+                'original_name' => $name !== '' ? $name : basename($existingPath),
                 'url' => \App\Support\AttachmentStorage::browserUrl($existingPath),
             ];
         }
@@ -427,7 +452,8 @@ class PenyediaanIklanController extends Controller
     protected function storeKelulusanUpload(UploadedFile $file, int $tenderId): array
     {
         $dir = public_path("uploads/penyediaan-iklan/{$tenderId}/kelulusan");
-        if (! is_dir($dir)) {
+        // Local disk only — remote/SFTP writes via AttachmentStorage and must not mkdir here.
+        if (! \App\Support\AttachmentStorage::isRemote() && ! is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
 
@@ -497,7 +523,8 @@ class PenyediaanIklanController extends Controller
     protected function storeMejaTerkawalFile(UploadedFile $file, int $tenderId): array
     {
         $dir = public_path("uploads/penyediaan-iklan/{$tenderId}/sokongan");
-        if (! is_dir($dir)) {
+        // Local disk only — remote/SFTP writes via AttachmentStorage and must not mkdir here.
+        if (! \App\Support\AttachmentStorage::isRemote() && ! is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
 

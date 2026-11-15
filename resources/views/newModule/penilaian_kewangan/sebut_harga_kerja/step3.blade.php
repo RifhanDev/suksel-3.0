@@ -32,7 +32,7 @@
             </div>
 
             {{-- Info Alert --}}
-            <div class="rounded-3 px-3 py-2.5 d-inline-flex align-items-center gap-2 mb-3 w-100" style="background:#eff6ff; border:1px solid #bfdbfe; font-size:0.825rem; color:#1e40af;">
+            <div class="rounded-3 p-3 d-inline-flex align-items-center gap-2 mb-3 w-100" style="background:#eff6ff; border:1px solid #bfdbfe; font-size:0.825rem; line-height:1.5; color:#1e40af;">
                 <i class="bi bi-info-circle-fill text-primary fs-5 flex-shrink-0"></i>
                 <div>
                     <span class="fw-bold">Maklumat Saringan:</span>
@@ -72,24 +72,40 @@
             </div>
 
             {{-- Table of Step 3 Qualified Vendors --}}
-            <div class="table-responsive mb-4 rounded-3 shadow-sm border bg-white">
+            <section class="rounded-3 border bg-white shadow-sm mb-4 overflow-hidden" aria-labelledby="step3VendorListTitle">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 p-3 p-md-4 bg-light border-bottom">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="d-inline-flex align-items-center justify-content-center rounded-3 bg-danger-subtle text-danger flex-shrink-0" style="width: 44px; height: 44px;"><i class="bi bi-people-fill fs-5"></i></div>
+                        <div>
+                            <h6 class="fw-bold mb-1 text-dark" id="step3VendorListTitle">Status Penilaian Kerja Mengikut Petender</h6>
+                            <p class="text-secondary small mb-0">Semak baki kerja, projek terbesar, keputusan dan tindakan penilaian.</p>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <span class="badge bg-white text-secondary border rounded-pill px-3 py-2 font-monospace" id="step3VendorCountBadge">0 Petender</span>
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-2" id="step3PendingCountBadge">0 Menunggu Penilaian</span>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2" id="step3PassCountBadge">0 Memuaskan</span>
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-2" id="step3FailCountBadge">0 Tidak Memuaskan</span>
+                    </div>
+                </div>
+                <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0 w-100">
-                    <thead style="background-color: #1e293b;">
+                    <thead class="table-light">
                         <tr>
-                            <th class="py-3 px-3 text-center fw-bold text-white text-uppercase" style="width: 6%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">BIL</th>
-                            <th class="py-3 px-3 text-center fw-bold text-white text-uppercase" style="width: 12%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">KOD PETENDER</th>
-                            <th class="py-3 px-3 text-start fw-bold text-white text-uppercase" style="width: 28%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">NAMA PETENDER & CIDB</th>
-                            <th class="py-3 px-3 text-end fw-bold text-white text-uppercase" style="width: 14%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">BAKI KERJA SEMASA (RM)</th>
-                            <th class="py-3 px-3 text-end fw-bold text-white text-uppercase" style="width: 14%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">PROJEK TERBESAR (RM)</th>
-                            <th class="py-3 px-3 text-center fw-bold text-white text-uppercase" style="width: 13%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">KEPUTUSAN</th>
-                            <th class="py-3 px-3 text-center fw-bold text-white text-uppercase" style="width: 13%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">TINDAKAN</th>
+                            <th class="text-center text-uppercase small fw-bold text-secondary px-3" style="width: 120px;">Kod Pembekal</th>
+                            <th class="text-uppercase small fw-bold text-secondary px-3">Petender & CIDB</th>
+                            <th class="text-end text-uppercase small fw-bold text-secondary px-3">Baki Kerja Semasa (RM)</th>
+                            <th class="text-end text-uppercase small fw-bold text-secondary px-3">Projek Terbesar (RM)</th>
+                            <th class="text-center text-uppercase small fw-bold text-secondary px-3">Keputusan</th>
+                            <th class="text-center text-uppercase small fw-bold text-secondary px-3">Tindakan</th>
                         </tr>
                     </thead>
                     <tbody id="step3VendorTableBody">
                         {{-- Rendered dynamically by window.type2State.renderStep3() --}}
                     </tbody>
                 </table>
-            </div>
+                </div>
+            </section>
 
             {{-- Footer Action --}}
             <div class="d-flex justify-content-end align-items-center gap-2 pt-2 border-top">
@@ -122,6 +138,9 @@
                 <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill" id="totalStep3MemuaskanBadge">
                     0 Petender Memuaskan
                 </span>
+                <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2.5 py-1 rounded-pill" id="totalStep3PendingBadge">
+                    0 Menunggu Penilaian
+                </span>
             </div>
 
             <div class="row mb-4">
@@ -130,8 +149,7 @@
                         <table class="table table-hover align-middle mb-0 w-100">
                             <thead style="background-color: #1e293b;">
                                 <tr>
-                                    <th class="py-2.5 px-3 text-center text-uppercase text-white fw-bold" style="width: 7%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">BIL</th>
-                                    <th class="py-2.5 px-3 text-center text-uppercase text-white fw-bold" style="width: 12%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">KOD</th>
+                                    <th class="py-2.5 px-3 text-center text-uppercase text-white fw-bold" style="width: 12%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">KOD PEMBEKAL</th>
                                     <th class="py-2.5 px-3 text-start text-uppercase text-white fw-bold" style="width: 28%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">NAMA PEMBEKAL</th>
                                     <th class="py-2.5 px-3 text-end text-uppercase text-white fw-bold" style="width: 15%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">BAKI KERJA (RM)</th>
                                     <th class="py-2.5 px-3 text-center text-uppercase text-white fw-bold" style="width: 12%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">KAKITANGAN</th>
@@ -175,8 +193,7 @@
                         <table class="table table-hover align-middle mb-0 w-100">
                             <thead style="background-color: #1e293b;">
                                 <tr>
-                                    <th class="py-2.5 px-3 text-center text-uppercase text-white fw-bold" style="width: 7%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">BIL</th>
-                                    <th class="py-2.5 px-3 text-center text-uppercase text-white fw-bold" style="width: 12%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">KOD</th>
+                                    <th class="py-2.5 px-3 text-center text-uppercase text-white fw-bold" style="width: 12%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">KOD PEMBEKAL</th>
                                     <th class="py-2.5 px-3 text-start text-uppercase text-white fw-bold" style="width: 28%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">NAMA PEMBEKAL</th>
                                     <th class="py-2.5 px-3 text-end text-uppercase text-white fw-bold" style="width: 15%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">BAKI KERJA (RM)</th>
                                     <th class="py-2.5 px-3 text-start text-uppercase text-white fw-bold" style="font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">SEBAB / CATATAN KEGAGALAN</th>

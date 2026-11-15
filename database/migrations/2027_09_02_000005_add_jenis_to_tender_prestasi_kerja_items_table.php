@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('tender_prestasi_kerja_items', function (Blueprint $table) {
+                if (Schema::hasTable('tender_prestasi_kerja_items')) {
+Schema::table('tender_prestasi_kerja_items', function (Blueprint $table) {
+            if (! Schema::hasColumn('tender_prestasi_kerja_items', 'jenis')) {
             $table->tinyInteger('jenis')->nullable()->comment('1: Serupa, 2: Sebanding')->after('sort_order');
+            }
         });
+        }
     }
 
     /**

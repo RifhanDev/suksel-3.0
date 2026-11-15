@@ -1,5 +1,10 @@
 @extends('layouts.v3.master')
 
+@section('styles')
+    <link href="{{ asset('css/components/bq-upload-tokens.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/components/bq-upload.css') }}" rel="stylesheet">
+@endsection
+
 @section('content')
     <style>
         .stats-card {
@@ -180,6 +185,31 @@
             @endforeach
         </div>
 
+    <div class="modal fade" id="modal-kemaskini-ahli" tabindex="-1" aria-labelledby="modal-kemaskini-ahli-title" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title fw-bold" id="modal-kemaskini-ahli-title">Kemaskini Ahli Jawatankuasa</h5>
+                        <div class="small text-muted" id="kemaskini-ahli-jenis-label"></div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="cari-pegawai-jawatankuasa" class="form-label fw-semibold small">Tambah pegawai</label>
+                    <input type="search" id="cari-pegawai-jawatankuasa" class="form-control form-control-sm" autocomplete="off" placeholder="Cari nama, nombor kad pengenalan atau e-mel">
+                    <div id="hasil-carian-pegawai-jawatankuasa" class="list-group mt-1 d-none"></div>
+                    <div class="form-text mb-3">Pegawai yang ditambah, dibuang atau ditukar peranannya akan menerima e-mel pemakluman.</div>
+                    <div id="senarai-kemaskini-ahli" class="d-flex flex-column gap-2"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" id="btn-simpan-kemaskini-ahli" class="btn btn-primary">Simpan Perubahan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <datalist id="tempat-mesyuarat-options">
         @foreach($tempatMesyuarat ?? [] as $tempat)
             <option value="{{ $tempat }}"></option>
@@ -204,6 +234,22 @@
         'hantarUrl' => route('penyediaanMesyuarat.hantar'),
         'csrfToken' => csrf_token(),
         'stosConfigured' => $stosConfigured ?? false,
+        'membersByJenis' => collect($uiTabs ?? [])->mapWithKeys(function ($tab) use ($membersByJenis) {
+            return [$tab['jenis'] => collect($membersByJenis[$tab['jenis']] ?? [])->map(function ($member) {
+                return [
+                    'user_id' => (int) $member->user_id,
+                    'ic_number' => $member->user->ic_number ?? '',
+                    'name' => $member->user->name ?? '-',
+                    'email' => $member->user->email ?? '',
+                    'jawatan' => $member->user->jawatan ?? '-',
+                    'gred' => $member->user->gred ?? '-',
+                    'p_p' => (string) $member->p_p,
+                    'peranan' => (string) $member->peranan,
+                ];
+            })->values()->all()];
+        })->all(),
+        'updateCommitteeUrl' => route('penyediaanMesyuarat.kemaskiniAhli'),
+        'searchUsersUrl' => route('jawatankuasa.searchUsers'),
     ]) !!}</script>
 
     <script type="text/javascript">
@@ -219,10 +265,208 @@
                 hantarUrl,
                 csrfToken,
                 stosConfigured,
+                membersByJenis,
+                updateCommitteeUrl,
+                searchUsersUrl,
             } = config;
 
-            function buildRow(bil) {
-                return $('<tr class="mesyuarat-row">' +
+            const meetingDialog = window.Swal && typeof window.Swal.mixin === 'function'
+                ? window.Swal.mixin({
+                    buttonsStyling: false,
+                    heightAuto: false,
+                    scrollbarPadding: false,
+                    showClass: { popup: 'bq-dialog-fade-in', backdrop: 'bq-backdrop-fade-in' },
+                    hideClass: { popup: 'bq-dialog-fade-out', backdrop: 'bq-backdrop-fade-out' },
+                    customClass: {
+                        container: 'bq-dialog-container',
+                        popup: 'bq-dialog',
+                        confirmButton: 'bq-dialog-button',
+                        cancelButton: 'bq-dialog-button bq-dialog-cancel'
+                    }
+                })
+                : null;
+
+            function fireMeetingDialog(options) {
+                if (meetingDialog) {
+                    return meetingDialog.fire(options);
+                }
+
+                if (typeof window.showConfirmModal === 'function') {
+                    return window.showConfirmModal({
+                        title: options.title,
+                        message: options.text || '',
+                        icon: options.icon || 'warning',
+                        confirmText: options.confirmButtonText || 'OK',
+                        cancelText: options.cancelButtonText || 'Batal',
+                        showCancel: options.showCancelButton !== false
+                    }).then(function (isConfirmed) {
+                        return { isConfirmed: isConfirmed };
+                    });
+                }
+
+                return Promise.resolve({ isConfirmed: false });
+            }
+
+            function showMeetingNotice(message, icon) {
+                return fireMeetingDialog({
+                    title: icon === 'success' ? 'Berjaya' : (icon === 'error' ? 'Ralat' : 'Perhatian'),
+                    text: message,
+                    icon: icon || 'warning',
+                    confirmButtonText: 'OK',
+                    showCancelButton: false
+                });
+            }
+
+            let committeeSearchResults = [];
+            let committeeSearchTimer = null;
+            let editingCommitteeJenis = null;
+
+            function buildCommitteeMemberRow(member) {
+                const $row = $('<div class="committee-edit-row border rounded-2 p-3 d-flex flex-column flex-md-row align-items-md-center gap-3"></div>')
+                    .attr('data-user-id', member.user_id);
+                const $identity = $('<div class="flex-grow-1"></div>');
+                $identity.append($('<div class="fw-semibold"></div>').text(member.name || '-'));
+                $identity.append($('<div class="small text-muted"></div>').text((member.ic_number || '-') + ' · ' + (member.email || '-')));
+
+                const $role = $('<select class="form-select form-select-sm committee-role" aria-label="Peranan"></select>')
+                    .append('<option value="1">Pengerusi</option><option value="2">Setiausaha</option><option value="3">Ahli</option>')
+                    .val(String(member.peranan || '3'));
+                const $ppWrap = $('<label class="form-check d-flex align-items-center gap-2 mb-0 small text-nowrap"><input type="checkbox" class="form-check-input committee-pp m-0"><span>P&P</span></label>');
+                $ppWrap.find('input').prop('checked', String(member.p_p) === '1');
+                const $remove = $('<button type="button" class="btn btn-sm btn-outline-danger btn-remove-committee-member">Buang</button>');
+
+                $row.append($identity, $('<div class="committee-role-wrap" style="min-width:150px"></div>').append($role), $ppWrap, $remove);
+                return $row;
+            }
+
+            function openCommitteeEditor(jenis, label) {
+                editingCommitteeJenis = jenis;
+                $('#kemaskini-ahli-jenis-label').text(label || jenis);
+                $('#senarai-kemaskini-ahli').empty();
+                $('#cari-pegawai-jawatankuasa').val('');
+                $('#hasil-carian-pegawai-jawatankuasa').addClass('d-none').empty();
+                (membersByJenis[jenis] || []).forEach(function (member) {
+                    $('#senarai-kemaskini-ahli').append(buildCommitteeMemberRow(member));
+                });
+
+                const modalElement = document.getElementById('modal-kemaskini-ahli');
+                if (window.bootstrap && window.bootstrap.Modal) {
+                    window.bootstrap.Modal.getOrCreateInstance(modalElement).show();
+                } else if (typeof $('#modal-kemaskini-ahli').modal === 'function') {
+                    $('#modal-kemaskini-ahli').modal('show');
+                }
+            }
+
+            function searchCommitteeUsers(term) {
+                const $results = $('#hasil-carian-pegawai-jawatankuasa');
+                if (term.length < 2) {
+                    $results.addClass('d-none').empty();
+                    return;
+                }
+                $.getJSON(searchUsersUrl, { q: term }).done(function (users) {
+                    committeeSearchResults = users || [];
+                    $results.empty();
+                    committeeSearchResults.forEach(function (user, index) {
+                        const label = (user.name || '-') + ' · ' + (user.ic_number || '-') + ' · ' + (user.email || '-');
+                        $results.append($('<button type="button" class="list-group-item list-group-item-action small"></button>')
+                            .attr('data-user-index', index).text(label));
+                    });
+                    if (committeeSearchResults.length) $results.removeClass('d-none');
+                    else $results.addClass('d-none');
+                }).fail(function () {
+                    $results.addClass('d-none').empty();
+                });
+            }
+
+            $(document).on('click', '.btn-kemaskini-ahli', function () {
+                openCommitteeEditor($(this).data('jenis'), $(this).data('label'));
+            });
+
+            $('#cari-pegawai-jawatankuasa').on('input', function () {
+                const term = $(this).val().trim();
+                clearTimeout(committeeSearchTimer);
+                committeeSearchTimer = setTimeout(function () { searchCommitteeUsers(term); }, 250);
+            });
+
+            $('#hasil-carian-pegawai-jawatankuasa').on('click', 'button[data-user-index]', function () {
+                const member = committeeSearchResults[parseInt($(this).attr('data-user-index'), 10)];
+                if (!member) return;
+                const exists = $('#senarai-kemaskini-ahli .committee-edit-row').toArray().some(function (row) {
+                    return String($(row).attr('data-user-id')) === String(member.id);
+                });
+                if (!exists) {
+                    $('#senarai-kemaskini-ahli').append(buildCommitteeMemberRow({
+                        user_id: member.id,
+                        name: member.name,
+                        ic_number: member.ic_number,
+                        email: member.email,
+                        peranan: '3',
+                        p_p: '0',
+                    }));
+                }
+                $('#cari-pegawai-jawatankuasa').val('');
+                $('#hasil-carian-pegawai-jawatankuasa').addClass('d-none').empty();
+            });
+
+            $('#senarai-kemaskini-ahli').on('click', '.btn-remove-committee-member', function () {
+                $(this).closest('.committee-edit-row').remove();
+            });
+
+            $('#btn-simpan-kemaskini-ahli').on('click', async function () {
+                const rows = $('#senarai-kemaskini-ahli .committee-edit-row').toArray().map(function (row) {
+                    const $row = $(row);
+                    return {
+                        user_id: parseInt($row.attr('data-user-id'), 10),
+                        peranan: $row.find('.committee-role').val(),
+                        p_p: $row.find('.committee-pp').is(':checked') ? '1' : '0',
+                    };
+                });
+                const confirmation = await fireMeetingDialog({
+                    title: 'Simpan perubahan ahli?',
+                    text: 'Ahli yang terjejas akan menerima e-mel pemakluman. Roster kehadiran mesyuarat akan dikemaskini untuk mesyuarat akan datang.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Simpan',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true,
+                    focusCancel: true
+                });
+                if (!confirmation.isConfirmed) return;
+
+                const $button = $(this).prop('disabled', true);
+                $.ajax({
+                    url: updateCommitteeUrl,
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        _token: csrfToken,
+                        tender: tenderUuid,
+                        jenis_jawatankuasa: editingCommitteeJenis,
+                        rows: rows,
+                    }),
+                    success: function (response) {
+                        const modalElement = document.getElementById('modal-kemaskini-ahli');
+                        if (window.bootstrap && window.bootstrap.Modal) {
+                            window.bootstrap.Modal.getOrCreateInstance(modalElement).hide();
+                        } else if (typeof $('#modal-kemaskini-ahli').modal === 'function') {
+                            $('#modal-kemaskini-ahli').modal('hide');
+                        }
+                        showMeetingNotice(response.message || 'Senarai ahli berjaya dikemaskini.', response.partial ? 'warning' : 'success').then(function () {
+                            window.location.reload();
+                        });
+                    },
+                    error: function (xhr) {
+                        const response = xhr.responseJSON || {};
+                        const errors = response.errors || {};
+                        const firstError = Object.values(errors).flat().find(Boolean);
+                        showMeetingNotice(firstError || response.message || 'Gagal mengemaskini senarai ahli.', 'error');
+                    },
+                    complete: function () { $button.prop('disabled', false); },
+                });
+            });
+
+            function buildRow(bil, meetingId) {
+                const $row = $('<tr class="mesyuarat-row">' +
                     '<td class="text-center row-bil fw-semibold text-muted" style="font-size:0.8rem;">' + bil + '</td>' +
                     '<td><input type="date" class="form-control form-control-sm" min="' + todayDate + '"></td>' +
                     '<td><input type="time" class="form-control form-control-sm"></td>' +
@@ -234,6 +478,8 @@
                         '</button>' +
                     '</td>' +
                 '</tr>');
+                if (meetingId) $row.attr('data-meeting-id', meetingId);
+                return $row;
             }
 
             function seedMeetingRows(uiTab) {
@@ -245,7 +491,7 @@
                     return;
                 }
                 saved.forEach(function (row, index) {
-                    const $row = buildRow(index + 1);
+                    const $row = buildRow(index + 1, row.id);
                     $row.find('input[type="date"]').val(row.tarikh_mesyuarat || '');
                     $row.find('input[type="time"]').val(row.masa || '');
                     $row.find('input[type="text"]').val(row.tempat || '');
@@ -270,11 +516,16 @@
                         hasPastDate = true;
                     }
                     if (tarikh && masa && tempat) {
-                        rows.push({ tarikh_mesyuarat: tarikh, masa: masa, tempat: tempat });
+                        rows.push({
+                            id: $(this).attr('data-meeting-id') || null,
+                            tarikh_mesyuarat: tarikh,
+                            masa: masa,
+                            tempat: tempat
+                        });
                     }
                 });
                 if (hasPastDate) {
-                    alert('Tarikh mesyuarat mestilah hari ini atau selepasnya.');
+                    showMeetingNotice('Tarikh mesyuarat mestilah hari ini atau selepasnya.', 'warning');
                     return null;
                 }
                 return rows;
@@ -292,9 +543,9 @@
                 $loadingOverlay.removeClass('show');
             }
 
-            function postMeeting(action, uiTab) {
+            async function postMeeting(action, uiTab) {
                 if (!stosConfigured) {
-                    alert('STOS backend tidak dikonfigurasi.');
+                    showMeetingNotice('STOS backend tidak dikonfigurasi.', 'warning');
                     return;
                 }
                 const rows = collectRows(uiTab);
@@ -302,11 +553,21 @@
                     return;
                 }
                 if (!rows.length) {
-                    alert('Sila lengkapkan sekurang-kurangnya satu perincian mesyuarat.');
+                    showMeetingNotice('Sila lengkapkan sekurang-kurangnya satu perincian mesyuarat.', 'warning');
                     return;
                 }
-                if (action === 'hantar' && !confirm('Hantar jemputan mesyuarat kepada ahli jawatankuasa tab ini sahaja?')) {
-                    return;
+                if (action === 'hantar') {
+                    const confirmation = await fireMeetingDialog({
+                        title: 'Hantar jemputan mesyuarat?',
+                        text: 'Jemputan akan dihantar kepada ahli jawatankuasa tab ini sahaja.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, Hantar',
+                        cancelButtonText: 'Batal',
+                        reverseButtons: true,
+                        focusCancel: true
+                    });
+                    if (!confirmation.isConfirmed) return;
                 }
                 showLoading(action);
                 $.ajax({
@@ -319,12 +580,14 @@
                         rows: rows,
                     },
                     success: function (res) {
-                        alert(res.message || 'Berjaya.');
-                        window.location.reload();
+                        hideLoading();
+                        showMeetingNotice(res.message || 'Berjaya.', 'success').then(function () {
+                            window.location.reload();
+                        });
                     },
                     error: function (xhr) {
                         hideLoading();
-                        alert((xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Gagal memproses permintaan.');
+                        showMeetingNotice((xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Gagal memproses permintaan.', 'error');
                     },
                 });
             }
@@ -375,4 +638,8 @@
             });
         });
     </script>
+@endsection
+
+@section('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 @endsection
