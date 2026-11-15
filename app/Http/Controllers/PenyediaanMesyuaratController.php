@@ -309,6 +309,9 @@ class PenyediaanMesyuaratController extends Controller
         });
 
         $jenisLabel = self::JENIS_LABELS[$jenis] ?? $jenis;
+        if (in_array($jenis, ['eval', 'harga'], true)) {
+            $jenisLabel = 'Jawatankuasa Penilaian ' . ($tender->isTenderKaedah() ? 'Tender' : 'Sebut Harga');
+        }
         $perananLabels = ['1' => 'Pengerusi', '2' => 'Setiausaha', '3' => 'Ahli'];
         $notified = 0;
         $failedChanges = [];

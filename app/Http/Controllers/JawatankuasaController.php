@@ -479,6 +479,10 @@ class JawatankuasaController extends Controller
 
         $emailCount = $specQueued;
         $useQueue = config('mail.use_queue', false);
+        $tenderNo = $tender->no_tender ?: ($tender->ref_number ?? '-');
+        $kaedahLabel = $tender->isTenderKaedah() ? 'Tender' : 'Sebut Harga';
+        $jenisLabels['eval'] = 'Jawatankuasa Penilaian ' . $kaedahLabel;
+        $jenisLabels['harga'] = $jenisLabels['eval'];
 
         foreach ($members as $member) {
             if ($member->jenis_jawatankuasa === 'spec') {
@@ -493,13 +497,14 @@ class JawatankuasaController extends Controller
             $perananLabel = $perananLabels[(string) $member->peranan] ?? 'Ahli';
 
             $to = trim($member->user->email);
-            $subject = 'Pemakluman Pelantikan ' . $jenisLabel . ' - ' . ($tender->ref_number ?? '');
+            $subject = 'Pemakluman Pelantikan ' . $jenisLabel . ' - ' . $tenderNo;
             $viewParams = [
                 'tender' => $tender,
                 'emailUser' => $member->user,
                 'jenisLabel' => $jenisLabel,
                 'perananLabel' => $perananLabel,
-                'tenderRefNumber' => $tender->ref_number ?? '-',
+                'kaedahLabel' => $kaedahLabel,
+                'tenderRefNumber' => $tenderNo,
                 'tenderPtj' => optional($tender->tenderer)->name ?? '-',
             ];
 

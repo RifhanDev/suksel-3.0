@@ -85,7 +85,16 @@
                                 Pilih Fail
                             </label>
                             <div class="file-info-display" @if(!$dokumen) style="display:none;" @endif>
-                                <a class="file-name-text" href="{{ $dokumen['url'] ?? '#' }}" target="_blank">{{ $dokumen['original_name'] ?? '' }}</a>
+                                @php
+                                    $docName = $dokumen['original_name'] ?? basename((string) ($dokumen['path'] ?? '')) ?: 'Dokumen';
+                                    $docAvailable = ! empty($dokumen['available']) || (! empty($dokumen['url']) && ($dokumen['url'] ?? '#') !== '#');
+                                @endphp
+                                @if ($docAvailable)
+                                    <a class="file-name-text" href="{{ $dokumen['url'] }}" target="_blank" title="{{ $docName }}">{{ $docName }}</a>
+                                @else
+                                    <span class="file-name-text text-muted" title="Fail tidak dijumpai di pelayan storan">{{ $docName }}</span>
+                                    <small class="d-block text-danger" style="font-size:10px;line-height:1.2;">Fail tiada di NAS</small>
+                                @endif
                                 <button type="button" class="btn-remove-file" title="Buang fail">&times;</button>
                             </div>
                         </td>

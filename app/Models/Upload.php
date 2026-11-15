@@ -30,6 +30,29 @@ class Upload extends Model
 		return \App\Support\AttachmentStorage::urlForUploadModel($this) ?? $value;
 	}
 
+	/** Filename for UI — always from DB, even if the NAS file is missing. */
+	public function displayName(): string
+	{
+		$label = trim((string) ($this->label ?? ''));
+		if ($label !== '') {
+			return $label;
+		}
+
+		$name = trim((string) ($this->name ?? ''));
+
+		return $name !== '' ? $name : 'Dokumen';
+	}
+
+	public function fileIsAvailable(): bool
+	{
+		$relative = \App\Support\AttachmentStorage::relativeForUpload(
+			(string) ($this->path ?? ''),
+			(string) ($this->name ?? '')
+		);
+
+		return $relative !== '' && \App\Support\AttachmentStorage::exists($relative);
+	}
+
 	public function getPath() {
 		return $this->resolveAbsolutePath() ?? ($this->path . $this->name);
 	}
