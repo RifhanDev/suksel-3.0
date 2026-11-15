@@ -86,7 +86,7 @@ class SubscriptionsController extends Controller
 			'from'                 => 'Renewal',
 			'status'               => 'SUCCESS',
 			'user_id'              => auth()->user()->id,
-			'amount'               => 100
+			'amount'               => config('app.vendor_registration_fee', 0.10)
 		]));
 
 		$data['start_date']     = $subscription_dates[0];
