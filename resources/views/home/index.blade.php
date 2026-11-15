@@ -621,7 +621,7 @@
 									@if ($banner->link)
 										<a href="{{ $banner->link }}" title="{{ $banner->title }}" class="d-block">
 									@endif
-									<img src="{{ $banner->file->url . '/' . $banner->file->name }}" alt="{{ $banner->title }}">
+									<img src="{{ method_exists($banner->file, 'fileUrl') ? $banner->file->fileUrl() : ($banner->file->url . '/' . $banner->file->name) }}" alt="{{ $banner->title }}">
                                     @if ($banner->link)
 										</a>
 									@endif

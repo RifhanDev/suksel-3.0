@@ -199,7 +199,7 @@
                     <a class="list-group-item list-group-item-action btn-circular-view" 
                        id="circular-{{ $circular->id }}"
                        data-id="{{ $circular->id }}"
-                       data-url="{{ $circular->pdf_link ? $circular->pdf_link : $circular->file->url . '/' . $circular->file->name }}"
+                       data-url="{{ $circular->pdf_link ? $circular->pdf_link : (method_exists($circular->file, 'fileUrl') ? $circular->file->fileUrl() : ($circular->file->url . '/' . $circular->file->name)) }}"
                        href="javascript:void(0);">
                         <span class="text-truncate">{{ $circular->title }}</span>
                         <i class="ti ti-chevron-right" style="font-size: 0.8rem;"></i>

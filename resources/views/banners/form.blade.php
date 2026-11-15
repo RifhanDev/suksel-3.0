@@ -25,7 +25,7 @@
         <div class="col-12">
             <label class="form-label fw-medium small">Preview Banner Semasa:</label>
             <div>
-                <img src="{{ $banner->file->url }}/{{ $banner->file->name }}" alt="{{ $banner->title }}"
+                <img src="{{ method_exists($banner->file, 'fileUrl') ? $banner->file->fileUrl() : ($banner->file->url . '/' . $banner->file->name) }}" alt="{{ $banner->title }}"
                     class="img-fluid rounded shadow-sm" style="max-height: 200px;">
             </div>
         </div>
