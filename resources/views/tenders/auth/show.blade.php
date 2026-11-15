@@ -971,7 +971,7 @@
 															<td>{{ $upload->size }}</td>
 															<td>{{ $upload->type }}</td>
 															<td>
-																<a href="{{ route('tenders.files', [$tender->id, $upload->id]) }}" class="btn btn-sm btn-selangor" download>
+																<a href="{{ route('tenders.files', [$tender->id, $upload->id]) }}" class="btn btn-sm btn-selangor" download="{{ method_exists($upload, 'downloadFilename') ? $upload->downloadFilename() : ($upload->label ?: $upload->name) }}">
 																	<svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="16" height="16"
 																		viewBox="0 0 24 24">
 																		<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"

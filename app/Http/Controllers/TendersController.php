@@ -1580,13 +1580,12 @@ class TendersController extends Controller
 			$fullPath = $this->resolveMejaTerkawalFallbackPath($tender, $file);
 		}
 
+		$downloadName = method_exists($file, 'downloadFilename')
+			? $file->downloadFilename()
+			: trim((string) ($file->label ?: $file->name ?: 'dokumen'));
+
 		if (! $fullPath || ! is_file($fullPath)) {
 			$relative = \App\Support\AttachmentStorage::relativeForUpload((string) $file->path, (string) $file->name);
-			$downloadName = trim((string) ($file->label ?: $file->name));
-			$extension = pathinfo((string) $file->name, PATHINFO_EXTENSION);
-			if ($extension !== '' && pathinfo($downloadName, PATHINFO_EXTENSION) === '') {
-				$downloadName .= '.' . $extension;
-			}
 			$stored = $relative !== ''
 				? \App\Support\AttachmentStorage::responseOrNull($relative, $downloadName, $file->type ?: null, true)
 				: null;
@@ -1595,12 +1594,6 @@ class TendersController extends Controller
 			}
 
 			abort(404, 'Fail tidak dijumpai.');
-		}
-
-		$downloadName = trim((string) ($file->label ?: $file->name));
-		$extension = pathinfo((string) $file->name, PATHINFO_EXTENSION);
-		if ($extension !== '' && pathinfo($downloadName, PATHINFO_EXTENSION) === '') {
-			$downloadName .= '.' . $extension;
 		}
 
 		return response()->download($fullPath, $downloadName, [

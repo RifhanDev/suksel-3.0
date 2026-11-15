@@ -43,6 +43,53 @@ class Upload extends Model
 		return $name !== '' ? $name : 'Dokumen';
 	}
 
+	/**
+	 * Browser download name. Keep the label, but always keep a real file extension
+	 * so the OS does not save an extensionless / broken file.
+	 */
+	public function downloadFilename(?string $fallbackOriginal = null): string
+	{
+		$base = trim((string) ($this->label ?: $this->name ?: 'dokumen'));
+		if (pathinfo($base, PATHINFO_EXTENSION) !== '') {
+			return $base;
+		}
+
+		foreach ([(string) ($this->name ?? ''), (string) $fallbackOriginal] as $candidate) {
+			$ext = pathinfo(trim($candidate), PATHINFO_EXTENSION);
+			if ($ext !== '') {
+				return $base . '.' . strtolower($ext);
+			}
+		}
+
+		$ext = self::extensionFromMime((string) ($this->type ?? ''));
+		if ($ext !== '') {
+			return $base . '.' . $ext;
+		}
+
+		return $base . '.pdf';
+	}
+
+	public static function extensionFromMime(string $mime): string
+	{
+		$mime = strtolower(trim($mime));
+		$map = [
+			'application/pdf' => 'pdf',
+			'image/jpeg' => 'jpg',
+			'image/jpg' => 'jpg',
+			'image/png' => 'png',
+			'image/gif' => 'gif',
+			'image/webp' => 'webp',
+			'application/msword' => 'doc',
+			'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'docx',
+			'application/vnd.ms-excel' => 'xls',
+			'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'xlsx',
+			'application/zip' => 'zip',
+			'text/plain' => 'txt',
+		];
+
+		return $map[$mime] ?? '';
+	}
+
 	public function fileIsAvailable(): bool
 	{
 		$relative = \App\Support\AttachmentStorage::relativeForUpload(
