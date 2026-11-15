@@ -528,7 +528,15 @@ class PenyediaanIklanController extends Controller
             mkdir($dir, 0755, true);
         }
 
-        $name = Str::uuid() . '.' . $file->getClientOriginalExtension();
+        $extension = strtolower((string) $file->getClientOriginalExtension());
+        if ($extension === '') {
+            $extension = pathinfo((string) $file->getClientOriginalName(), PATHINFO_EXTENSION);
+        }
+        if ($extension === '') {
+            $extension = \App\Upload::extensionFromMime((string) $file->getMimeType()) ?: 'pdf';
+        }
+
+        $name = Str::uuid() . '.' . strtolower($extension);
         \App\Support\AttachmentStorage::moveUploadedFile($file, $dir, $name);
         $relative = "uploads/penyediaan-iklan/{$tenderId}/sokongan/{$name}";
 

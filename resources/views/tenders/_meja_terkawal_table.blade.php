@@ -70,22 +70,9 @@
 						<td class="col-saiz">{{ $doc['size'] ?? '-' }}</td>
 						<td class="col-jenis">{{ $doc['type'] ?? '-' }}</td>
 						<td class="col-tindakan">
-							@php
-								$downloadName = trim((string) ($doc['label'] ?? 'dokumen'));
-								$ext = 'pdf';
-								if (! empty($doc['type']) && str_contains((string) $doc['type'], '/')) {
-									$guess = explode('/', (string) $doc['type'])[1] ?? '';
-									if ($guess !== '' && $guess !== 'octet-stream') {
-										$ext = $guess === 'jpeg' ? 'jpg' : $guess;
-									}
-								}
-								if (pathinfo($downloadName, PATHINFO_EXTENSION) === '') {
-									$downloadName .= '.' . $ext;
-								}
-							@endphp
 							<a href="{{ $doc['url'] }}"
 								class="btn btn-sm btn-primary"
-								download="{{ $downloadName }}">Muat Turun</a>
+								download="{{ $doc['download_name'] ?? $doc['label'] }}">Muat Turun</a>
 						</td>
 					</tr>
 				@endforeach
