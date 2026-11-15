@@ -1039,6 +1039,9 @@
 			}
 
 			function savePenyediaanIklanDraft(done) {
+				if (typeof window.reindexKelulusanRows === 'function') {
+					window.reindexKelulusanRows();
+				}
 				var form = preparePenyediaanIklanForm();
 				if (!form) return;
 
