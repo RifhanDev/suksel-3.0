@@ -309,6 +309,9 @@ $(document).ready(function () {
         if (currentTab === tabs.length - 1) {
             var form = document.getElementById('formPenyediaanIklan');
             if (form) {
+                if (typeof window.reindexKelulusanRows === 'function') {
+                    window.reindexKelulusanRows();
+                }
                 form.action = '{{ route("penyediaanIklan.hantar", $tender) }}';
                 if (typeof CKEDITOR !== 'undefined' && CKEDITOR.instances['syarat_tender']) {
                     CKEDITOR.instances['syarat_tender'].updateElement();
