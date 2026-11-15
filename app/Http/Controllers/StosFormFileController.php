@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesTenderFileAccess;
+use App\Models\Tender as ModernTender;
 use App\Services\StosBackendClient;
 use App\Support\StosStoredFile;
 use App\Tender;
@@ -100,11 +101,11 @@ class StosFormFileController extends Controller
     /**
      * Rewrite STOS absolute storage URLs to local authenticated proxy routes.
      *
-     * @param  Tender  $tender
+     * @param  Tender|ModernTender  $tender
      * @param  array<int, array<string, mixed>>  $dokumens
      * @return array<int, array<string, mixed>>
      */
-    public static function rewriteDokumenUrls(Tender $tender, string $type, array $dokumens): array
+    public static function rewriteDokumenUrls(Tender|ModernTender $tender, string $type, array $dokumens): array
     {
         if (! isset(self::TYPES[$type])) {
             return $dokumens;
