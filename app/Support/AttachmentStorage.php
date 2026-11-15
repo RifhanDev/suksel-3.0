@@ -250,6 +250,20 @@ class AttachmentStorage
         return route('attachments.stream', ['path' => $relative]);
     }
 
+    /**
+     * Same as browserUrl, but null when the file is not on any storage disk.
+     * Use this so the UI can show the DB filename without a dead link.
+     */
+    public static function browserUrlIfExists(string $relative): ?string
+    {
+        $relative = self::normalize($relative);
+        if ($relative === '' || self::locate($relative) === null) {
+            return null;
+        }
+
+        return self::browserUrl($relative);
+    }
+
     public static function urlForUploadModel(object $upload): ?string
     {
         if (! self::isRemote()) {

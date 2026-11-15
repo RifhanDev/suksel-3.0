@@ -21,7 +21,7 @@ class AttachmentController extends Controller
         $name = basename($path);
         $response = AttachmentStorage::responseOrNull($path, $name);
         if (! $response) {
-            abort(404, 'Fail tidak dijumpai pada storan sistem.');
+            abort(404, 'Rekod wujud, tetapi fail "'.$name.'" tidak dijumpai di pelayan storan (NAS).');
         }
 
         return $response;
