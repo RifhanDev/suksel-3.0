@@ -511,7 +511,7 @@ class PenyediaanIklanService
             if ($uploadId) {
                 $upload = Upload::query()
                     ->where('id', $uploadId)
-                    ->where('uploadable_type', 'App\Tender')
+                    ->whereIn('uploadable_type', \App\Tender::uploadMorphTypes())
                     ->where('uploadable_id', $tender->id)
                     ->first();
 
