@@ -844,6 +844,7 @@
         @include('partials.two-factor-penilaian-modal')
     @endauth
     @stack('modals')
+    @include('partials.global_pdf_viewer')
 
     <!-- Scripts -->
     <script src="{{ asset('js/modern.js') }}"></script>
