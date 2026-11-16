@@ -80,7 +80,7 @@
 							</td>
 							<td>
 								@forelse ($exception->files as $key => $value)
-									<button class="btn btn-warning btn-file-view" data-url="{{ $value->url . '/' . $value->name }}">Lihat</button>
+									<button class="btn btn-warning btn-file-view" data-url="{{ method_exists($value, 'fileUrl') ? $value->fileUrl() : ($value->url . '/' . $value->name) }}">Lihat</button>
 								@empty
 									Tiada Fail
 								@endforelse
