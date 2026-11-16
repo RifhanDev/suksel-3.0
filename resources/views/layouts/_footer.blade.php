@@ -106,7 +106,7 @@
 
 						<div class="system-info text-center">
 							<img src="{{ asset('images/sirim3.png') }}" width="100" height="80" alt="SIRIM Certification" class="mb-3">
-							<p class="small fw-bold mb-0">Versi Sistem : STOS Ver 2.3</p>
+							<p class="small fw-bold mb-0">Versi Sistem : STOS Ver 3.0</p>
 						</div>
 					</div>
 				</div>
