@@ -199,6 +199,7 @@ Route::post('register-user', [RegistrationController::class, 'storeRegisterUser'
 // Auth routes
 Route::get('auth/login', [AuthController::class, 'login'])->name('login');
 Route::post('auth/login', [AuthController::class, 'doLogin']);
+Route::post('auth/resend-confirmation', [AuthController::class, 'resendConfirmationEmail'])->name('auth.resend-confirmation');
 Route::get('auth/2fa/verify', [AuthController::class, 'show2FA'])->name('2fa.verify');
 Route::post('auth/2fa/verify', [AuthController::class, 'verify2FA']);
 Route::get('auth/logout', [AuthController::class, 'logout'])->name('logout');

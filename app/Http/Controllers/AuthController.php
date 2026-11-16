@@ -83,6 +83,10 @@ class AuthController extends Controller
 
                if ($user->hasRole('Vendor') && !$user->confirmed) {
                   auth()->logout();
+                  // Remember who failed so the resend button (shown with this alert only)
+                  // can send to them without trusting an email typed into a form.
+                  session()->put('unconfirmed_user_id', $user->id);
+                  session()->flash('show_resend_confirmation', true);
                   session()->flash('error', 'Sila sahkan alamat emel anda terlebih dahulu. Semak inbox emel anda untuk pautan pengesahan.');
                   return redirect('/auth/login');
                }
@@ -156,6 +160,52 @@ class AuthController extends Controller
             }
          }
       }
+   }
+
+   /**
+    * Resend the email-confirmation link to a vendor who was just turned away at
+    * login for being unconfirmed. The user comes from the session set in doLogin(),
+    * so only someone who has just entered that account's correct password can
+    * trigger a send.
+    */
+   public function resendConfirmationEmail()
+   {
+      $user = User::find(session('unconfirmed_user_id'));
+
+      if (!$user || $user->confirmed || !$user->hasRole('Vendor')) {
+         session()->forget('unconfirmed_user_id');
+         return redirect('/auth/login');
+      }
+
+      // One send per 2 minutes per session, so the button cannot be used to flood a mailbox.
+      $lastSent = session('confirmation_resent_at');
+      if ($lastSent && now()->timestamp - $lastSent < 120) {
+         session()->flash('show_resend_confirmation', true);
+         return redirect('/auth/login')->with('error', 'Emel pengesahan baru sahaja dihantar. Sila tunggu 2 minit sebelum menghantar semula.');
+      }
+
+      // confirm() clears the code once used, and many accounts migrated from 2.0 have none.
+      if (empty($user->confirmation_code)) {
+         $user->confirmation_code = md5(uniqid(mt_rand(), true));
+         User::where('id', $user->id)->update(['confirmation_code' => $user->confirmation_code]);
+      }
+
+      $email  = trim($user->email);
+      $status = $this->sendMail('html', $email, 'Sahkan Alamat Emel - Sistem Tender Online Selangor', '', 'auth.emails.confirm', [
+         'emailUser'         => $user,
+         'user_name'         => $user->name,
+         'confirmation_code' => $user->confirmation_code,
+      ]);
+
+      if (!$this->emailSendSucceeded($status)) {
+         Log::error('Resend confirmation email from login page failed', ['user_id' => $user->id, 'reason' => $status]);
+         session()->flash('show_resend_confirmation', true);
+         return redirect('/auth/login')->with('error', 'Emel pengesahan gagal dihantar. Sila cuba lagi sebentar atau hubungi pentadbir sistem.');
+      }
+
+      session()->put('confirmation_resent_at', now()->timestamp);
+
+      return redirect('/auth/login')->with('notice', 'Emel pengesahan telah dihantar semula ke ' . $email . '. Sila semak inbox atau folder spam anda dan klik pautan pengesahan sebelum log masuk.');
    }
 
    /**
