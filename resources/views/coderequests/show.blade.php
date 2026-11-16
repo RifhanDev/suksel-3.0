@@ -901,8 +901,9 @@
                         @endif
                     </div>
                 </div>
-            </div> <!-- End col-12 -->
-        </div> <!-- End Row -->
+            </div> <!-- End card -->
+        </div> <!-- End col-12 -->
+    </div> <!-- End Row -->
 
 
     @endsection
@@ -938,47 +939,7 @@
             </div>
         </div>
 
-        <!-- PDF VIEWER MODAL — draggable, no blocking backdrop so request info stays visible -->
-        <div class="modal fade" id="pdfViewerModal" tabindex="-1" aria-hidden="true"
-            data-bs-backdrop="false" data-bs-keyboard="true">
-            <div class="modal-dialog modal-lg modal-dialog-scrollable pdf-viewer-dialog">
-                <div class="modal-content border-0 shadow-lg rounded-3">
-                    <div class="modal-header pdf-viewer-drag-handle">
-                        <h5 class="modal-title fw-bold mb-0">
-                            Paparan Dokumen
-                            <small class="text-muted fw-normal ms-2">(seret untuk alih)</small>
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body p-0 bg-light">
-                        <iframe id="pdfIframe" src="" width="100%" height="100%"
-                            style="border:none; min-height: 70vh;"></iframe>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <style>
-            #pdfViewerModal {
-                pointer-events: none;
-            }
-            #pdfViewerModal .modal-dialog {
-                pointer-events: auto;
-                margin: 1.5rem auto 1.5rem 2rem;
-                max-width: min(720px, 92vw);
-            }
-            #pdfViewerModal .pdf-viewer-drag-handle {
-                cursor: move;
-                user-select: none;
-                background: #f8fafc;
-            }
-            #pdfViewerModal.show {
-                background: transparent !important;
-            }
-            body.modal-open:has(#pdfViewerModal.show) {
-                overflow: auto !important;
-                padding-right: 0 !important;
-            }
-        </style>
+        <!-- PDF viewer: global partials.global_pdf_viewer (layouts) -->
 
         <!-- REJECT MODAL -->
         @if ($request->canProcess())
@@ -1063,28 +1024,7 @@
             });
 
             document.addEventListener("DOMContentLoaded", function() {
-                // Document Viewer Modal Logic
-                document.body.addEventListener('click', function(e) {
-                    var target = e.target.closest('.btn-file-view');
-
-                    if (target) {
-                        e.preventDefault();
-
-                        var url = target.getAttribute('data-url');
-
-                        if (url) {
-                            // Open Modal
-                            var iframe = document.getElementById('pdfIframe');
-                            var modalEl = document.getElementById('pdfViewerModal');
-
-                            if (iframe && modalEl) {
-                                iframe.src = url;
-                                var myModal = new bootstrap.Modal(modalEl);
-                                myModal.show();
-                            }
-                        }
-                    }
-                });
+                // PDF open/drag/resize handled by partials.global_pdf_viewer
 
                 // Approve Modal Logic
                 var approveBtn = document.getElementById('btn-approve');
@@ -1106,62 +1046,6 @@
 
                         // Submit the form
                         $("#approveForm").submit();
-                    });
-                }
-
-                var pdfModal = document.getElementById('pdfViewerModal');
-                if (pdfModal) {
-                    var pdfDialog = pdfModal.querySelector('.modal-dialog');
-                    var pdfDragHandle = pdfModal.querySelector('.pdf-viewer-drag-handle');
-                    var pdfDragging = false;
-                    var pdfDragOrigin = { x: 0, y: 0, left: 0, top: 0 };
-
-                    function resetPdfDialogPosition() {
-                        if (!pdfDialog) return;
-                        pdfDialog.style.transform = '';
-                        pdfDialog.style.left = '';
-                        pdfDialog.style.top = '';
-                        pdfDialog.style.margin = '';
-                        pdfDialog.style.position = '';
-                    }
-
-                    if (pdfDragHandle && pdfDialog) {
-                        pdfDragHandle.addEventListener('mousedown', function(e) {
-                            if (e.target.closest('.btn-close')) return;
-                            pdfDragging = true;
-                            var rect = pdfDialog.getBoundingClientRect();
-                            pdfDialog.style.position = 'fixed';
-                            pdfDialog.style.margin = '0';
-                            pdfDialog.style.left = rect.left + 'px';
-                            pdfDialog.style.top = rect.top + 'px';
-                            pdfDialog.style.transform = 'none';
-                            pdfDragOrigin = {
-                                x: e.clientX,
-                                y: e.clientY,
-                                left: rect.left,
-                                top: rect.top
-                            };
-                            e.preventDefault();
-                        });
-
-                        document.addEventListener('mousemove', function(e) {
-                            if (!pdfDragging) return;
-                            var nextLeft = pdfDragOrigin.left + (e.clientX - pdfDragOrigin.x);
-                            var nextTop = pdfDragOrigin.top + (e.clientY - pdfDragOrigin.y);
-                            var maxLeft = window.innerWidth - pdfDialog.offsetWidth - 8;
-                            var maxTop = window.innerHeight - 48;
-                            pdfDialog.style.left = Math.min(Math.max(8, nextLeft), Math.max(8, maxLeft)) + 'px';
-                            pdfDialog.style.top = Math.min(Math.max(8, nextTop), Math.max(8, maxTop)) + 'px';
-                        });
-
-                        document.addEventListener('mouseup', function() {
-                            pdfDragging = false;
-                        });
-                    }
-
-                    pdfModal.addEventListener('hidden.bs.modal', function() {
-                        document.getElementById('pdfIframe').src = '';
-                        resetPdfDialogPosition();
                     });
                 }
 
