@@ -693,11 +693,12 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('/ref/type-of-perolehan-by-kategori', [RefKategoriJenisPerolehanController::class, 'getTypeOfPerolehanByKategori'])->name('getTypeOfPerolehanByKategori');
 
 	Route::get('vendors/select', [VendorsController::class, 'select']);
-	Route::resource('vendors', VendorsController::class);
+	// Static paths must be registered before vendors/{vendor} from the resource.
 	Route::get('vendors/new', [VendorsController::class, 'pendingRegistrationIndex']);
 	Route::get('vendors/approval', [VendorsController::class, 'approvalNew1Index']);
 	Route::get('vendors/changes', [VendorsController::class, 'approvalEdit1Index']);
 	Route::get('vendors/emails', [VendorsController::class, 'emails']);
+	Route::resource('vendors', VendorsController::class);
 	Route::get('vendor/{vendor_id}/approve', [VendorsController::class, 'approve']);
 	Route::post('vendor/{vendor_id}/reject', [VendorsController::class, 'reject']);
 	Route::get('vendors/{vendor}/subscriptions/{id}/receipt', [SubscriptionsController::class, 'receipt'])->name('vendors.subscriptions.receipt');
