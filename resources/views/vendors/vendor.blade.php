@@ -976,54 +976,8 @@
     </div>
 </div>
 
-@push('modals')
-    <!-- MODAL -->
-    <div class="modal fade" id="pdfViewerModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content h-100 border-0 shadow-lg rounded-3">
-                <div class="modal-body p-0 bg-light">
-                    <iframe id="pdfIframe" src="" width="100%" height="100%"
-                        style="border:none; min-height: 85vh;"></iframe>
-                </div>
-            </div>
-        </div>
-    </div>
-@endpush
-
 @push('scripts')
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            document.body.addEventListener('click', function(e) {
-                var target = e.target.closest('.view-pdf-btn, .btn-file-view');
-
-                if (target) {
-                    e.preventDefault();
-
-                    var url = target.getAttribute('data-url') || target.getAttribute('href');
-
-                    if (url) {
-                        // Open Modal
-                        var iframe = document.getElementById('pdfIframe');
-                        var modalEl = document.getElementById('pdfViewerModal');
-
-                        if (iframe && modalEl) {
-                            iframe.src = url;
-                            var myModal = new bootstrap.Modal(modalEl);
-                            myModal.show();
-                        }
-                    }
-                }
-            });
-
-            var pdfModal = document.getElementById('pdfViewerModal');
-            if (pdfModal) {
-                pdfModal.addEventListener('hidden.bs.modal', function() {
-                    document.getElementById('pdfIframe').src = '';
-                });
-            }
-        });
-    </script>
-
+    {{-- PDF viewer: partials.global_pdf_viewer --}}
     @if (session('cidb_integrated'))
         <script>
             document.addEventListener('DOMContentLoaded', function() {

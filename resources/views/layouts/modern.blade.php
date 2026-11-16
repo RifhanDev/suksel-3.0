@@ -2796,6 +2796,7 @@
 	{{-- <script src='https://cdn.jsdelivr.net/npm/botman-web-widget@0/build/js/widget.js'></script> --}}
 	<script src='{{ asset('packages/botman/build/js/widget.js') }}'></script>
 
+	@include('partials.global_pdf_viewer')
 	@yield('scripts')
 </body>
 
