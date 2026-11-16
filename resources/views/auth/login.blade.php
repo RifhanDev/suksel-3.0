@@ -117,6 +117,26 @@
 			border-left: 3px solid var(--sg-red);
 		}
 
+		.btn-resend-confirmation {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.4rem;
+			margin-top: 0.6rem;
+			padding: 0.4rem 0.85rem;
+			font-size: 0.8rem;
+			font-weight: 600;
+			color: #fff;
+			background-color: var(--sg-red);
+			border: none;
+			border-radius: 6px;
+			cursor: pointer;
+			transition: opacity 0.15s ease;
+		}
+
+		.btn-resend-confirmation:hover {
+			opacity: 0.9;
+		}
+
 		/* =========================================
 								REGISTER
 								========================================= */
@@ -213,6 +233,9 @@
 	</style>
 @endsection
 
+{{-- Errors are shown inside the login card (with the resend button), not in the layout's top alert --}}
+@section('hide_layout_error', '1')
+
 @section('content')
 	<div class="row justify-content-center align-items-center" style="min-height: 80vh;">
 
@@ -256,9 +279,14 @@
 								@else
 									{{ session('error') }}
 									@if (session('show_resend_confirmation'))
-										<form method="POST" action="{{ route('auth.resend-confirmation') }}" class="mt-2">
+										<form method="POST" action="{{ route('auth.resend-confirmation') }}">
 											@csrf
-											<button type="submit" class="btn btn-sm btn-outline-danger fw-semibold">
+											<button type="submit" class="btn-resend-confirmation">
+												<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+													stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+													<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+													<polyline points="22,6 12,13 2,6" />
+												</svg>
 												Hantar semula emel pengesahan
 											</button>
 										</form>
