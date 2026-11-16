@@ -13,23 +13,23 @@
 		$vendorCanEdit = Auth::check() && Auth::user()->vendor_id && $tender->hasParticipate(Auth::user()->vendor_id);
 		$dokumenMode = $vendorCanEdit ? 'vendor' : 'admin';
 		$dokumenList = $tenderDokumen->items($dokumenMode, $vendorCanEdit ? (int) Auth::user()->vendor_id : null);
-		// 2.0 Dokumen Sebut Harga/Tender = uploads public=0. Prefer that list when the
-		// 3.0 checklist is empty so migrated NAS files still appear like STOS 2.0.
+		// Show downloadable uploads.public=0 whenever the viewer may see files.
+		// Do not require showDokumenSenaraiTab() — that hid migrated NAS files when
+		// kaedah was Iklan Sahaja / unknown, even though DB rows existed.
+		$canSeeTenderDownloads = Auth::check() && $tender->canShowFiles(Auth::user()->vendor_id ?? null);
 		$legacyTenderFileCount = $tender->files()->where('public', 0)->count();
 		$hasIklanDokumenTab = $tender->showDokumenSenaraiTab()
 			&& $tender->usesIklanDokumen()
 			&& $tender->iklanDokumens->isNotEmpty();
 		$useLegacyAsDokumenSenarai = ! $hasIklanDokumenTab
-			&& $tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id ?? null)
-			&& $legacyTenderFileCount > 0
-			&& count($dokumenList) === 0;
+			&& $canSeeTenderDownloads
+			&& $legacyTenderFileCount > 0;
 		$useChecklistDokumenSenarai = ! $hasIklanDokumenTab
-			&& $tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id ?? null)
-			&& ! $useLegacyAsDokumenSenarai;
-		$usePlainLegacyTab = ! $tender->isIklanSahaja()
-			&& ! $tender->showDokumenSenaraiTab()
-			&& Auth::check()
-			&& $tender->canShowFiles(Auth::user()->vendor_id);
+			&& $canSeeTenderDownloads
+			&& $tender->showDokumenSenaraiTab()
+			&& ! $useLegacyAsDokumenSenarai
+			&& count($dokumenList) > 0;
+		$usePlainLegacyTab = false;
 	@endphp
 
 	<div class="row">

@@ -810,7 +810,7 @@
                                         <td class="ps-4 py-3" @if ($request->status == 'pending') colspan="2" @endif>
                                             <button
                                                 class="btn btn-warning btn-sm btn-file-view d-flex align-items-center gap-2 shadow-sm"
-                                                data-url="{{ $file->url . '/' . $file->name }}">
+                                                data-url="{{ method_exists($file, 'fileUrl') ? $file->fileUrl() : ($file->url . '/' . $file->name) }}">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -901,8 +901,9 @@
                         @endif
                     </div>
                 </div>
-            </div> <!-- End col-12 -->
-        </div> <!-- End Row -->
+            </div> <!-- End card -->
+        </div> <!-- End col-12 -->
+    </div> <!-- End Row -->
 
 
     @endsection
@@ -938,21 +939,7 @@
             </div>
         </div>
 
-        <!-- PDF VIEWER MODAL -->
-        <div class="modal fade" id="pdfViewerModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-                <div class="modal-content h-100 border-0 shadow-lg rounded-3">
-                    <div class="modal-header">
-                        <h5 class="modal-title fw-bold">Paparan Dokumen</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body p-0 bg-light">
-                        <iframe id="pdfIframe" src="" width="100%" height="100%"
-                            style="border:none; min-height: 85vh;"></iframe>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <!-- PDF viewer: global partials.global_pdf_viewer (layouts) -->
 
         <!-- REJECT MODAL -->
         @if ($request->canProcess())
@@ -1037,28 +1024,7 @@
             });
 
             document.addEventListener("DOMContentLoaded", function() {
-                // Document Viewer Modal Logic
-                document.body.addEventListener('click', function(e) {
-                    var target = e.target.closest('.btn-file-view');
-
-                    if (target) {
-                        e.preventDefault();
-
-                        var url = target.getAttribute('data-url');
-
-                        if (url) {
-                            // Open Modal
-                            var iframe = document.getElementById('pdfIframe');
-                            var modalEl = document.getElementById('pdfViewerModal');
-
-                            if (iframe && modalEl) {
-                                iframe.src = url;
-                                var myModal = new bootstrap.Modal(modalEl);
-                                myModal.show();
-                            }
-                        }
-                    }
-                });
+                // PDF open/drag/resize handled by partials.global_pdf_viewer
 
                 // Approve Modal Logic
                 var approveBtn = document.getElementById('btn-approve');
@@ -1080,13 +1046,6 @@
 
                         // Submit the form
                         $("#approveForm").submit();
-                    });
-                }
-
-                var pdfModal = document.getElementById('pdfViewerModal');
-                if (pdfModal) {
-                    pdfModal.addEventListener('hidden.bs.modal', function() {
-                        document.getElementById('pdfIframe').src = '';
                     });
                 }
 

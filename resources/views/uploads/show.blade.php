@@ -18,7 +18,7 @@
 					<td>{{Carbon\Carbon::parse($upload->created_at)->format('d/m/Y')}}
 					<td style="text-align: center">
 						{{-- <a href="{{$upload->url}}/{{$upload->name}}" class="btn btn-primary" download>Muat Turun</a> --}}
-                        <button class="btn btn-primary btn-file-view" data-url="{{ $upload->url . '/' . $upload->name }}">Lihat</button>
+                        <button class="btn btn-primary btn-file-view" data-url="{{ method_exists($upload, 'fileUrl') ? $upload->fileUrl() : ($upload->url . '/' . $upload->name) }}">Lihat</button>
 					</td>
 				</tr>
 			@endforeach

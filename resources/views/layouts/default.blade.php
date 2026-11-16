@@ -1231,7 +1231,7 @@
 				</button>
 				<h1 class="navbar-brand navbar-brand-autodark">
 					<a href="/">
-						<img src="{{ asset('images/header.png') }}" width="110" height="32" alt="Sistem Tender Online Selangor"
+						<img src="{{ asset('images/sistem-perolehan-selangor-3-0.png') }}" width="96" height="32" alt="Sistem Perolehan Selangor 3.0"
 							class="navbar-brand-image">
 					</a>
 				</h1>
@@ -1536,6 +1536,7 @@
 	<script src="{{ asset('js/prevent-double-submit.js') }}"></script>
 	<script src="{{ asset('js/restrict-upload-types.js') }}"></script>
 
+	@include('partials.global_pdf_viewer')
 	@yield('scripts')
 
 	<!-- Login Modal JavaScript -->
