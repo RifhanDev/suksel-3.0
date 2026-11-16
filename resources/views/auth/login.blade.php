@@ -255,6 +255,14 @@
 									</ul>
 								@else
 									{{ session('error') }}
+									@if (session('show_resend_confirmation'))
+										<form method="POST" action="{{ route('auth.resend-confirmation') }}" class="mt-2">
+											@csrf
+											<button type="submit" class="btn btn-sm btn-outline-danger fw-semibold">
+												Hantar semula emel pengesahan
+											</button>
+										</form>
+									@endif
 								@endif
 							</div>
 						</div>
