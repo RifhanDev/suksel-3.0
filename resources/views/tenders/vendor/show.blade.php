@@ -267,7 +267,7 @@
 			}
 		}
 		$dokumenList = $tenderDokumen->items('vendor', $vendorHasPurchased ? (int) Auth::user()->vendor_id : null);
-		// 2.0 Dokumen Sebut Harga/Tender = uploads public=0 (NAS legacy). Use when 3.0 checklist empty.
+		// 2.0 Dokumen Sebut Harga/Tender = uploads public=0 (NAS). Prefer downloads whenever present.
 		$legacyTenderFileCount = $tender->files()->where('public', 0)->count();
 		$hasIklanDokumenTab = ! $tender->isIklanSahaja()
 			&& $tender->showDokumenSenaraiTab()
@@ -277,12 +277,12 @@
 		$useLegacyAsDokumenSenarai = ! $hasIklanDokumenTab
 			&& ! $tender->isIklanSahaja()
 			&& $tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id ?? null)
-			&& $legacyTenderFileCount > 0
-			&& count($dokumenList) === 0;
+			&& $legacyTenderFileCount > 0;
 		$useChecklistDokumenSenarai = ! $hasIklanDokumenTab
 			&& ! $tender->isIklanSahaja()
 			&& $tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id ?? null)
-			&& ! $useLegacyAsDokumenSenarai;
+			&& ! $useLegacyAsDokumenSenarai
+			&& count($dokumenList) > 0;
 		$usePlainLegacyTab = ! $tender->isIklanSahaja()
 			&& ! $tender->showDokumenSenaraiTab()
 			&& $tender->canShowFiles(Auth::user()->vendor_id);
