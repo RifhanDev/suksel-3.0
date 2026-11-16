@@ -567,6 +567,16 @@
 		@isset($tender)
 			@method('PUT')
 		@endisset
+		@if ($errors->any())
+			<div class="alert alert-danger mx-3 mt-3 mb-0" role="alert">
+				<strong>Sila semak maklumat berikut:</strong>
+				<ul class="mb-0 mt-2">
+					@foreach ($errors->all() as $error)
+						<li>{{ $error }}</li>
+					@endforeach
+				</ul>
+			</div>
+		@endif
 
 		<div class="modern-card">
 
@@ -903,7 +913,7 @@
 											{{ $selectedZonLokasi == '1' ? 'required' : '' }}>
 											<option value="" {{ empty($selectedLokalitiId) ? 'selected' : '' }} disabled>Pilih...</option>
 											@foreach ($lokalitis as $lokaliti)
-												@continue(strcasecmp(trim((string) $lokaliti->name), 'Zon Terpilih') === 0)
+												@continue(strcasecmp(trim((string) $lokaliti->name), 'Daerah Terpilih') !== 0)
 												<option value="{{ $lokaliti->id }}" data-lokaliti-name="{{ strtolower(trim($lokaliti->name)) }}"
 													{{ (string) $selectedLokalitiId === (string) $lokaliti->id ? 'selected' : '' }}>
 													{{ $lokaliti->name }}</option>
