@@ -45,8 +45,10 @@
 			table.table ul { margin: 0; padding-left: 15px; }
 			table.table li { margin: 0; }
 			footer { position: relative; z-index: 2; padding: 8px 16px; font-size: 7pt; color: #5c001f; text-align: center; }
-			#watermark { position: fixed; top: 35%; left: 0; z-index: 0; width: 100%; text-align: center; }
-			#watermark .watermark-grid { display: none; }
+			#watermark { position: fixed; top: 0; left: 0; z-index: 0; width: 100%; height: 100%; pointer-events: none; }
+			#watermark .watermark-pdf { position: absolute; top: 0; left: -10%; z-index: 0; width: 120%; height: 100%; table-layout: fixed; border-collapse: collapse; opacity: 0.1; transform: rotate(-45deg); transform-origin: center center; }
+			#watermark .watermark-pdf td { width: 16.666%; height: 16.666%; padding: 0; border: 0; text-align: center; vertical-align: middle; }
+			#watermark .watermark-pdf img { width: 105px; height: auto; opacity: 0.9; }
 			#bg-text { display: none; }
 		@else
 		.container {
@@ -77,7 +79,7 @@
 			justify-items: center;
 			align-items: center;
 			gap: 32px;
-			transform: rotate(-20deg);
+			transform: rotate(-45deg);
 			transform-origin: center;
 			opacity: 0.1;
 			-webkit-print-color-adjust: exact;
@@ -109,7 +111,6 @@
 	<style>
 		/* Keep the same certificate content and typography hierarchy as the iframe, sized for one A4 page. */
 		.container, header, section.body, footer { box-sizing: border-box; }
-		#watermark .watermark-grid { display: none; }
 	</style>
 	@endif
 	<style>
@@ -137,13 +138,26 @@
 <body>
 	<div class="container">
 		<div id="watermark">
-			<div class="watermark-grid">
-				@if (empty($isPdf))
+			@if (!empty($isPdf))
+				@php
+					$selangorWatermark = 'data:image/png;base64,' . base64_encode(file_get_contents(public_path('images/02_selangor.png')));
+				@endphp
+				<table class="watermark-pdf" aria-hidden="true">
+					@for ($row = 0; $row < 6; $row++)
+						<tr>
+							@for ($column = 0; $column < 6; $column++)
+								<td><img src="{{ $selangorWatermark }}" alt=""></td>
+							@endfor
+						</tr>
+					@endfor
+				</table>
+			@else
+				<div class="watermark-grid">
 					@for ($i = 0; $i < 36; $i++)
 						<span><img src="{{ asset('images/02_selangor.png') }}" alt="Selangor watermark"></span>
 					@endfor
-				@endif
-			</div>
+				</div>
+			@endif
 			<p id="bg-text">{{ $type }}</p>
 		</div>
 		<header>
