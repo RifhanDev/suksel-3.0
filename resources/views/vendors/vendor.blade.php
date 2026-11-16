@@ -981,9 +981,21 @@
     <div class="modal fade" id="pdfViewerModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content h-100 border-0 shadow-lg rounded-3">
+                <div class="modal-header bg-white">
+                    <h5 class="modal-title fw-bold">Sijil Pengesahan Syarikat</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                </div>
                 <div class="modal-body p-0 bg-light">
                     <iframe id="pdfIframe" src="" width="100%" height="100%"
                         style="border:none; min-height: 85vh;"></iframe>
+                </div>
+                <div class="modal-footer bg-white">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Tutup</button>
+                    <a href="{{ route('vendors.certificate.download', $vendor->id) }}"
+                        class="btn btn-danger d-inline-flex align-items-center gap-2">
+                        <i class="bi bi-download"></i>
+                        Muat Turun PDF
+                    </a>
                 </div>
             </div>
         </div>
