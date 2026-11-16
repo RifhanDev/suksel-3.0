@@ -131,7 +131,7 @@
 					<tr>
 						<th class="col-lg-3">{{ $value->label }}</th>
 						<td><button class="btn btn-warning btn-file-view"
-								data-url="{{ $value->url . '/' . $value->name }}">Lihat</button></td>
+								data-url="{{ method_exists($value, 'fileUrl') ? $value->fileUrl() : ($value->url . '/' . $value->name) }}">Lihat</button></td>
 					</tr>
 				@empty
 					<td colspan="2">Tiada Fail</td>

@@ -810,7 +810,7 @@
                                         <td class="ps-4 py-3" @if ($request->status == 'pending') colspan="2" @endif>
                                             <button
                                                 class="btn btn-warning btn-sm btn-file-view d-flex align-items-center gap-2 shadow-sm"
-                                                data-url="{{ $file->url . '/' . $file->name }}">
+                                                data-url="{{ method_exists($file, 'fileUrl') ? $file->fileUrl() : ($file->url . '/' . $file->name) }}">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
