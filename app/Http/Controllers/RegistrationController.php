@@ -159,6 +159,9 @@ class RegistrationController extends Controller
 
 
         $validator = Validator::make($request->all(), [
+            'ssm_expiry'      => Vendor::ssmExpiryValidationRules(
+                $request->input('organization_type') ?: auth()->user()?->vendor?->organization_type
+            ),
             'mof'             => ['nullable', 'mimes:pdf', 'max:5120'],
             'cidb'            => ['nullable', 'mimes:pdf', 'max:5120'],
             'ssm'             => ['nullable', 'mimes:pdf', 'max:5120'],
@@ -169,7 +172,7 @@ class RegistrationController extends Controller
         if ($validator->fails())
             return redirect()->back()
                 ->withErrors($validator, 'pdf_upload')
-                ->with('danger', 'Fail Dimuat Naik Tidak Betul.');
+                ->with('danger', 'Sila semak Tarikh Tamat Sijil SSM dan fail yang dimuat naik.');
 
         $user = auth()->user();
         if (!$user || !$user->vendor) {
@@ -214,11 +217,7 @@ class RegistrationController extends Controller
 
         $data['submission_date'] = date('Y-m-d');
 
-        // convert ssm_expiry
-        $ssm_expiry_input = $data["ssm_expiry"]; // Your string representation of a date
-        $ssm_expiry_input_format = 'd/m/Y'; // Your custom date format
-        $new_ssm_expiry = Carbon::createFromFormat($ssm_expiry_input_format, $ssm_expiry_input);
-        $data["ssm_expiry"] = $new_ssm_expiry->format('Y-m-d');
+        $data['ssm_expiry'] = Vendor::normalizeSsmExpiry($data['ssm_expiry'] ?? null);
 
         if (!$vendor->update($data)) {
             return $this->_validation_error($vendor);
@@ -310,7 +309,7 @@ class RegistrationController extends Controller
             'status' => 'pending',
             'user_id' => $user->id,
             'organization_unit_id' => isset($gateway) ? $gateway->organization_unit_id : Config::get('app.global_cart_ou'),
-            'amount' => 100,
+            'amount' => config('app.vendor_registration_fee', 0.10),
             'ip' => request()->ip(),
             'gateway_id' => isset($gateway) ? $gateway->id : null,
             'cached_data' => serialize($cached_data)

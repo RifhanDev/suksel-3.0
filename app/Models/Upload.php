@@ -30,6 +30,30 @@ class Upload extends Model
 		return \App\Support\AttachmentStorage::urlForUploadModel($this) ?? $value;
 	}
 
+	/**
+	 * Full browser URL for the file itself.
+	 * Older views used url (directory) + '/' + name; on NAS urlForUploadModel
+	 * already returns a complete stream URL, so concatenating name again breaks banners.
+	 */
+	public function fileUrl(): string
+	{
+		$relative = \App\Support\AttachmentStorage::relativeForUpload(
+			(string) ($this->path ?? ''),
+			(string) ($this->name ?? '')
+		);
+		if ($relative !== '') {
+			return \App\Support\AttachmentStorage::browserUrl($relative);
+		}
+
+		$base = rtrim((string) ($this->attributes['url'] ?? ''), '/');
+		$name = ltrim((string) ($this->name ?? ''), '/');
+		if ($base !== '' && $name !== '') {
+			return $base . '/' . $name;
+		}
+
+		return $base !== '' ? $base : '#';
+	}
+
 	/** Filename for UI — always from DB, even if the NAS file is missing. */
 	public function displayName(): string
 	{
@@ -41,6 +65,53 @@ class Upload extends Model
 		$name = trim((string) ($this->name ?? ''));
 
 		return $name !== '' ? $name : 'Dokumen';
+	}
+
+	/**
+	 * Browser download name. Keep the label, but always keep a real file extension
+	 * so the OS does not save an extensionless / broken file.
+	 */
+	public function downloadFilename(?string $fallbackOriginal = null): string
+	{
+		$base = trim((string) ($this->label ?: $this->name ?: 'dokumen'));
+		if (pathinfo($base, PATHINFO_EXTENSION) !== '') {
+			return $base;
+		}
+
+		foreach ([(string) ($this->name ?? ''), (string) $fallbackOriginal] as $candidate) {
+			$ext = pathinfo(trim($candidate), PATHINFO_EXTENSION);
+			if ($ext !== '') {
+				return $base . '.' . strtolower($ext);
+			}
+		}
+
+		$ext = self::extensionFromMime((string) ($this->type ?? ''));
+		if ($ext !== '') {
+			return $base . '.' . $ext;
+		}
+
+		return $base . '.pdf';
+	}
+
+	public static function extensionFromMime(string $mime): string
+	{
+		$mime = strtolower(trim($mime));
+		$map = [
+			'application/pdf' => 'pdf',
+			'image/jpeg' => 'jpg',
+			'image/jpg' => 'jpg',
+			'image/png' => 'png',
+			'image/gif' => 'gif',
+			'image/webp' => 'webp',
+			'application/msword' => 'doc',
+			'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'docx',
+			'application/vnd.ms-excel' => 'xls',
+			'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'xlsx',
+			'application/zip' => 'zip',
+			'text/plain' => 'txt',
+		];
+
+		return $map[$mime] ?? '';
 	}
 
 	public function fileIsAvailable(): bool
@@ -268,10 +339,6 @@ class Upload extends Model
 	}
 	
 	public function previewUrl() {
-	
-	}
-	
-	public function fileUrl() {
 	
 	}
 }

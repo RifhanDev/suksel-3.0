@@ -9,6 +9,7 @@ use App\Models\PetenderPerformance;
 use \Venturecraft\Revisionable\RevisionableTrait;
 use App\Upload;
 use App\VendorCode;
+use Illuminate\Validation\Rule;
 
 class Vendor extends Model
 {
@@ -127,6 +128,38 @@ class Vendor extends Model
 	public static function setRules($name)
 	{
 		self::$rules = self::$_rules[$name];
+	}
+
+	public static function ssmExpiryRequiredFor(?string $organizationType): bool
+	{
+		return in_array($organizationType, [
+			'ROB: PERSEORANGAN',
+			'ROB: PERKONGSIAN',
+		], true);
+	}
+
+	public static function ssmExpiryValidationRules(?string $organizationType): array
+	{
+		return [
+			Rule::requiredIf(self::ssmExpiryRequiredFor($organizationType)),
+			'nullable',
+			'date_format:d/m/Y,Y-m-d',
+		];
+	}
+
+	public static function normalizeSsmExpiry(?string $value): ?string
+	{
+		$value = trim((string) $value);
+
+		if ($value === '') {
+			return null;
+		}
+
+		if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+			return $value;
+		}
+
+		return Carbon::createFromFormat('d/m/Y', $value)->format('Y-m-d');
 	}
 
 	/**

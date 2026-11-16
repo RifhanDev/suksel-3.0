@@ -32,7 +32,10 @@ class CircularController extends Controller
                 })
                 ->addColumn('actions', function ($circular) {
 
-                    $link = ($circular->pdf_link) ? $circular->pdf_link : $circular->file->url . '/' . $circular->file->name;
+                    $link = $circular->pdf_link
+                        ?: (method_exists($circular->file, 'fileUrl')
+                            ? $circular->file->fileUrl()
+                            : ($circular->file->url . '/' . $circular->file->name));
 
                     $actions   = [];
                     $actions[] = link_to_route('circulars.edit', 'Kemaskini', $circular->id, ['class' => 'btn btn-sm btn-warning rounded-8 px-3']);

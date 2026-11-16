@@ -537,7 +537,12 @@ class PenyediaanIklanService
                 }
             }
 
-            $upload = $this->createTenderMejaUpload($tender, $sourcePath, $nama);
+            $upload = $this->createTenderMejaUpload(
+                $tender,
+                $sourcePath,
+                $nama,
+                (string) ($doc['original_name'] ?? $doc['path'] ?? '')
+            );
             $keptUploadIds[] = (int) $upload->id;
             $updated[] = array_merge($doc, [
                 'upload_id' => (int) $upload->id,
@@ -562,7 +567,7 @@ class PenyediaanIklanService
         return $updated;
     }
 
-    protected function createTenderMejaUpload(Tender $tender, string $sourcePath, string $label): Upload
+    protected function createTenderMejaUpload(Tender $tender, string $sourcePath, string $label, string $originalName = ''): Upload
     {
         $hash = Str::random(40);
         $relativeDir = 'uploads/' . $hash;
@@ -571,13 +576,23 @@ class PenyediaanIklanService
             mkdir($destDir, 0755, true);
         }
 
-        $filename = basename($sourcePath);
+        $filename = $this->mejaStoredFilename($sourcePath, $originalName, $label);
         if (! copy($sourcePath, $destDir . $filename)) {
             throw new \RuntimeException('Gagal menyalin fail dokumen meja terkawal.');
         }
 
         $fullPath = $destDir . $filename;
         $mime = mime_content_type($fullPath) ?: 'application/octet-stream';
+
+        // tempnam() sources have no extension; sniff mime and rename before watermark/download.
+        if (pathinfo($filename, PATHINFO_EXTENSION) === '') {
+            $ext = Upload::extensionFromMime($mime) ?: 'pdf';
+            $renamed = pathinfo($filename, PATHINFO_FILENAME) . '.' . $ext;
+            if (@rename($fullPath, $destDir . $renamed)) {
+                $filename = $renamed;
+                $fullPath = $destDir . $filename;
+            }
+        }
 
         if ($mime === 'application/pdf' && method_exists($tender, 'setWatermark')) {
             try {
@@ -608,6 +623,23 @@ class PenyediaanIklanService
         $upload->save();
 
         return $upload;
+    }
+
+    protected function mejaStoredFilename(string $sourcePath, string $originalName, string $label): string
+    {
+        $filename = basename($sourcePath);
+        if (pathinfo($filename, PATHINFO_EXTENSION) !== '') {
+            return $filename;
+        }
+
+        foreach ([$originalName, $label] as $candidate) {
+            $ext = pathinfo(trim((string) $candidate), PATHINFO_EXTENSION);
+            if ($ext !== '') {
+                return Str::uuid() . '.' . strtolower($ext);
+            }
+        }
+
+        return Str::uuid() . '.pdf';
     }
 
     protected function deleteTenderUpload(Upload $upload): void
@@ -675,9 +707,19 @@ class PenyediaanIklanService
             return null;
         }
 
-        file_put_contents($tmp, $contents);
+        $ext = pathinfo($relative, PATHINFO_EXTENSION);
+        $target = $ext !== '' ? $tmp . '.' . strtolower($ext) : $tmp;
+        if ($target !== $tmp) {
+            @unlink($tmp);
+        }
 
-        return $tmp;
+        if (file_put_contents($target, $contents) === false) {
+            @unlink($target);
+
+            return null;
+        }
+
+        return $target;
     }
 
     /**

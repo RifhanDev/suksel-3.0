@@ -167,14 +167,19 @@
 
                 <!-- Right Column -->
                 <div>
+                    @php
+                        $currentOrganizationType = old('organization_type', $vendor->organization_type ?? null);
+                        $ssmExpiryRequired = App\Vendor::ssmExpiryRequiredFor($currentOrganizationType);
+                    @endphp
                     {!! Former::select('organization_type')->label('Jenis Perniagaan')->placeholder('Pilih dari senarai')->options(App\Vendor::$organizationTypes)->required() !!}
                     {!! Former::text('incorporation_date')->label('Tarikh Penubuhan')->required()->data_date_end_date(date('d/m/Y')) !!}
 
                     <div class="mb-3">
-                        <label for="ssm_expiry" class="form-label">Tarikh Tamat Sijil SSM <sup>*</sup></label>
-                        <input class="form-control valid" date-date-start-date="{{ date('d/m/Y') }}" required
-                            aria-required="true" id="ssm_expiry" type="text" name="ssm_expiry"
-                            value="{{ isset($vendor->ssm_expiry) && $vendor->ssm_expiry != '' ? $vendor->ssm_expiry->format('d/m/Y') : date('d/m/Y') }}">
+                        <label for="ssm_expiry" class="form-label">Tarikh Tamat Sijil SSM <sup id="ssm_expiry_required_marker" style="{{ $ssmExpiryRequired ? '' : 'display:none' }}">*</sup></label>
+                        <input class="form-control valid" date-date-start-date="{{ date('d/m/Y') }}"
+                            {{ $ssmExpiryRequired ? 'required aria-required=true' : '' }}
+                            id="ssm_expiry" type="text" name="ssm_expiry"
+                            value="{{ old('ssm_expiry', isset($vendor->ssm_expiry) && $vendor->ssm_expiry != '' ? $vendor->ssm_expiry->format('d/m/Y') : '') }}">
                     </div>
 
                     <div class="mb-3">
@@ -1145,6 +1150,50 @@
             </div>
         </div>
     </div>
+@endpush
+
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var organizationType = document.getElementById('organization_type');
+            var ssmExpiry = document.getElementById('ssm_expiry');
+            var requiredMarker = document.getElementById('ssm_expiry_required_marker');
+            var robTypes = ['ROB: PERSEORANGAN', 'ROB: PERKONGSIAN'];
+
+            if (!organizationType || !ssmExpiry || !requiredMarker) return;
+
+            function updateSsmExpiryRequirement() {
+                var required = robTypes.indexOf(organizationType.value) !== -1;
+                ssmExpiry.required = required;
+                if (required) {
+                    ssmExpiry.setAttribute('aria-required', 'true');
+                } else {
+                    ssmExpiry.removeAttribute('aria-required');
+                }
+                requiredMarker.style.display = required ? '' : 'none';
+
+                var validator = window.VendorForm && window.VendorForm.validators
+                    ? window.VendorForm.validators.main
+                    : null;
+                if (validator && validator.rules) {
+                    var rules = validator.rules.get(ssmExpiry) || [];
+                    rules = rules.filter(function(rule) { return rule !== 'required'; });
+                    if (required) rules.unshift('required');
+                    if (rules.length) {
+                        validator.rules.set(ssmExpiry, rules);
+                    } else {
+                        validator.rules.delete(ssmExpiry);
+                    }
+                    if (validator.touched && validator.touched.has(ssmExpiry)) {
+                        validator.validateInput(ssmExpiry);
+                    }
+                }
+            }
+
+            updateSsmExpiryRequirement();
+            organizationType.addEventListener('change', updateSsmExpiryRequirement);
+        });
+    </script>
 @endpush
 
 @push('scripts')

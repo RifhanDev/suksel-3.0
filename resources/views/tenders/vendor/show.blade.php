@@ -1206,7 +1206,7 @@
 													<td>{{ $upload->type }}</td>
 													<td class="pe-4 text-center">
 														<a href="{{ route('tenders.files', [$tender->id, $upload->id]) }}" class="btn btn-sm btn-primary rounded-8 px-3"
-															download>Muat Turun</a>
+															download="{{ method_exists($upload, 'downloadFilename') ? $upload->downloadFilename() : ($upload->label ?: $upload->name) }}">Muat Turun</a>
 													</td>
 												</tr>
 											@endforeach

@@ -248,6 +248,8 @@ return [
     ],
     'global_ou'        => 48,
     'global_cart_ou'   => 22,
+    // Temporary test fee for vendor daftar/renew (was 100). Change back to 100 for live.
+    'vendor_registration_fee' => (float) env('VENDOR_REGISTRATION_FEE', 0.10),
     'email_blacklists' => [
         'streamyx.com',
         'tm.net.my'

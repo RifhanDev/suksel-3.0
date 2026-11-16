@@ -32,12 +32,20 @@ class TenderMejaTerkawalPresenter
     public function documents(): array
     {
         $fromUploads = $this->tender->tableFiles
-            ->map(fn($upload) => [
-                'label' => trim((string) ($upload->label ?: $upload->name)),
-                'url' => route('tenders.files', [$this->tender->id, $upload->id]),
-                'size' => $this->formatSize($upload->size),
-                'type' => $upload->type ?: '-',
-            ])
+            ->map(function ($upload) {
+                $label = trim((string) ($upload->label ?: $upload->name));
+                $download = method_exists($upload, 'downloadFilename')
+                    ? $upload->downloadFilename()
+                    : $label;
+
+                return [
+                    'label' => $label,
+                    'download_name' => $download,
+                    'url' => route('tenders.files', [$this->tender->id, $upload->id]),
+                    'size' => $this->formatSize($upload->size),
+                    'type' => $upload->type ?: '-',
+                ];
+            })
             ->filter(fn(array $doc) => $doc['label'] !== '' && $doc['url'] !== '')
             ->values()
             ->all();
@@ -91,8 +99,21 @@ class TenderMejaTerkawalPresenter
                 $type = mime_content_type($fullPath) ?: null;
             }
 
+            $downloadName = $label;
+            if (pathinfo($downloadName, PATHINFO_EXTENSION) === '') {
+                $ext = pathinfo((string) ($doc['original_name'] ?? $path), PATHINFO_EXTENSION);
+                if ($ext === '' && $type) {
+                    $ext = \App\Upload::extensionFromMime((string) $type);
+                }
+                if ($ext === '') {
+                    $ext = 'pdf';
+                }
+                $downloadName .= '.' . strtolower($ext);
+            }
+
             $normalized[] = [
                 'label' => $label,
+                'download_name' => $downloadName,
                 'url' => $url,
                 'size' => $this->formatSize($size),
                 'type' => $type ?: '-',

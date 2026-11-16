@@ -4,7 +4,7 @@
 	<hr>
 	{!! Former::open(action('SubscriptionsController@store', $parent_id)) !!}
 	<h3>New Expiry Date: {{$parent->getNewExpiryDates()[1]!!}</h3>
-			<h3>Amount Charged: RM 100</h3>
+			<h3>Amount Charged: RM {{ number_format((float) config('app.vendor_registration_fee', 0.10), 2) }}</h3>
 			<br>
 			<br>
 						@include('subscriptions.actions-footer', ['has_submit' => true])
