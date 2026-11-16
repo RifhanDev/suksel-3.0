@@ -23,7 +23,7 @@
 		</button>
 		<h1 class="navbar-brand navbar-brand-autodark d-none-navbar-horizontal pe-0 pe-md-3">
 			<a href="/" title="Utama">
-				<img src="{{ asset('images/header.png') }}" width="110" height="32" alt="Sistem Tender Online Selangor"
+				<img src="{{ asset('images/sistem-perolehan-selangor-3-0.png') }}" width="96" height="32" alt="Sistem Perolehan Selangor 3.0"
 					class="navbar-brand-image">
 			</a>
 		</h1>

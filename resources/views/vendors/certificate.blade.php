@@ -113,6 +113,8 @@
 	</style>
 	@endif
 	<style>
+		header .logo { width: 100%; height: auto; padding-bottom: 12px; }
+		header .logo img { display: block; width: 100%; max-width: 100%; height: auto; margin: 0 auto; }
 		header,
 		section.body,
 		footer {
@@ -145,8 +147,8 @@
 			<p id="bg-text">{{ $type }}</p>
 		</div>
 		<header>
-			<div class="logo"><img src="{{ !empty($isPdf) ? 'data:image/png;base64,' . base64_encode(file_get_contents(public_path('images/header.png'))) : asset('images/header.png') }}"></div>
-			<div class="title" style="margin-top: 30px;">Pengesahan Pendaftaran Syarikat</div>
+			<div class="logo"><img src="{{ !empty($isPdf) ? 'data:image/png;base64,' . base64_encode(file_get_contents(public_path('images/sistem-perolehan-selangor-3-0.png'))) : asset('images/sistem-perolehan-selangor-3-0.png') }}"></div>
+			<div class="title" style="margin-top: 12px;">Pengesahan Pendaftaran Syarikat</div>
 			<div class="clearfix"></div>
 		</header>
 

@@ -32,7 +32,7 @@ html { -webkit-text-size-adjust:none; -ms-text-size-adjust: none;}
               <table width="115" border="0" cellspacing="0" cellpadding="0">
                 <tr><td align="left" valign="top" class="mob_center">
                   <a href="{{ url('/') }}" target="_blank" style="color: #596167; font-family: Arial, Helvetica, sans-serif; font-size: 13px;">
-                  <img src="{{ asset('assets/images/header.png') }}" height="75" alt="Tender Online SUK Selangor" border="0" style="display: block;" /></a>
+                  <img src="{{ asset('images/sistem-perolehan-selangor-3-0.png') }}" width="300" height="100" alt="Sistem Perolehan Selangor 3.0" border="0" style="display: block; margin-bottom: 12px;" /></a>
                 </td></tr>
               </table>
             </td></tr>
