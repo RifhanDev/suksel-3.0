@@ -13,11 +13,42 @@
 	<meta name="_token" content="{{ csrf_token() }}">
 	@yield('meta')
 	<title>Pengesahan Pendaftaran Syarikat</title>
+	@if (empty($isPdf))
 	<link href="http://fonts.googleapis.com/css?family=Open+Sans:400,300,600,700&subset=all" rel="stylesheet"
 		type="text/css">
 	<link href="{{ asset('css/application.css') }}" rel="stylesheet">
 	<link href="{{ asset('css/receipt.css') }}" rel="stylesheet">
+	@endif
 	<style>
+		@if (!empty($isPdf))
+			@page { size: A4 portrait; margin: 0; }
+			html, body { box-sizing: border-box; margin: 0; padding: 0; font-family: "Open Sans", "DejaVu Sans", sans-serif; font-size: 9.75pt; line-height: 1.25; }
+			body { padding: 12mm 14mm 8mm; }
+			.container { position: relative; width: 100%; margin: 0; padding: 0; border: 0; overflow: hidden; }
+			header { position: relative; z-index: 2; padding: 8px 16px; text-align: center; }
+			header .logo { height: auto; display: block; }
+			header .logo img { display: block; width: 100%; height: auto; max-width: 100%; margin: 0 auto; }
+			header .title { font-size: 13.5pt; font-weight: bold; text-transform: uppercase; margin-top: 2px; }
+			section.body { position: relative; z-index: 2; margin: 0; padding: 10px 16px; line-height: 1.25; }
+			.text-center { text-align: center; }
+			h1 { font-size: 22pt; margin: 5px 0 2px; }
+			h1 small { font-size: 9.75pt; font-weight: normal; }
+			h3 { font-size: 16pt; margin: 4px 0; }
+			h4 { font-size: 12pt; margin: 3px 0; }
+			section.body > .text-center > br { display: none; }
+			section.body > .text-center > h1 + br,
+			section.body > .text-center > h3 + br,
+			section.body > .text-center > h4 + br { display: block; }
+			table.table { width: 100%; border-collapse: collapse; border-spacing: 0; margin: 7px 0 0; font-size: 9.25pt; }
+			table.table th, table.table td { border: 1px solid #ddd; padding: 3px 5px; vertical-align: top; line-height: 1.1; }
+			table.table th { text-align: left; width: 42%; }
+			table.table ul { margin: 0; padding-left: 15px; }
+			table.table li { margin: 0; }
+			footer { position: relative; z-index: 2; padding: 8px 16px; font-size: 7pt; color: #5c001f; text-align: center; }
+			#watermark { position: fixed; top: 35%; left: 0; z-index: 0; width: 100%; text-align: center; }
+			#watermark .watermark-grid { display: none; }
+			#bg-text { display: none; }
+		@else
 		.container {
 			position: relative;
 			overflow: hidden;
@@ -72,8 +103,18 @@
 			position: relative;
 			z-index: 1;
 		}
+		@endif
 	</style>
+	@if (!empty($isPdf))
 	<style>
+		/* Keep the same certificate content and typography hierarchy as the iframe, sized for one A4 page. */
+		.container, header, section.body, footer { box-sizing: border-box; }
+		#watermark .watermark-grid { display: none; }
+	</style>
+	@endif
+	<style>
+		header .logo { width: 100%; height: auto; padding-bottom: 12px; }
+		header .logo img { display: block; width: 100%; max-width: 100%; height: auto; margin: 0 auto; }
 		header,
 		section.body,
 		footer {
@@ -97,15 +138,17 @@
 	<div class="container">
 		<div id="watermark">
 			<div class="watermark-grid">
-				@for ($i = 0; $i < 36; $i++)
-					<span><img src="{{ asset('images/02_selangor.png') }}" alt="Selangor watermark"></span>
-				@endfor
+				@if (empty($isPdf))
+					@for ($i = 0; $i < 36; $i++)
+						<span><img src="{{ asset('images/02_selangor.png') }}" alt="Selangor watermark"></span>
+					@endfor
+				@endif
 			</div>
 			<p id="bg-text">{{ $type }}</p>
 		</div>
 		<header>
-			<div class="logo"><img src="{{ asset('images/header.png') }}"></div>
-			<div class="title">Pengesahan Pendaftaran Syarikat</div>
+			<div class="logo"><img src="{{ !empty($isPdf) ? 'data:image/png;base64,' . base64_encode(file_get_contents(public_path('images/sistem-perolehan-selangor-3-0.png'))) : asset('images/sistem-perolehan-selangor-3-0.png') }}"></div>
+			<div class="title" style="margin-top: 12px;">Pengesahan Pendaftaran Syarikat</div>
 			<div class="clearfix"></div>
 		</header>
 

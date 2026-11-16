@@ -69,7 +69,7 @@ html { -webkit-text-size-adjust:none; -ms-text-size-adjust: none;}
                 <tr><td align="left" valign="top" class="mob_center">
                   <a href="{{ URL::to('/') }}" target="_blank" style="color: #596167; font-family: Arial, Helvetica, sans-serif; font-size: 13px;">
                   <font face="Arial, Helvetica, sans-seri; font-size: 13px;" size="3" color="#596167">
-                  <img src="{{ asset('assets/images/header.png') }}" width="300" height="75" alt="Tender Online SUK Selangor" border="0" border="0" style="display: block;" /></font></a>
+                  <img src="{{ asset('images/sistem-perolehan-selangor-3-0.png') }}" width="300" height="100" alt="Sistem Perolehan Selangor 3.0" border="0" border="0" style="display: block; margin-bottom: 12px;" /></font></a>
                 </td></tr>
               </table>            
             </td></tr>

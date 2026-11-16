@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use PDF;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Hash;
 use Mail;
 use App\Role;
@@ -243,6 +243,7 @@ class VendorsController extends Controller
 		$validator = Validator::make(
 			$data,
 			[
+				'ssm_expiry' => Vendor::ssmExpiryValidationRules($data['organization_type'] ?? null),
 				// 'ssm'        => 'required|max:5120|mimes:pdf',
 				// 'bumiputera' => 'max:5120|mimes:pdf',
 				// 'mof'        => 'max:5120|mimes:pdf',
@@ -258,7 +259,7 @@ class VendorsController extends Controller
 		if ($validator->fails()) {
 			return redirect()->back()
 				->withInput()
-				->with('danger', 'Fail Dimuat Naik Tidak Betul.')
+				->with('danger', 'Sila semak Tarikh Tamat Sijil SSM dan fail yang dimuat naik.')
 				->withErrors($validator);
 		}
 
@@ -280,19 +281,7 @@ class VendorsController extends Controller
 		$user->roles()->sync([Role::where('name', 'Vendor')->first()->id]);
 
 
-		// convert ssm_expiry
-		if (!empty($data["ssm_expiry"])) {
-			// Check if it's already in Y-m-d format (from HTML5 date input)
-			if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $data["ssm_expiry"])) {
-				// Already in Y-m-d format, no conversion needed
-				$data["ssm_expiry"] = $data["ssm_expiry"];
-			} else {
-				// Convert from d/m/Y format
-				$ssm_expiry_input_format = 'd/m/Y';
-				$new_ssm_expiry = Carbon::createFromFormat($ssm_expiry_input_format, $data["ssm_expiry"]);
-				$data["ssm_expiry"] = $new_ssm_expiry->format('Y-m-d');
-			}
-		}
+		$data['ssm_expiry'] = Vendor::normalizeSsmExpiry($data['ssm_expiry'] ?? null);
 
 		if ($data["district_id"] > 0) {
 			$data["state_id"] = null;
@@ -443,14 +432,42 @@ class VendorsController extends Controller
 			return $this->_access_denied();
 		}
 
-		$type = 'SALINAN';
-		if ($vendor->certificate_generated_at == null) {
-			$vendor->certificate_generated_at = date('Y-m-d H:i:s');
-			$vendor->update();
-			$type = 'ASAL';
-		}
+		$type = $this->certificateType($vendor);
+
 		return view('vendors.certificate', compact('vendor', 'type'));
-		//return PDF::loadView('vendors.certificate', compact('vendor', 'type'))->stream();
+	}
+
+	public function downloadCertificate($id)
+	{
+		$vendor = Vendor::findOrFail($id);
+
+		if (!$vendor->canCertificate()) {
+			return $this->_access_denied();
+		}
+
+		$type = $this->certificateType($vendor);
+		$pdf = Pdf::loadView('vendors.certificate', [
+			'vendor' => $vendor,
+			'type' => $type,
+			'isPdf' => true,
+		])
+			->setPaper('a4', 'portrait');
+		$registration = preg_replace('/[^A-Za-z0-9_-]+/', '_', (string) $vendor->registration);
+		$fileName = 'sijil-pengesahan-' . ($registration !== '' ? $registration : $vendor->id) . '.pdf';
+
+		return $pdf->download($fileName);
+	}
+
+	private function certificateType(Vendor $vendor): string
+	{
+		if ($vendor->certificate_generated_at !== null) {
+			return 'SALINAN';
+		}
+
+		$vendor->certificate_generated_at = date('Y-m-d H:i:s');
+		$vendor->update();
+
+		return 'ASAL';
 	}
 
 	/**
@@ -554,6 +571,7 @@ class VendorsController extends Controller
 		$vendor = Vendor::findOrFail($id);
 
 		$validator = Validator::make($request->all(), [
+			'ssm_expiry'      => Vendor::ssmExpiryValidationRules($request->input('organization_type') ?: $vendor->organization_type),
 			'mof'             => ['nullable', 'mimes:pdf', 'max:5120'],
 			'cidb'            => ['nullable', 'mimes:pdf', 'max:5120'],
 			'ssm'             => ['nullable', 'mimes:pdf', 'max:5120'],
@@ -564,7 +582,7 @@ class VendorsController extends Controller
 		if ($validator->fails())
 			return redirect()->back()
 				->withErrors($validator, 'pdf_upload')
-				->with('danger', 'Fail Dimuat Naik Tidak Betul.');
+				->with('danger', 'Sila semak Tarikh Tamat Sijil SSM dan fail yang dimuat naik.');
 
 		Vendor::setRules('update');
 		$data = $request->all();
@@ -572,16 +590,7 @@ class VendorsController extends Controller
 		$data['authorized_capital'] = str_replace(',', '', $data['authorized_capital']);
 
 
-		// convert ssm_expiry
-		if (!empty($data["ssm_expiry"])) {
-			if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $data["ssm_expiry"])) {
-				$data["ssm_expiry"] = $data["ssm_expiry"];
-			} else {
-				$ssm_expiry_input_format = 'd/m/Y';
-				$new_ssm_expiry = Carbon::createFromFormat($ssm_expiry_input_format, $data["ssm_expiry"]);
-				$data["ssm_expiry"] = $new_ssm_expiry->format('Y-m-d');
-			}
-		}
+		$data['ssm_expiry'] = Vendor::normalizeSsmExpiry($data['ssm_expiry'] ?? null);
 
 		if (isset($data["district_id"])) {
 			if ($data["district_id"] > 0) {

@@ -135,6 +135,13 @@ class UsersController extends Controller
 
 		User::setRules('storeUserInvite');
 
+		// Non-Admins never see the Agensi field, so take their own agency before
+		// validating; otherwise 'organization_unit_id' => 'required' fails with an
+		// error the form has nowhere to show, and the page just reloads.
+		if (!auth()->user()->hasRole('Admin')) {
+			$data['organization_unit_id'] = auth()->user()->organization_unit_id;
+		}
+
 		if (isset($data['ic_number'])) {
 			$digits = preg_replace('/\D+/', '', (string) $data['ic_number']);
 			$data['ic_number'] = $digits === '' ? null : substr($digits, 0, 12);
@@ -143,7 +150,8 @@ class UsersController extends Controller
 		// Validate the request
 		$validator = Validator::make($data, User::$rules);
 		if ($validator->fails()) {
-			return redirect()->back()->withErrors($validator)->withInput();
+			return redirect()->back()->withErrors($validator)->withInput()
+				->with('danger', $validator->errors()->first());
 		}
 
 		$data['name']      = $data['name'];
@@ -166,10 +174,6 @@ class UsersController extends Controller
 			if ($data['jawatan'] === '') {
 				$data['jawatan'] = null;
 			}
-		}
-
-		if (!auth()->user()->hasRole('Admin')) {
-			$data['organization_unit_id'] = auth()->user()->organization_unit_id;
 		}
 
 		$user = new User;

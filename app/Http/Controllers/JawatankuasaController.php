@@ -609,7 +609,7 @@ class JawatankuasaController extends Controller
             }
 
             $result = $this->createEmailQueue(
-                $recipient['content'] ?? '',
+                view('emails.pemakluman_jawatankuasa_spesifikasi', $recipient['view_data'])->render(),
                 $to,
                 $recipient['subject'] ?? 'Pemakluman Pelantikan Jawatankuasa Spesifikasi dan Jemputan Mesyuarat',
                 $recipient['attachments'] ?? []

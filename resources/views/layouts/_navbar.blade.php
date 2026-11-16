@@ -23,7 +23,7 @@
 		</button>
 		<h1 class="navbar-brand navbar-brand-autodark d-none-navbar-horizontal pe-0 pe-md-3">
 			<a href="/" title="Utama">
-				<img src="{{ asset('images/header.png') }}" width="110" height="32" alt="Sistem Tender Online Selangor"
+				<img src="{{ asset('images/sistem-perolehan-selangor-3-0.png') }}" width="96" height="32" alt="Sistem Perolehan Selangor 3.0"
 					class="navbar-brand-image">
 			</a>
 		</h1>
@@ -65,7 +65,7 @@
 								<i class="ti ti-chart-bar me-2"></i> Bidaan
 							</a>
 							<a href="{{ action('VendorsController@certificate', $user->vendor->id) }}" target="_blank" class="dropdown-item">
-								<i class="ti ti-certificate me-2"></i> Papar Sijil Pengesahan
+								<svg class="me-2" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> Papar Sijil
 							</a>
 							<a
 								href="{{ action('ReportVendorSummaryController@index', ['year' => date('Y'), 'vendor_id' => $user->vendor->id]) }}"

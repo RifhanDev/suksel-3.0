@@ -705,6 +705,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('vendors/{user}/edit_email', [VendorsController::class, 'editEmail']);
 	Route::put('vendors/{user}/edit_email', [VendorsController::class, 'updateEmail']);
 	Route::get('vendors/{user}/histories', [VendorsController::class, 'histories']);
+	Route::get('vendors/{user}/certificate/download', [VendorsController::class, 'downloadCertificate'])->name('vendors.certificate.download');
 	Route::get('vendors/{user}/certificate', [VendorsController::class, 'certificate']);
 	Route::post('vendors/{id}/cidb/integrate', [VendorsController::class, 'integrateCidb'])->name('vendors.cidb.integrate');
 	Route::resource('vendor.blacklists', VendorBlacklistsController::class);

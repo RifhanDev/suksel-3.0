@@ -338,16 +338,23 @@ class PenilaianKewanganKerjaController extends Controller
 
             $tarikhTutupTenderStr = $tender->submission_datetime ? \Carbon\Carbon::parse($tender->submission_datetime)->format('d/m/Y') : '-';
 
-            $unitMap = ['1' => 'Minggu', '2' => 'Bulan', '3' => 'Hari', 'minggu' => 'Minggu', 'bulan' => 'Bulan', 'hari' => 'Hari'];
+            $unitMap = [
+                '1' => 'Minggu', 'week' => 'Minggu', 'weeks' => 'Minggu', 'minggu' => 'Minggu',
+                '2' => 'Bulan', 'month' => 'Bulan', 'months' => 'Bulan', 'bulan' => 'Bulan',
+                '3' => 'Hari', 'day' => 'Hari', 'days' => 'Hari', 'hari' => 'Hari',
+            ];
             $rawTenderUnitKey = strtolower(trim((string) ($tender->tempoh_siap_unit ?? $tender->tempoh_kontrak_unit ?? '')));
             $resolvedTenderUnit = $unitMap[$rawTenderUnitKey] ?? ($tender->tempoh_siap_unit ?: 'Minggu');
             if (! empty($tender->tempoh_siap_val)) {
                 $tempohSiapTenderStr = $tender->tempoh_siap_val . ' ' . $resolvedTenderUnit;
+                $tempohPaparanUnit = $resolvedTenderUnit;
             } elseif (! empty($tender->tempoh_kontrak_bulan)) {
                 $kontrakUnit = $unitMap[strtolower(trim((string) ($tender->tempoh_kontrak_unit ?? 'bulan')))] ?? 'Bulan';
                 $tempohSiapTenderStr = $tender->tempoh_kontrak_bulan . ' ' . $kontrakUnit;
+                $tempohPaparanUnit = $kontrakUnit;
             } else {
                 $tempohSiapTenderStr = '-';
+                $tempohPaparanUnit = null;
             }
 
             foreach ($participants as $p) {
@@ -389,7 +396,7 @@ class PenilaianKewanganKerjaController extends Controller
                 $hargaTawaranFormatted = $p->harga_tawaran_formatted ?? ($hargaTawaranVal > 0 ? ('RM ' . number_format($hargaTawaranVal, 2)) : '-');
 
                 $tempohData = $this->getVendorTempohSiapInWeeks($tender, $vId, $p);
-                $tempohSiapPembekalStr = $tempohData['disp'] ?? '-';
+                $tempohSiapPembekalStr = $this->formatVendorTempohForUnit($tempohData, $tempohPaparanUnit);
 
                 // 4. CIDB Expiry & Status
                 $cidbEndDate = ($p->vendor && $p->vendor->cidb_end_date) ? \Carbon\Carbon::parse($p->vendor->cidb_end_date) : null;
@@ -5266,6 +5273,60 @@ class PenilaianKewanganKerjaController extends Controller
             'weeks' => $weeks,
             'disp'  => $dispFormatted,
         ];
+    }
+
+    /**
+     * Format the vendor's submitted period in the tender's display unit.
+     * The week-based value returned by getVendorTempohSiapInWeeks() remains
+     * unchanged for evaluation calculations.
+     *
+     * @param  array{val: float|null, unit: string|null, weeks: float|null, disp: string}  $tempohData
+     */
+    protected function formatVendorTempohForUnit(array $tempohData, ?string $targetUnit): string
+    {
+        if (! $targetUnit) {
+            return $tempohData['disp'] ?? '-';
+        }
+
+        $targetUnitNorm = strtolower(trim($targetUnit));
+        $targetUnitNorm = match ($targetUnitNorm) {
+            'bulan', 'month', 'months', '2' => 'bulan',
+            'hari', 'day', 'days', '3' => 'hari',
+            'minggu', 'week', 'weeks', '1' => 'minggu',
+            default => '',
+        };
+
+        if ($targetUnitNorm === '') {
+            return $tempohData['disp'] ?? '-';
+        }
+
+        $displayUnit = match ($targetUnitNorm) {
+            'bulan' => 'Bulan',
+            'hari' => 'Hari',
+            default => 'Minggu',
+        };
+
+        $value = isset($tempohData['val']) ? (float) $tempohData['val'] : 0.0;
+        if ($value <= 0) {
+            return '0 ' . $displayUnit;
+        }
+
+        $sourceUnitNorm = strtolower(trim((string) ($tempohData['unit'] ?? '')));
+        $weeks = match ($sourceUnitNorm) {
+            'bulan', 'month', 'months', '2' => $value * 4.0,
+            'hari', 'day', 'days', '3' => $value / 7.0,
+            default => $value,
+        };
+
+        $displayValue = match ($targetUnitNorm) {
+            'bulan' => $weeks / 4.0,
+            'hari' => $weeks * 7.0,
+            default => $weeks,
+        };
+
+        $formattedValue = rtrim(rtrim(number_format($displayValue, 2, '.', ','), '0'), '.');
+
+        return $formattedValue . ' ' . $displayUnit;
     }
 
     /**

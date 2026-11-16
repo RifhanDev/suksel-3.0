@@ -17,7 +17,7 @@
 	@foreach($purchases as $purchase)
 		<div class="receipt-block">
 			<header>
-				<div class="logo"><img src="{{ asset('images/header.png') }}"></div>
+				<div class="logo" style="height:auto;padding-bottom:12px;"><img src="{{ asset('images/sistem-perolehan-selangor-3-0.png') }}" alt="Sistem Perolehan Selangor 3.0" style="display:block;width:360px;max-width:100%;height:auto;margin:0 auto;"></div>
 				<div class="title">Resit Pembelian Dokumen</div>
 				<div class="clearfix"></div>
 			</header>

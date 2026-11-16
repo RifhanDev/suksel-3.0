@@ -1533,8 +1533,8 @@
                                         Bidaan
                                     </a>
                                     <a class="dropdown-item" href="{{ action('VendorsController@certificate', Auth::user()->vendor->id) }}" target="_blank">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19.496 3a1 1 0 0 1 .753.34l.042.052l2 2.5a1 1 0 0 1 0 1.216l-2 2.5a1 1 0 0 1-.753.392H18v8a3 3 0 0 1-2.824 2.995L15 21H7a3 3 0 0 1-2.995-2.824L4 18V6a3 3 0 0 1 2.824-2.995L7 3h12.496zM14 15H8a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2zm0-4H8a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2zm-2-4H8a1 1 0 0 0 0 2h4a1 1 0 0 0 0-2z"/></svg>
-                                        Papar Sijil Pengesahan
+                                        <svg class="me-2" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                        Papar Sijil
                                     </a>
                                     <a class="dropdown-item" href="{{ route('vendor.report.vendor.summary', ['year' => date('Y'), 'vendor_id' => Auth::user()->vendor->id]) }}">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 12h3v8H3zM9 5h3v15H9zM15 8h3v12h-3z"/></svg>

@@ -17,7 +17,7 @@
 <div class="container">
     <header>
         <div class="col-xs-12" style="text-align:right">Versi 1.0</div>
-        <div class="logo"><img src="/images/header.png"></div>
+        <div class="logo" style="height:auto;padding-bottom:12px;"><img src="{{ asset('images/sistem-perolehan-selangor-3-0.png') }}" alt="Sistem Perolehan Selangor 3.0" style="display:block;width:360px;max-width:100%;height:auto;margin:0 auto;"></div>
         <div class="title">Resit Pembelian Dokumen</div>
         <div class="clearfix"></div>
     </header>
