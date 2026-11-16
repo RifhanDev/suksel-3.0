@@ -817,9 +817,29 @@ class Tender extends Model
 		return $this->hasMany('App\TenderVendor');
 	}
 
+	/**
+	 * Morph class names written into uploads.uploadable_type across 2.0 / 3.0.
+	 *
+	 * @return list<string>
+	 */
+	public static function uploadMorphTypes(): array
+	{
+		return array_values(array_unique([
+			self::class,
+			'App\Tender',
+			'App\Models\Tender',
+		]));
+	}
+
+	/**
+	 * Tender attachments (meja public=1 + dokumen tender/tawaran public=0).
+	 * Uses hasMany + type aliases so migrated 2.0 rows still resolve when
+	 * uploadable_type is App\Models\Tender vs App\Tender.
+	 */
 	public function files()
 	{
-		return $this->morphMany('App\Upload', 'uploadable');
+		return $this->hasMany(Upload::class, 'uploadable_id', 'id')
+			->whereIn('uploadable_type', static::uploadMorphTypes());
 	}
 
 	public function invites()

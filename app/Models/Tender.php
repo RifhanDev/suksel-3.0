@@ -453,7 +453,8 @@ class Tender extends Model
 
 	public function files()
 	{
-		return $this->morphMany('App\Upload', 'uploadable');
+		return $this->hasMany(\App\Upload::class, 'uploadable_id', 'id')
+			->whereIn('uploadable_type', \App\Tender::uploadMorphTypes());
 	}
 
 	public function invites()

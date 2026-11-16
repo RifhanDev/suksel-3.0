@@ -267,25 +267,22 @@
 			}
 		}
 		$dokumenList = $tenderDokumen->items('vendor', $vendorHasPurchased ? (int) Auth::user()->vendor_id : null);
-		// 2.0 Dokumen Sebut Harga/Tender = uploads public=0 (NAS). Prefer downloads whenever present.
+		// Downloadable uploads.public=0 whenever vendor may see files (purchased / participate).
+		$canSeeTenderDownloads = $tender->canShowFiles(Auth::user()->vendor_id ?? null);
 		$legacyTenderFileCount = $tender->files()->where('public', 0)->count();
-		$hasIklanDokumenTab = ! $tender->isIklanSahaja()
-			&& $tender->showDokumenSenaraiTab()
+		$hasIklanDokumenTab = $tender->showDokumenSenaraiTab()
 			&& $vendorHasPurchased
 			&& $tender->usesIklanDokumen()
 			&& $tender->iklanDokumens->isNotEmpty();
 		$useLegacyAsDokumenSenarai = ! $hasIklanDokumenTab
-			&& ! $tender->isIklanSahaja()
-			&& $tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id ?? null)
+			&& $canSeeTenderDownloads
 			&& $legacyTenderFileCount > 0;
 		$useChecklistDokumenSenarai = ! $hasIklanDokumenTab
-			&& ! $tender->isIklanSahaja()
-			&& $tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id ?? null)
+			&& $canSeeTenderDownloads
+			&& $tender->showDokumenSenaraiTab()
 			&& ! $useLegacyAsDokumenSenarai
 			&& count($dokumenList) > 0;
-		$usePlainLegacyTab = ! $tender->isIklanSahaja()
-			&& ! $tender->showDokumenSenaraiTab()
-			&& $tender->canShowFiles(Auth::user()->vendor_id);
+		$usePlainLegacyTab = false;
 		$canManageWakilLawatan =
 		    Auth::check() &&
 		    Auth::user()->vendor_id &&
