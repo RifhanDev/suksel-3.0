@@ -6,6 +6,7 @@
 	{{-- <link href="{{ asset('css/tender.form.css') }}" rel="stylesheet"> --}}
 	<link href="{{ asset('css/components/tender-show.css') }}" rel="stylesheet">
 	<link href="{{ asset('css/components/badges.css') }}" rel="stylesheet">
+	<link href="{{ asset('css/components/syarat-paper.css') }}" rel="stylesheet">
 @endsection
 
 @section('content')
@@ -20,7 +21,7 @@
 		$legacyTenderFileCount = $tender->files()->where('public', 0)->count();
 		$hasIklanDokumenTab = $tender->showDokumenSenaraiTab()
 			&& $tender->usesIklanDokumen()
-			&& $tender->iklanDokumens->isNotEmpty();
+			&& ($tender->iklanDokumens->isNotEmpty() || $legacyTenderFileCount === 0);
 		$useLegacyAsDokumenSenarai = ! $hasIklanDokumenTab
 			&& $canSeeTenderDownloads
 			&& $legacyTenderFileCount > 0;
@@ -707,9 +708,13 @@
 									Syarat {{ App\Tender::$types[$tender->type] }}
 								</h3>
 							</div>
-							<div class="card-body">
+							<div class="card-body p-0">
 								{{-- {!! nl2br( $tender->tender_rules, '<b><strong><i><em><u><p><ul><ol><li>' ) !!} --}}
-								{!! $tender->tender_rules !!}
+								<div class="syarat-paper-wrap">
+									<div class="syarat-paper">
+										{!! $tender->tender_rules !!}
+									</div>
+								</div>
 							</div>
 						</div>
 					</div>

@@ -27,6 +27,7 @@
 
     <!-- Modern CSS (includes Bootstrap 5) -->
     <link href="{{ asset('css/modern.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/components/password-toggle.css') }}" rel="stylesheet">
 
     <!-- Selectize CSS -->
     <link href="{{ asset('packages/selectize/dist/css/selectize.default.css') }}" rel="stylesheet">
@@ -1791,6 +1792,7 @@
 
     <!-- Modern JS (includes jQuery and Bootstrap 5) -->
     <script src="{{ asset('js/modern.js') }}"></script>
+    <script src="{{ asset('js/password-toggle.js') }}"></script>
 
     <!-- Bootstrap Datepicker -->
     <script src="{{ asset('packages/bootstrap-datepicker/js/bootstrap-datepicker.js') }}"></script>

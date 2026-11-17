@@ -303,7 +303,7 @@
 						<div class="mb-3">
 							<label class="form-label">Alamat Emel</label>
 							<input type="email" class="form-control @error('email') is-invalid @enderror" name="email"
-								placeholder="nama@syarikat.com" value="{{ old('email') }}" required autocomplete="off" autofocus>
+								placeholder="contoh@email.com" value="{{ old('email') }}" required autocomplete="off" autofocus>
 							@error('email')
 								<div class="invalid-feedback d-block small mt-1">{{ $message }}</div>
 							@enderror

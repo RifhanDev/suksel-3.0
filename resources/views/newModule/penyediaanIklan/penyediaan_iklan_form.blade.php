@@ -995,9 +995,9 @@
 								// Full CKEditor build enables Easy Image / Cloud Services by default;
 								// without cloudServices_tokenUrl it logs cloudservices-no-token-url.
 								removePlugins: 'easyimage,cloudservices,exportpdf',
-								height: 250,
+								height: '70vh',
 								contentsCss: [CKEDITOR.getUrl('contents.css'),
-									'html { overflow-y: hidden; }'
+									'html { background: #eef1f5; } body { max-width: 794px; min-height: 1123px; margin: 24px auto; padding: 56px 64px; background: #fff; box-shadow: 0 1px 4px rgba(15, 23, 42, 0.15); box-sizing: border-box; }'
 								],
 							});
 						} catch (e) {
