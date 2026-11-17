@@ -34,7 +34,7 @@ use App\Support\TenderProcessStatus;
 use App\Http\Controllers\Concerns\RestrictsTenderByRole;
 use Illuminate\Support\Facades\Queue;
 use Mail;
-use PDF;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Log;
 
@@ -598,6 +598,44 @@ class TendersController extends Controller
 
 		// dd($tender->validDocumentDate());
 		return view('tenders.auth.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner', 'pegawaiDisplay', 'tenderDokumen', 'mejaTerkawal'));
+	}
+
+	/**
+	 * Render a continuous, print-friendly snapshot of the tender's current details.
+	 */
+	public function printTender(Request $request, $id)
+	{
+		$tender = Tender::with([
+			'codes',
+			'siteVisits',
+			'creator.organizationunit',
+			'officer.organizationunit',
+			'tenderer',
+			'kaedahDokumen',
+			'iklanDokumens',
+		])->findOrFail($id);
+
+		if (auth()->check() && ! auth()->user()->hasRole('Vendor')) {
+			$this->assertOwnAgency($tender);
+		}
+
+		if (! $tender->canShow()) {
+			return $this->_access_denied();
+		}
+
+		app(\App\Services\StosTenderChecklistSync::class)->syncForTenderOnView($tender);
+		app(\App\Services\PenyediaanIklanService::class)->ensureMejaTerkawalSyncedForTender($tender);
+
+		$pegawaiDisplay = \App\Support\TenderPegawaiPresenter::for($tender);
+		$mejaTerkawal = \App\Support\TenderMejaTerkawalPresenter::for($tender);
+		$showTenderFiles = auth()->check() && $tender->canShowFiles(auth()->user()->vendor_id);
+
+		$pdf = Pdf::loadView('tenders.print', compact('tender', 'pegawaiDisplay', 'mejaTerkawal', 'showTenderFiles'))
+			->setPaper('a4', 'portrait');
+
+		$fileName = 'maklumat-tender-' . $tender->id . '.pdf';
+
+		return $pdf->stream($fileName, ['Attachment' => false]);
 	}
 
 	public function downloadIklanDokumen(Tender $tender, \App\Models\TenderIklanDokumen $dokumen)
