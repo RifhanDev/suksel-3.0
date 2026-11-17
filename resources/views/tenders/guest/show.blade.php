@@ -3,6 +3,7 @@
 @section('styles')
 	<link href="{{ asset('css/components/button-components.css') }}" rel="stylesheet">
 	<link href="{{ asset('css/components/badges.css') }}" rel="stylesheet">
+	<link href="{{ asset('css/components/syarat-paper.css') }}" rel="stylesheet">
 	<style>
 		.vendor-tender-card {
 			background: #fff;
@@ -374,13 +375,17 @@
 								</svg></div>
 							<h6>Syarat {{ App\Tender::$types[$tender->type] ?? 'Tender' }}</h6>
 						</div>
-						<div class="p-4" style="font-size:0.85rem; line-height:1.7;">
-							@if ($tender->tender_rules)
-								{!! $tender->tender_rules !!}
-							@else
+						@if ($tender->tender_rules)
+							<div class="syarat-paper-wrap">
+								<div class="syarat-paper">
+									{!! $tender->tender_rules !!}
+								</div>
+							</div>
+						@else
+							<div class="p-4" style="font-size:0.85rem; line-height:1.7;">
 								<p class="text-muted mb-0">Tiada syarat ditetapkan.</p>
-							@endif
-						</div>
+							</div>
+						@endif
 					</div>
 				</div>
 

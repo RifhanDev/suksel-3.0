@@ -109,6 +109,11 @@
             font-size: 0.9rem;
         }
 
+        /* Keeps CKEditor's hidden helper from stretching the page into a second scrollbar */
+        .cke_screen_reader_only {
+            top: 0;
+        }
+
         /* ===== PAGE LAYOUT ===== */
         .page-container {
             display: flex;
