@@ -711,7 +711,7 @@
                     </div>
 
                     <div class="promo-actions">
-                        <a href="{{ asset('company_search') }}" class="btn-promo-sub">
+                        <a href="{{ asset('company_search') }}" class="btn-promo-sub" style="display:none">
                             Semak Status
                         </a>
                         <a href="{{ asset('register') }}" class="btn-promo-main">
