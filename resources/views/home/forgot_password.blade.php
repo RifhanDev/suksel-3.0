@@ -198,7 +198,7 @@
                                name="email" 
                                id="email" 
                                value="{{ old('email') }}" 
-                               placeholder="nama@syarikat.com" 
+                               placeholder="contoh@email.com" 
                                required 
                                autofocus>
                     </div>
