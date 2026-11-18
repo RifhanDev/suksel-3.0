@@ -307,6 +307,14 @@ $(document).ready(function () {
     $('#btnSebelum').on('click', function () { goToTab(currentTab - 1); });
     $('#btnSeterusnya').on('click', function () {
         if (currentTab === tabs.length - 1) {
+            // Stop here on a bad typed Pegawai 2 email so the other tabs are not lost on reload
+            var emel2 = $.trim($('#pegawai2_emel').val() || '');
+            if (emel2 && !$('#pegawai2_user_id').val() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emel2)) {
+                goToTab(tabs.indexOf('#tab-pegawai-btn'));
+                Swal.fire({ icon: 'error', title: 'Ralat', text: 'E-mel Pegawai Bertanggungjawab 2 tidak sah.', confirmButtonText: 'Faham', confirmButtonColor: '#1e293b' });
+                return;
+            }
+
             var form = document.getElementById('formPenyediaanIklan');
             if (form) {
                 if (typeof window.reindexKelulusanRows === 'function') {

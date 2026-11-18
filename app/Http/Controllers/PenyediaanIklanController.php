@@ -19,6 +19,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -155,6 +156,11 @@ class PenyediaanIklanController extends Controller
 
         if (! PenyediaanIklanAccess::canManage(auth()->user(), $tender)) {
             return $this->_access_denied();
+        }
+
+        $emailCheck = Validator::make($request->all(), ['pegawai2_emel' => 'nullable|email:filter']);
+        if (! $request->filled('pegawai2_user_id') && $emailCheck->fails()) {
+            return $this->respondError($request, 'E-mel Pegawai Bertanggungjawab 2 tidak sah.', 422);
         }
 
         $payload = $this->buildPayload($request, $tender->id);
