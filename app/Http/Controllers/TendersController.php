@@ -34,7 +34,7 @@ use App\Support\TenderProcessStatus;
 use App\Http\Controllers\Concerns\RestrictsTenderByRole;
 use Illuminate\Support\Facades\Queue;
 use Mail;
-use PDF;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Log;
 
@@ -598,6 +598,44 @@ class TendersController extends Controller
 
 		// dd($tender->validDocumentDate());
 		return view('tenders.auth.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner', 'pegawaiDisplay', 'tenderDokumen', 'mejaTerkawal'));
+	}
+
+	/**
+	 * Render a continuous, print-friendly snapshot of the tender's current details.
+	 */
+	public function printTender(Request $request, $id)
+	{
+		$tender = Tender::with([
+			'codes',
+			'siteVisits',
+			'creator.organizationunit',
+			'officer.organizationunit',
+			'tenderer',
+			'kaedahDokumen',
+			'iklanDokumens',
+		])->findOrFail($id);
+
+		if (auth()->check() && ! auth()->user()->hasRole('Vendor')) {
+			$this->assertOwnAgency($tender);
+		}
+
+		if (! $tender->canShow()) {
+			return $this->_access_denied();
+		}
+
+		app(\App\Services\StosTenderChecklistSync::class)->syncForTenderOnView($tender);
+		app(\App\Services\PenyediaanIklanService::class)->ensureMejaTerkawalSyncedForTender($tender);
+
+		$pegawaiDisplay = \App\Support\TenderPegawaiPresenter::for($tender);
+		$mejaTerkawal = \App\Support\TenderMejaTerkawalPresenter::for($tender);
+		$showTenderFiles = auth()->check() && $tender->canShowFiles(auth()->user()->vendor_id);
+
+		$pdf = Pdf::loadView('tenders.print', compact('tender', 'pegawaiDisplay', 'mejaTerkawal', 'showTenderFiles'))
+			->setPaper('a4', 'portrait');
+
+		$fileName = 'maklumat-tender-' . $tender->id . '.pdf';
+
+		return $pdf->stream($fileName, ['Attachment' => false]);
 	}
 
 	public function downloadIklanDokumen(Tender $tender, \App\Models\TenderIklanDokumen $dokumen)
@@ -2161,25 +2199,45 @@ class TendersController extends Controller
 	{
 		$tender = Tender::findOrFail($id);
 
-		if (!$tender->canPublish())
-			$this->_access_denied();
-		if ($tender->publishedByKetuaJabatan())
+		if (!$tender->canPublish()) {
+			return $this->_access_denied();
+		}
+		if ($tender->publishedByKetuaJabatan()) {
 			return redirect('tenders/' . $tender->id)->with('error', 'Tender / Sebut Harga ini telah disiarkan.');
-
-		$approval          = new Approval;
-		$approval->user_id = auth()->user()->id;
-		$approval->save();
-
-		// $tender->approver_id = $approval->id; // OLD CODE BUG: stores approval record ID, not user ID — FK references users.id
-		$tender->approver_id = auth()->user()->id;
-
-		// Siar opens vendor submission. Older tenders stay below status 5 because
-		// publish never advanced the process status.
-		if ((int) ($tender->status_process_id ?? 0) < TenderProcessStatus::PENYEDIAAN_IKLAN) {
-			$tender->status_process_id = TenderProcessStatus::PENYEDIAAN_IKLAN;
 		}
 
-		$tender->save();
+		DB::beginTransaction();
+		try {
+			$tender = Tender::query()->whereKey($id)->lockForUpdate()->firstOrFail();
+
+			if (!$tender->canPublish()) {
+				DB::rollBack();
+				return $this->_access_denied();
+			}
+			if ($tender->publishedByKetuaJabatan()) {
+				DB::rollBack();
+				return redirect('tenders/' . $tender->id)->with('error', 'Tender / Sebut Harga ini telah disiarkan.');
+			}
+
+			$approval          = new Approval;
+			$approval->user_id = auth()->user()->id;
+			$approval->save();
+
+			// $tender->approver_id = $approval->id; // OLD CODE BUG: stores approval record ID, not user ID — FK references users.id
+			$tender->approver_id = auth()->user()->id;
+
+			// Siar opens vendor submission. Older tenders stay below status 5 because
+			// publish never advanced the process status.
+			if ((int) ($tender->status_process_id ?? 0) < TenderProcessStatus::PENYEDIAAN_IKLAN) {
+				$tender->status_process_id = TenderProcessStatus::PENYEDIAAN_IKLAN;
+			}
+
+			$tender->save();
+			DB::commit();
+		} catch (\Throwable $e) {
+			DB::rollBack();
+			throw $e;
+		}
 
 		// Heavy post-publish work runs after the HTTP response so the gateway
 		// does not 504 while eligible vendors / invite emails are processed.

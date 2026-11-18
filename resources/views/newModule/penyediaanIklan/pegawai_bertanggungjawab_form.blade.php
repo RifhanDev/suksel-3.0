@@ -85,7 +85,7 @@
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label fw-medium small">Nama</label>
-                    <select id="pegawai2_nama_select" name="pegawai2_nama" placeholder="Cari nama pegawai..."></select>
+                    <select id="pegawai2_nama_select" name="pegawai2_nama" placeholder="Cari atau taip nama pegawai..."></select>
                     <input type="hidden" id="pegawai2_user_id" name="pegawai2_user_id" value="{{ $pegawai2['user_id'] ?? '' }}">
                 </div>
                 <div class="col-md-6">
@@ -173,29 +173,38 @@ $(document).ready(function () {
         searchField   : ['nama', 'email'],
         options       : pegawaiData,
         maxItems      : 1,
-        create        : false,
-        placeholder   : 'Cari nama pegawai...',
+        // create        : false,
+        create        : function (input) { return { id: input, nama: input, email: '' }; },
+        // Digits-only would be read as a user id by the backend
+        createFilter  : function (input) { return !/^\d+$/.test(input); },
+        placeholder   : 'Cari atau taip nama pegawai...',
         dropdownParent: 'body',
         render: {
             option: function (item, escape) {
                 return '<div><strong>' + escape(item.nama) + '</strong>' +
                     '<br><small class="text-muted">' + escape(item.email || '-') + '</small></div>';
+            },
+            option_create: function (data, escape) {
+                return '<div class="create">Guna nama: <strong>' + escape(data.input) + '</strong></div>';
             }
         },
         onChange: function (value) {
             if (!value) {
                 $('#pegawai2_user_id').val('');
-                $('#pegawai2_emel').val('');
+                $('#pegawai2_emel').val('').prop('readonly', true).addClass('bg-light').attr('placeholder', '-');
                 return;
             }
 
             var selected = pegawaiData.find(function (p) { return String(p.id) === String(value); });
             if (!selected) {
+                // Typed name: not linked to any user, so drop the previous pick and let them type the email
+                $('#pegawai2_user_id').val('');
+                $('#pegawai2_emel').val('').prop('readonly', false).removeClass('bg-light').attr('placeholder', '');
                 return;
             }
 
             $('#pegawai2_user_id').val(selected.id);
-            $('#pegawai2_emel').val(selected.email || '');
+            $('#pegawai2_emel').val(selected.email || '').prop('readonly', true).addClass('bg-light').attr('placeholder', '-');
 
             var $tel = $('input[name="pegawai2_tel"]');
             var $jabatan = $('input[name="pegawai2_jabatan"]');
@@ -220,6 +229,11 @@ $(document).ready(function () {
         });
         if (matchedByName) {
             selectize.setValue(String(matchedByName.id), true);
+        } else {
+            // Typed name saved earlier: add it back so it shows
+            selectize.addOption({ id: savedPegawai2.nama, nama: savedPegawai2.nama, email: '' });
+            selectize.setValue(savedPegawai2.nama, true);
+            $('#pegawai2_emel').prop('readonly', false).removeClass('bg-light').attr('placeholder', '');
         }
     }
 

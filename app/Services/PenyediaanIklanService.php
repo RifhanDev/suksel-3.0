@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\PenyediaanIklan;
 use App\Support\AttachmentStorage;
+use App\Support\PenyediaanIklanAccess;
 use App\Support\TenderProcessStatus;
 use App\Tender;
 use App\Upload;
@@ -175,6 +176,17 @@ class PenyediaanIklanService
     public function save(Tender $tender, array $payload, bool $submit = false): PenyediaanIklan
     {
         return DB::transaction(function () use ($tender, $payload, $submit) {
+            $tender = Tender::query()
+                ->whereKey($tender->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if (! PenyediaanIklanAccess::isEditable($tender)) {
+                throw ValidationException::withMessages([
+                    'tender' => 'Tender telah disiarkan atau tidak lagi boleh dikemaskini dalam Penyediaan Iklan.',
+                ]);
+            }
+
             $existing = PenyediaanIklan::query()->where('tender_id', $tender->id)->first();
             $previousTaklimat = is_array($existing?->meta)
                 ? ($existing->meta['iklan']['taklimat'] ?? [])

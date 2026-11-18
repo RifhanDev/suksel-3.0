@@ -27,6 +27,7 @@
 
     <!-- Modern CSS (includes Bootstrap 5) -->
     <link href="{{ asset('css/modern.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/components/password-toggle.css') }}" rel="stylesheet">
 
     <!-- Selectize CSS -->
     <link href="{{ asset('packages/selectize/dist/css/selectize.default.css') }}" rel="stylesheet">
@@ -1756,7 +1757,8 @@
                     </div>
                 @endif
 
-                @if (session('error'))
+                {{-- Pages that show the error inside their own form (e.g. login) set this section to avoid a duplicate --}}
+                @if (session('error') && !View::hasSection('hide_layout_error'))
                     <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -1790,6 +1792,7 @@
 
     <!-- Modern JS (includes jQuery and Bootstrap 5) -->
     <script src="{{ asset('js/modern.js') }}"></script>
+    <script src="{{ asset('js/password-toggle.js') }}"></script>
 
     <!-- Bootstrap Datepicker -->
     <script src="{{ asset('packages/bootstrap-datepicker/js/bootstrap-datepicker.js') }}"></script>

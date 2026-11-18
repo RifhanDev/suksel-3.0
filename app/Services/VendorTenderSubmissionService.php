@@ -159,9 +159,7 @@ class VendorTenderSubmissionService
             return 'Tender telah masuk fasa penilaian. Penghantaran tawaran telah ditutup.';
         }
 
-        $opened = $status >= TenderProcessStatus::PENYEDIAAN_IKLAN || ! empty($tender->approver_id);
-
-        if (! $opened) {
+        if (! $tender->publishedByKetuaJabatan()) {
             return 'Tender belum dibuka untuk penghantaran tawaran.';
         }
 

@@ -19,6 +19,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -42,20 +44,16 @@ class PenyediaanIklanController extends Controller
     public function index(Request $request)
     {
         $query = Tender::query()
-            ->where('status_process_id', TenderProcessStatus::penyediaanIklanListStatus())
             ->with('tenderer')
             ->orderByDesc('id');
 
+        PenyediaanIklanAccess::scopeEditable($query);
         PenyediaanIklanAccess::scopeVisible($query, auth()->user());
 
         TenderListingFilters::apply($query, $request);
 
-        if ($request->filled('status')) {
-            if ($request->input('status') === 'penyediaan_iklan') {
-                $query->where('tenders.status_process_id', TenderProcessStatus::penyediaanIklanListStatus());
-            } else {
-                $query->whereRaw('1 = 0');
-            }
+        if ($request->filled('status') && $request->input('status') !== 'penyediaan_iklan') {
+            $query->whereRaw('1 = 0');
         }
 
         $tenders = $query
@@ -66,7 +64,9 @@ class PenyediaanIklanController extends Controller
                     'no_tender' => $tender->no_tender ?: $tender->ref_number ?: (string) $tender->id,
                     'tajuk' => $tender->name ?: '-',
                     'ptj' => $tender->tenderer?->name ?? '-',
-                    'status_label' => 'Penyediaan Iklan',
+                    'status_label' => (int) $tender->status_process_id === TenderProcessStatus::PENYEDIAAN_IKLAN
+                        ? 'Menunggu Siar'
+                        : 'Penyediaan Iklan',
                     'show_url' => route('penyediaanIklan.show', $tender->id),
                 ];
             });
@@ -76,10 +76,10 @@ class PenyediaanIklanController extends Controller
 
     public function show(Tender $tender)
     {
-        if ((int) $tender->status_process_id !== TenderProcessStatus::penyediaanIklanListStatus()) {
+        if (! PenyediaanIklanAccess::isEditable($tender)) {
             /** @var \Illuminate\Http\RedirectResponse $redirect */
             $redirect = redirect()->route('penyediaanIklan.index');
-            return $redirect->with('error', 'Tender ini belum selesai pengurusan spesifikasi (status ' . TenderProcessStatus::SPESIFIKASI_KEWANGAN . ').');
+            return $redirect->with('error', 'Tender ini telah disiarkan atau tidak lagi dalam peringkat Penyediaan Iklan.');
         }
 
         if (! PenyediaanIklanAccess::canManage(auth()->user(), $tender)) {
@@ -149,23 +149,44 @@ class PenyediaanIklanController extends Controller
 
     protected function persist(Request $request, Tender $tender, bool $submit)
     {
-        if ((int) $tender->status_process_id !== TenderProcessStatus::penyediaanIklanListStatus()) {
-            return $this->respondError($request, 'Tender belum selesai pengurusan spesifikasi.', 422);
+        if (! PenyediaanIklanAccess::isEditable($tender)) {
+            return $this->respondError($request, 'Tender telah disiarkan atau tidak lagi boleh dikemaskini dalam Penyediaan Iklan.', 422);
         }
 
         if (! PenyediaanIklanAccess::canManage(auth()->user(), $tender)) {
             return $this->_access_denied();
         }
 
+        $emailCheck = Validator::make($request->all(), ['pegawai2_emel' => 'nullable|email:filter']);
+        if (! $request->filled('pegawai2_user_id') && $emailCheck->fails()) {
+            return $this->respondError($request, 'E-mel Pegawai Bertanggungjawab 2 tidak sah.', 422);
+        }
+
         $payload = $this->buildPayload($request, $tender->id);
 
         try {
-            $iklanDokumenRows = null;
-            if ($tender->usesIklanDokumen() && $request->has('iklan_dokumen_present')) {
-                $iklanDokumenRows = $this->iklanDokumenService->sync($tender, $request);
-            }
+            [$record, $payload, $iklanDokumenRows] = DB::transaction(function () use ($request, $tender, $submit) {
+                $lockedTender = Tender::query()
+                    ->whereKey($tender->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
-            $record = $this->penyediaanIklanService->save($tender, $payload, $submit);
+                if (! PenyediaanIklanAccess::canManage(auth()->user(), $lockedTender)) {
+                    throw ValidationException::withMessages([
+                        'tender' => 'Tender telah disiarkan atau tidak lagi boleh dikemaskini dalam Penyediaan Iklan.',
+                    ]);
+                }
+
+                $payload = $this->buildPayload($request, $lockedTender->id);
+                $iklanDokumenRows = null;
+                if ($lockedTender->usesIklanDokumen() && $request->has('iklan_dokumen_present')) {
+                    $iklanDokumenRows = $this->iklanDokumenService->sync($lockedTender, $request);
+                }
+
+                $record = $this->penyediaanIklanService->save($lockedTender, $payload, $submit);
+
+                return [$record, $payload, $iklanDokumenRows];
+            });
 
             if ($this->stos->isConfigured()) {
                 try {

@@ -1,0 +1,18 @@
+/* Syarat Tender shown on the same A4-style page as the Penyediaan Iklan editor */
+.syarat-paper-wrap {
+	background: #eef1f5;
+	padding: 24px;
+	overflow-x: auto;
+}
+
+.syarat-paper {
+	max-width: 794px;
+	margin: 0 auto;
+	padding: 56px 64px;
+	background: #fff;
+	box-shadow: 0 1px 4px rgba(15, 23, 42, 0.15);
+	font-family: sans-serif, Arial, Verdana, "Trebuchet MS";
+	font-size: 13px;
+	line-height: 1.6;
+	color: #333;
+}

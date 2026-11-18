@@ -31,6 +31,7 @@
     <link href="{{ asset('css/components/badges.css') }}" rel="stylesheet">
     <link href="{{ asset('css/components/toast.css') }}" rel="stylesheet">
     <link href="{{ asset('css/components/modal-confirm.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/components/password-toggle.css') }}" rel="stylesheet">
 
     <!-- Bootstrap Icons (bi-*); used by penilaian & other v3 screens -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" crossorigin="anonymous">
@@ -107,6 +108,11 @@
             background-color: #f3f4f6;
             overflow-x: hidden;
             font-size: 0.9rem;
+        }
+
+        /* Keeps CKEditor's hidden helper from stretching the page into a second scrollbar */
+        .cke_screen_reader_only {
+            top: 0;
         }
 
         /* ===== PAGE LAYOUT ===== */
@@ -853,6 +859,7 @@
     <script src="{{ asset('js/confirm-modal.js') }}"></script>
     <script src="{{ asset('js/prevent-double-submit.js') }}"></script>
     <script src="{{ asset('js/restrict-upload-types.js') }}"></script>
+    <script src="{{ asset('js/password-toggle.js') }}"></script>
     @auth
         {{-- 2FA code popup for penilaian Hantar; paths come from routes using the 2fa.penilaian middleware --}}
         <script>window.TWO_FACTOR_PENILAIAN_PATHS = @json(\App\Http\Middleware\RequireTwoFactorPenilaian::protectedPathPatterns());</script>

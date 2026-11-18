@@ -259,7 +259,11 @@ class Tender extends Model
 					return true;
 				} elseif ($user->ability(['Agency Admin', 'Agency User'], ['Tender:edit']) && $this->organization_unit_id == $user->organization_unit_id) {
 					return true;
-				} elseif ($user->hasRole('Vendor') && $this->invites()->where('vendor_id', $user->vendor_id)->first()) {
+				} elseif (
+					$user->hasRole('Vendor')
+					&& $this->publishedByKetuaJabatan()
+					&& $this->invites()->where('vendor_id', $user->vendor_id)->first()
+				) {
 					return true;
 				} elseif (self::canViewInternal($this->organization_unit_id)) {
 					// Kakitangan dalaman agensi pemilik. Senarai agensi memaparkan
@@ -529,7 +533,9 @@ class Tender extends Model
 	{
 		if (auth()->check() && auth()->user()->hasRole('Vendor')) {
 			// Iklan Sahaja: paparan iklan sahaja — tiada beli / tambah ke senarai.
-			if ($this->isIklanSahaja()) {
+			if (! $this->publishedByKetuaJabatan()) {
+				return false;
+			} elseif ($this->isIklanSahaja()) {
 				return false;
 			} elseif ($this->manual_payment) {
 				return false;
