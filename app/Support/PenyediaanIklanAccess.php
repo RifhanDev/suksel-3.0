@@ -20,6 +20,10 @@ final class PenyediaanIklanAccess
      */
     public static function isEditable(Tender $tender): bool
     {
+        if (! in_array($tender->type, ['tender', 'quotation'], true)) {
+            return false;
+        }
+
         if (! empty($tender->approver_id)) {
             return false;
         }
@@ -32,12 +36,13 @@ final class PenyediaanIklanAccess
 
     public static function scopeEditable(Builder $query): void
     {
-        $query->where(function (Builder $statusQuery) {
-            $statusQuery->where('status_process_id', TenderProcessStatus::penyediaanIklanListStatus())
-                ->orWhere('status_process_id', TenderProcessStatus::PENYEDIAAN_IKLAN);
-        })->where(function (Builder $approverQuery) {
-            $approverQuery->whereNull('approver_id')->orWhere('approver_id', 0);
-        });
+        $query->whereIn('type', ['tender', 'quotation'])
+            ->where(function (Builder $statusQuery) {
+                $statusQuery->where('status_process_id', TenderProcessStatus::penyediaanIklanListStatus())
+                    ->orWhere('status_process_id', TenderProcessStatus::PENYEDIAAN_IKLAN);
+            })->where(function (Builder $approverQuery) {
+                $approverQuery->whereNull('approver_id')->orWhere('approver_id', 0);
+            });
     }
 
     public static function seesAll(?User $user): bool
