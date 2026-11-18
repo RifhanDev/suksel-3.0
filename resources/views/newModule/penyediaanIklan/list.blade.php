@@ -4,7 +4,7 @@
     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4">
         <div>
             <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Penyediaan Iklan</h3>
-            <p class="text-muted small m-0">Senarai tender dengan status proses 4 (selesai spesifikasi kewangan), sedia untuk penyediaan iklan.</p>
+            <p class="text-muted small m-0">Senarai tender yang sedang disediakan atau menunggu Ketua Jabatan siarkan iklan.</p>
         </div>
     </div>
 
@@ -27,7 +27,7 @@
                     <label for="filter_status" class="form-label small fw-bold text-secondary text-uppercase mb-1">Status</label>
                     <select name="status" id="filter_status" class="form-select form-select-sm">
                         <option value="">Semua</option>
-                        <option value="penyediaan_iklan" @selected(request('status') === 'penyediaan_iklan')>Penyediaan Iklan</option>
+                        <option value="penyediaan_iklan" @selected(request('status') === 'penyediaan_iklan')>Penyediaan Iklan / Menunggu Siar</option>
                     </select>
                 </div>
                 <div class="col-6 col-lg-2">
@@ -62,7 +62,11 @@
                             <td class="fw-semibold text-danger">{{ $row['no_tender'] }}</td>
                             <td>{{ $row['tajuk'] }}</td>
                             <td class="small text-muted">{{ $row['ptj'] }}</td>
-                            <td><span class="badge bg-warning text-dark">{{ $row['status_label'] }}</span></td>
+                            <td>
+                                <span class="badge {{ $row['status_label'] === 'Menunggu Siar' ? 'bg-primary text-white' : 'bg-warning text-white' }}">
+                                    {{ $row['status_label'] }}
+                                </span>
+                            </td>
                             <td class="text-end">
                                 <a href="{{ $row['show_url'] }}" class="btn btn-sm btn-selangor">Sedia Iklan</a>
                             </td>

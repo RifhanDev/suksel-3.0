@@ -14,6 +14,32 @@ use Illuminate\Database\Eloquent\Builder;
  */
 final class PenyediaanIklanAccess
 {
+    /**
+     * A tender can be edited while being prepared (status 4) or while awaiting
+     * Ketua Jabatan publication (status 5 with no approver).
+     */
+    public static function isEditable(Tender $tender): bool
+    {
+        if (! empty($tender->approver_id)) {
+            return false;
+        }
+
+        return in_array((int) ($tender->status_process_id ?? 0), [
+            TenderProcessStatus::penyediaanIklanListStatus(),
+            TenderProcessStatus::PENYEDIAAN_IKLAN,
+        ], true);
+    }
+
+    public static function scopeEditable(Builder $query): void
+    {
+        $query->where(function (Builder $statusQuery) {
+            $statusQuery->where('status_process_id', TenderProcessStatus::penyediaanIklanListStatus())
+                ->orWhere('status_process_id', TenderProcessStatus::PENYEDIAAN_IKLAN);
+        })->where(function (Builder $approverQuery) {
+            $approverQuery->whereNull('approver_id')->orWhere('approver_id', 0);
+        });
+    }
+
     public static function seesAll(?User $user): bool
     {
         return $user !== null && $user->hasRole('Admin');
@@ -46,7 +72,7 @@ final class PenyediaanIklanAccess
             return false;
         }
 
-        if ((int) ($tender->status_process_id ?? 0) !== TenderProcessStatus::penyediaanIklanListStatus()) {
+        if (! self::isEditable($tender)) {
             return false;
         }
 

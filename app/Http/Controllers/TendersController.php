@@ -2199,25 +2199,45 @@ class TendersController extends Controller
 	{
 		$tender = Tender::findOrFail($id);
 
-		if (!$tender->canPublish())
-			$this->_access_denied();
-		if ($tender->publishedByKetuaJabatan())
+		if (!$tender->canPublish()) {
+			return $this->_access_denied();
+		}
+		if ($tender->publishedByKetuaJabatan()) {
 			return redirect('tenders/' . $tender->id)->with('error', 'Tender / Sebut Harga ini telah disiarkan.');
-
-		$approval          = new Approval;
-		$approval->user_id = auth()->user()->id;
-		$approval->save();
-
-		// $tender->approver_id = $approval->id; // OLD CODE BUG: stores approval record ID, not user ID — FK references users.id
-		$tender->approver_id = auth()->user()->id;
-
-		// Siar opens vendor submission. Older tenders stay below status 5 because
-		// publish never advanced the process status.
-		if ((int) ($tender->status_process_id ?? 0) < TenderProcessStatus::PENYEDIAAN_IKLAN) {
-			$tender->status_process_id = TenderProcessStatus::PENYEDIAAN_IKLAN;
 		}
 
-		$tender->save();
+		DB::beginTransaction();
+		try {
+			$tender = Tender::query()->whereKey($id)->lockForUpdate()->firstOrFail();
+
+			if (!$tender->canPublish()) {
+				DB::rollBack();
+				return $this->_access_denied();
+			}
+			if ($tender->publishedByKetuaJabatan()) {
+				DB::rollBack();
+				return redirect('tenders/' . $tender->id)->with('error', 'Tender / Sebut Harga ini telah disiarkan.');
+			}
+
+			$approval          = new Approval;
+			$approval->user_id = auth()->user()->id;
+			$approval->save();
+
+			// $tender->approver_id = $approval->id; // OLD CODE BUG: stores approval record ID, not user ID — FK references users.id
+			$tender->approver_id = auth()->user()->id;
+
+			// Siar opens vendor submission. Older tenders stay below status 5 because
+			// publish never advanced the process status.
+			if ((int) ($tender->status_process_id ?? 0) < TenderProcessStatus::PENYEDIAAN_IKLAN) {
+				$tender->status_process_id = TenderProcessStatus::PENYEDIAAN_IKLAN;
+			}
+
+			$tender->save();
+			DB::commit();
+		} catch (\Throwable $e) {
+			DB::rollBack();
+			throw $e;
+		}
 
 		// Heavy post-publish work runs after the HTTP response so the gateway
 		// does not 504 while eligible vendors / invite emails are processed.
