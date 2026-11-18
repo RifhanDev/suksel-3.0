@@ -35,7 +35,7 @@
 					Cetak
 				</a>
 			@else
-				<a href="javascript:window.print()" class="tender-menu-btn tender-menu-btn-ghost">
+				<a href="{{ route('tenders.print', $tender->id) }}" class="tender-menu-btn tender-menu-btn-ghost" target="_blank" rel="noopener">
 					<svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="15" height="15" viewBox="0 0 24 24">
 						<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
 							d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4M7 15a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-6a2 2 0 0 1 -2 -2l0 -4" />

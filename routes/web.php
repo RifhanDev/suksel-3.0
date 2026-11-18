@@ -216,6 +216,7 @@ Route::get('tenders/select', [TendersController::class, 'select']);
 // Route::resource('tenders', TendersController::class);
 Route::get('tenders', [TendersController::class, 'index'])->name('tenders.index');
 Route::get('tenders/{id}', [TendersController::class, 'show'])->name('tenders.show');
+Route::get('tenders/{id}/print', [TendersController::class, 'printTender'])->name('tenders.print');
 Route::get('tenders/{id}/prices', [TendersController::class, 'prices'])->name('tenders.prices');
 Route::get('tenders/{tender_id}/files/{id}', [TendersController::class, 'file'])->name('tenders.files');
 Route::get('attachments/view', [\App\Http\Controllers\AttachmentController::class, 'stream'])->name('attachments.stream');
