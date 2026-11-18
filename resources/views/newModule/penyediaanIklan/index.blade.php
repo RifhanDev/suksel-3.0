@@ -25,7 +25,13 @@
     <!-- ── HEADER ── -->
     <div class="mb-4">
         <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Penyediaan Iklan</h3>
-        <p class="text-muted small m-0">Semak dan sediakan maklumat iklan tender sebelum diterbitkan.</p>
+        <p class="text-muted small m-0">
+            @if ((int) $tender->status_process_id === \App\Support\TenderProcessStatus::PENYEDIAAN_IKLAN)
+                Iklan telah dihantar dan masih boleh dikemaskini sehingga Ketua Jabatan menyiarkannya.
+            @else
+                Semak dan sediakan maklumat iklan tender sebelum diterbitkan.
+            @endif
+        </p>
     </div>
 
     <!-- ── TENDER INFO CARD ── -->
@@ -57,7 +63,7 @@
                                     <circle cx="12" cy="12" r="10"></circle>
                                     <polyline points="12 6 12 12 16 14"></polyline>
                                 </svg>
-                                Penyediaan Iklan
+                                {{ (int) $tender->status_process_id === \App\Support\TenderProcessStatus::PENYEDIAAN_IKLAN ? 'Menunggu Siar' : 'Penyediaan Iklan' }}
                             </span>
                         </div>
                     </div>
@@ -278,7 +284,7 @@ $(document).ready(function () {
         if (currentTab === tabs.length - 1) {
             $('#btnSeterusnya').html(
                 '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>' +
-                ' Terbitkan'
+                ' {{ !empty($penyediaanIklan['submitted_at']) ? 'Hantar Semula' : 'Terbitkan' }}'
             ).addClass('btn-form-success').removeClass('btn-form-primary');
         } else {
             $('#btnSeterusnya').html(
@@ -307,6 +313,14 @@ $(document).ready(function () {
     $('#btnSebelum').on('click', function () { goToTab(currentTab - 1); });
     $('#btnSeterusnya').on('click', function () {
         if (currentTab === tabs.length - 1) {
+            // Stop here on a bad typed Pegawai 2 email so the other tabs are not lost on reload
+            var emel2 = $.trim($('#pegawai2_emel').val() || '');
+            if (emel2 && !$('#pegawai2_user_id').val() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emel2)) {
+                goToTab(tabs.indexOf('#tab-pegawai-btn'));
+                Swal.fire({ icon: 'error', title: 'Ralat', text: 'E-mel Pegawai Bertanggungjawab 2 tidak sah.', confirmButtonText: 'Faham', confirmButtonColor: '#1e293b' });
+                return;
+            }
+
             var form = document.getElementById('formPenyediaanIklan');
             if (form) {
                 if (typeof window.reindexKelulusanRows === 'function') {
