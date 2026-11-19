@@ -176,7 +176,8 @@
 
                     <div class="mb-3">
                         <label for="ssm_expiry" class="form-label">Tarikh Tamat Sijil SSM <sup id="ssm_expiry_required_marker" style="{{ $ssmExpiryRequired ? '' : 'display:none' }}">*</sup></label>
-                        <input class="form-control valid" date-date-start-date="{{ date('d/m/Y') }}"
+                        <input class="form-control valid" readonly style="background-color: #fff; cursor: pointer;"
+                            placeholder="Pilih tarikh"
                             {{ $ssmExpiryRequired ? 'required aria-required=true' : '' }}
                             id="ssm_expiry" type="text" name="ssm_expiry"
                             value="{{ old('ssm_expiry', isset($vendor->ssm_expiry) && $vendor->ssm_expiry != '' ? $vendor->ssm_expiry->format('d/m/Y') : '') }}">
@@ -1202,7 +1203,7 @@
     <script src="{{ asset('js/two-way-binding.js') }}"></script>
     <script src="{{ asset('js/form-validator.js') }}"></script>
     <script src="{{ asset('js/percentage-calculator.js') }}"></script>
-    <script src="{{ asset('js/vendor-form-init.js') }}"></script>
+    <script src="{{ asset('js/vendor-form-init.js') }}?v={{ @filemtime(public_path('js/vendor-form-init.js')) }}"></script>
     <script>
         (function() {
             // Function to prevent duplicate CIDB grade selections

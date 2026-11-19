@@ -462,12 +462,23 @@
             endDate: new Date()
         });
 
-        // Initialize ssm_expiry
+        // Initialize ssm_expiry. Past dates are allowed (SUK requirement: an
+        // expired SSM may be recorded). The input is readonly, so the calendar is
+        // the only way to set it; clearBtn lets a non-required value be emptied.
         $('#ssm_expiry').datepicker({
             format: 'dd/mm/yyyy',
             autoclose: true,
             todayHighlight: true,
-            startDate: new Date()
+            clearBtn: true
+        }).on('changeDate clearDate', function () {
+            // The validator checks on blur, which fires when the calendar opens,
+            // so re-check once a date is picked to drop a stale "wajib diisi".
+            var validator = window.VendorForm && window.VendorForm.validators
+                ? window.VendorForm.validators.main
+                : null;
+            if (validator && typeof validator.validateInput === 'function') {
+                validator.validateInput(this);
+            }
         });
 
         // Initialize MOF dates
