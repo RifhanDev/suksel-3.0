@@ -968,8 +968,13 @@
                                 <div class="mb-3">
                                     <label class="form-label fw-bold small text-uppercase text-secondary">Alasan
                                         Penolakan</label>
-                                    <textarea class="form-control" id="reason" name="reason" rows="3"
-                                        placeholder="Sila nyatakan sebab penolakan..."></textarea>
+                                    <div class="position-relative">
+                                        <textarea class="form-control" id="reason" name="reason" rows="3"
+                                            autocomplete="off" placeholder="Sila nyatakan sebab penolakan..."></textarea>
+                                        <div id="reasonSuggestions" class="list-group shadow-sm position-absolute w-100 d-none"
+                                            style="z-index: 1080; max-height: 220px; overflow-y: auto; top: 100%; left: 0;"></div>
+                                    </div>
+                                    <div class="form-text small">Alasan yang pernah anda gunakan dalam pelayar ini akan dicadangkan semasa menaip.</div>
                                 </div>
 
                                 @if ($templates)
@@ -1065,6 +1070,136 @@
                     });
                 }
 
+                // Autocomplete for "Alasan Penolakan", like a browser's own autocomplete:
+                // reasons this officer submitted before are kept in this browser only
+                // (localStorage, per user). Nothing is sent to or read from the server.
+                window.RejectReasonHistory = (function() {
+                    var KEY = 'rejectReasonHistory:{{ auth()->id() }}';
+                    var MAX = 50;
+
+                    function load() {
+                        try {
+                            var items = JSON.parse(localStorage.getItem(KEY) || '[]');
+                            return Array.isArray(items) ? items : [];
+                        } catch (e) {
+                            return [];
+                        }
+                    }
+
+                    function store(items) {
+                        try {
+                            localStorage.setItem(KEY, JSON.stringify(items.slice(0, MAX)));
+                        } catch (e) {}
+                    }
+
+                    function normalise(text) {
+                        return text.trim().replace(/\s+/g, ' ').toLowerCase();
+                    }
+
+                    return {
+                        all: load,
+                        add: function(text) {
+                            text = (text || '').trim();
+                            if (!text) return;
+                            var key = normalise(text);
+                            var items = load().filter(function(item) {
+                                return normalise(item) !== key;
+                            });
+                            items.unshift(text); // most recent first
+                            store(items);
+                        },
+                        remove: function(text) {
+                            store(load().filter(function(item) {
+                                return item !== text;
+                            }));
+                        }
+                    };
+                })();
+
+                (function() {
+                    var $reason = $('#reason');
+                    var $list = $('#reasonSuggestions');
+                    if (!$reason.length || !$list.length) return;
+
+                    var activeIndex = -1;
+
+                    function hide() {
+                        $list.addClass('d-none').empty();
+                        activeIndex = -1;
+                    }
+
+                    function render(items) {
+                        $list.empty();
+                        activeIndex = -1;
+                        if (!items.length) {
+                            hide();
+                            return;
+                        }
+                        items.forEach(function(text) {
+                            var $item = $('<div class="list-group-item list-group-item-action small d-flex align-items-start gap-2" style="cursor: pointer;"></div>')
+                                .attr('data-text', text)
+                                .on('mousedown', function(e) {
+                                    e.preventDefault(); // keep focus on the textarea
+                                    choose(text);
+                                });
+                            $('<span class="flex-grow-1" style="white-space: pre-wrap;"></span>').text(text).appendTo($item);
+                            $('<button type="button" class="btn-close flex-shrink-0" style="font-size: 0.6rem; margin-top: 3px;" title="Buang dari senarai"></button>')
+                                .on('mousedown', function(e) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    RejectReasonHistory.remove(text);
+                                    show();
+                                })
+                                .appendTo($item);
+                            $item.appendTo($list);
+                        });
+                        $list.removeClass('d-none');
+                    }
+
+                    function choose(text) {
+                        $reason.val(text);
+                        hide();
+                        $reason.focus();
+                    }
+
+                    function show() {
+                        var term = $reason.val().trim().toLowerCase();
+                        var items = RejectReasonHistory.all().filter(function(item) {
+                            var lower = item.toLowerCase();
+                            return lower.indexOf(term) !== -1 && lower !== term;
+                        });
+                        render(items);
+                    }
+
+                    $reason.on('focus input', show);
+                    $reason.on('blur', function() {
+                        setTimeout(hide, 150);
+                    });
+                    $reason.on('keydown', function(e) {
+                        var $items = $list.children();
+                        if ($list.hasClass('d-none') || !$items.length) return;
+
+                        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            activeIndex = e.key === 'ArrowDown' ?
+                                Math.min(activeIndex + 1, $items.length - 1) :
+                                Math.max(activeIndex - 1, 0);
+                            $items.removeClass('active').eq(activeIndex).addClass('active')[0]
+                                .scrollIntoView({
+                                    block: 'nearest'
+                                });
+                        } else if (e.key === 'Enter' && activeIndex >= 0) {
+                            e.preventDefault();
+                            choose($items.eq(activeIndex).attr('data-text'));
+                        } else if (e.key === 'Escape') {
+                            e.stopPropagation(); // close the list, not the modal
+                            hide();
+                        }
+                    });
+
+                    $('#rejectModal').on('hidden.bs.modal', hide);
+                })();
+
                 $('#confirmRejectBtn').click(function() {
                     var reason = $("#reason").val();
                     var template = [];
@@ -1083,6 +1218,8 @@
                                 template: template
                             })
                             .done(function() {
+                                // Remember the typed reason in this browser for next time
+                                if (window.RejectReasonHistory) RejectReasonHistory.add(reason);
                                 window.location.href =
                                     '{{ isset($vendor) ? route('vendor.requests.index', $vendor->id) : route('requests.index') }}';
                             })
