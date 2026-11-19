@@ -720,11 +720,13 @@ Route::middleware(['auth'])->group(function () {
 	Route::put('vendor/{vendor_id}/blacklist', [VendorsController::class, 'doBlacklist']);
 	Route::get('vendor/{vendor_id}/cancelBlacklist', [VendorsController::class, 'cancelBlacklist']);
 
-	Route::get('/agency/{id}', [OrganizationUnitsController::class, 'agency']);
-	Route::get('/agency/{id}/prices', [OrganizationUnitsController::class, 'agencyPrices']);
-	Route::get('/agency/{id}/results', [OrganizationUnitsController::class, 'agencyResults']);
-	Route::get('/agency/{id}/news', [OrganizationUnitsController::class, 'agencyNews']);
-	Route::get('/agency/{id}/report/{tender}', [OrganizationUnitsController::class, 'agencyReport']);
+	// Constrain {id} to digits so paths like /agency/transaction are not
+	// swallowed by this route (report lives at reports/agency/transaction).
+	Route::get('/agency/{id}', [OrganizationUnitsController::class, 'agency'])->whereNumber('id');
+	Route::get('/agency/{id}/prices', [OrganizationUnitsController::class, 'agencyPrices'])->whereNumber('id');
+	Route::get('/agency/{id}/results', [OrganizationUnitsController::class, 'agencyResults'])->whereNumber('id');
+	Route::get('/agency/{id}/news', [OrganizationUnitsController::class, 'agencyNews'])->whereNumber('id');
+	Route::get('/agency/{id}/report/{tender}', [OrganizationUnitsController::class, 'agencyReport'])->whereNumber('id');
 	Route::resource('agency', OrganizationUnitsController::class);
 
 	Route::get('txn_status/{id}', [HomeController::class, 'txnStatus'])->name('txn_status');
