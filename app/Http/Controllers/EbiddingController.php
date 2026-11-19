@@ -745,7 +745,7 @@ class EbiddingController extends Controller
             'rows.*.id' => ['nullable', 'integer'],
             'rows.*.kandungan' => ['required_with:rows', 'string', 'max:500'],
             'rows.*.files' => ['nullable', 'array'],
-            'rows.*.files.*' => ['file', 'max:10240'],
+            'rows.*.files.*' => ['file', 'max:20480'],
             'deleted_item_ids' => ['nullable', 'array'],
             'deleted_item_ids.*' => ['integer'],
             'deleted_file_ids' => ['nullable', 'array'],

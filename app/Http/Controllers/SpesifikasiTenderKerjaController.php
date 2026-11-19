@@ -127,14 +127,14 @@ class SpesifikasiTenderKerjaController extends Controller
         }
 
         $request->validate([
-            'file' => \App\Support\AllowedAttachment::rules(maxKb: 25600),
+            'file' => \App\Support\AllowedAttachment::rules(maxKb: 20480),
             'file_type' => ['nullable', 'string', 'in:support,bq,bq_template'],
             'checklist_item_uuid' => ['nullable', 'string'],
             'spesifikasi_kerja_item_uuid' => ['nullable', 'string'],
         ], [
             'file.required' => 'Tiada fail diterima. Sila pilih dokumen untuk dimuat naik.',
             'file.file' => 'Dokumen tidak sah. Sila pilih fail yang boleh dibaca dan cuba lagi.',
-            'file.max' => 'Saiz fail melebihi had 25 MB.',
+            'file.max' => 'Saiz fail melebihi had 20 MB.',
             'file.mimes' => \App\Support\AllowedAttachment::MESSAGE,
             'file.uploaded' => 'Fail tidak dapat diterima oleh pelayan. Sila pilih semula dokumen atau hubungi pentadbir.',
         ]);

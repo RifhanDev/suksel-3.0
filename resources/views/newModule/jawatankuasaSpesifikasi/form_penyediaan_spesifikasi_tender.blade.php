@@ -261,7 +261,7 @@
             </div>
             <div id="bq-template-rules" class="bq-upload-rules">
                 <span>Format: PDF, Word atau Excel</span>
-                <span>1 dokumen sahaja, maksimum 25 MB</span>
+                <span>1 dokumen sahaja, maksimum 20 MB</span>
             </div>
             <div id="bq-template-feedback" class="small mt-3" role="status" aria-live="polite" aria-atomic="true"></div>
             <div class="bq-document-heading">
@@ -1264,8 +1264,8 @@ $(function () {
             $('#bq-template-feedback').addClass('text-danger').text('Format fail tidak dibenarkan. Pilih PDF, Word atau Excel.');
             return;
         }
-        if (file.size > 25 * 1024 * 1024) {
-            $('#bq-template-feedback').addClass('text-danger').text('Saiz fail melebihi had 25 MB.');
+        if (file.size > 20 * 1024 * 1024) {
+            $('#bq-template-feedback').addClass('text-danger').text('Saiz fail melebihi had 20 MB.');
             return;
         }
         const formData = new FormData();

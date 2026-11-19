@@ -326,7 +326,7 @@ class PenyataBankController extends Controller
         $this->ensureFormEditable();
 
         $request->validate([
-            'file' => ['required', 'file', 'max:10240', 'mimes:pdf,doc,docx,xls,xlsx,png,jpg,jpeg'],
+            'file' => ['required', 'file', 'max:20480', 'mimes:pdf,doc,docx,xls,xlsx,png,jpg,jpeg'],
             'account_uuid' => ['required', 'uuid'],
             'account_index' => ['required', 'integer', 'min:0'],
         ]);

@@ -107,7 +107,7 @@ class JawatankuasaController extends Controller
             'rows.*.user_id' => ['nullable', 'integer', 'exists:users,id'],
             'rows.*.p_p' => ['nullable', Rule::in(['0', '1'])],
             'rows.*.peranan' => ['nullable', Rule::in(['1', '2', '3'])],
-            'dokumen_sokongan' => ['nullable', 'file', 'max:10240'],
+            'dokumen_sokongan' => ['nullable', 'file', 'max:20480'],
         ], [
             'jenis.in' => 'Jenis jawatankuasa ini belum disokong untuk simpan draf.',
         ]);
@@ -167,7 +167,7 @@ class JawatankuasaController extends Controller
             $rules["tabs.$jenis.rows.*.user_id"] = ['nullable', 'integer', 'exists:users,id'];
             $rules["tabs.$jenis.rows.*.p_p"] = ['nullable', Rule::in(['0', '1'])];
             $rules["tabs.$jenis.rows.*.peranan"] = ['nullable', Rule::in(['1', '2', '3'])];
-            $rules["tabs.$jenis.dokumen_sokongan"] = ['nullable', 'file', 'max:10240'];
+            $rules["tabs.$jenis.dokumen_sokongan"] = ['nullable', 'file', 'max:20480'];
         }
 
         $validated = $request->validate($rules);

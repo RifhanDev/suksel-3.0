@@ -17,7 +17,7 @@ class KakitanganTeknikalController extends Controller
 {
     use HandlesTenderFormAccess, AuthorizesTenderFileAccess;
 
-    private const MAX_UPLOAD_KB = 25600;
+    private const MAX_UPLOAD_KB = 20480;
 
     public function create(?string $tenderUuid = null)
     {
@@ -96,7 +96,7 @@ class KakitanganTeknikalController extends Controller
             'jumlah_pengalaman.required'  => 'Sila isi jumlah pengalaman.',
             'kakitangan_dokumen.required' => 'Sila muat naik sekurang-kurangnya satu dokumen sokongan.',
             'kakitangan_dokumen.min'      => 'Sila muat naik sekurang-kurangnya satu dokumen sokongan.',
-            'kakitangan_dokumen.*.max'    => 'Setiap fail dokumen kakitangan tidak boleh melebihi 25 MB.',
+            'kakitangan_dokumen.*.max'    => 'Setiap fail dokumen kakitangan tidak boleh melebihi 20 MB.',
         ]);
 
         $kategori = TenderKakitanganTeknikal::calculateKategori(
@@ -467,7 +467,7 @@ class KakitanganTeknikalController extends Controller
         ], [
             'dokumen_umum.required' => 'Sila muat naik sekurang-kurangnya satu dokumen sokongan.',
             'dokumen_umum.min'      => 'Sila muat naik sekurang-kurangnya satu dokumen sokongan.',
-            'dokumen_umum.*.max'    => 'Setiap fail dokumen sokongan keseluruhan tidak boleh melebihi 25 MB.',
+            'dokumen_umum.*.max'    => 'Setiap fail dokumen sokongan keseluruhan tidak boleh melebihi 20 MB.',
         ]);
 
         $savedFiles = [];

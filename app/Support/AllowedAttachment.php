@@ -32,7 +32,7 @@ class AllowedAttachment
     /**
      * @return list<string>
      */
-    public static function rules(bool $required = true, int $maxKb = 10240): array
+    public static function rules(bool $required = true, int $maxKb = 20480): array
     {
         return array_values(array_filter([
             $required ? 'required' : 'nullable',
