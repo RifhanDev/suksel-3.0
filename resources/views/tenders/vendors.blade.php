@@ -62,7 +62,7 @@
 					<div class="tender-ref-label">
 						<span class="tender-type-label">{{ App\Tender::$types[$tender->type] }}</span>
 						<span class="tender-ref-sep">·</span>
-						<span class="tender-ref-no">{{ $tender->ref_number }}</span>
+						<span class="tender-ref-no">{{ $tender->displayNoTender() }}</span>
 					</div>
 					<h2 class="tender-title-main">{{ $tender->name }}</h2>
 				</div>
