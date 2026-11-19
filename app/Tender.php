@@ -2398,7 +2398,7 @@ class Tender extends Model
 
 	public function scopePublished($q)
 	{
-		return $q->where(function ($query) {
+		return $q->where(function ($query) use ($q) {
 			$query->where(function ($inner) {
 				$inner->whereIn('type', ['tender', 'quotation'])
 					->whereHas('approver', function ($approver) {
