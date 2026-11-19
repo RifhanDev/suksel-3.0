@@ -576,7 +576,7 @@ class PenyediaanSuratSstController extends Controller
     public function muatNaikDokumen(Request $request, Tender $tender): JsonResponse
     {
         $request->validate([
-            'file' => 'required|file|max:10240',
+            'file' => 'required|file|max:20480',
         ]);
 
         $file = $request->file('file');

@@ -110,7 +110,7 @@ class TenderPrestasiKerjaController extends Controller
             'kemajuan_jadual'        => ['nullable', 'array'],
             'kemajuan_jadual.*'      => ['nullable', 'numeric', 'min:0', 'max:100'],
             'dokumen_prestasi'       => ['nullable', 'array'],
-            'dokumen_prestasi.*'     => ['file', 'max:10240'],
+            'dokumen_prestasi.*'     => ['file', 'max:20480'],
         ]);
 
         $filledRows = collect($validated['nama'] ?? [])

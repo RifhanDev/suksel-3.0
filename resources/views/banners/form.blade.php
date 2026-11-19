@@ -17,7 +17,7 @@
         </label>
         <input type="file" class="form-control" id="file" name="file"
             accept="image/png,image/jpg,image/jpeg" {{ !$banner->exists() ? 'required' : '' }}>
-        <small class="text-muted mt-1 d-block">Format yang diterima: PNG, JPG, JPEG (Maksimum 5MB)</small>
+        <small class="text-muted mt-1 d-block">Format yang diterima: PNG, JPG, JPEG (Maksimum 20MB)</small>
         {!! $errors->first('file', '<div class="text-danger small mt-1">:message</div>') !!}
     </div>
 

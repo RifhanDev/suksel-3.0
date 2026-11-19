@@ -317,7 +317,7 @@
                         </svg>
                     </div>
                     <span class="upload-zone-label d-block fw-semibold text-dark small mb-1">Klik di sini untuk memuat naik dokumen sokongan keseluruhan</span>
-                    <span class="upload-zone-sub d-block text-muted" style="font-size:0.75rem;">PDF, Word, Excel, Imej — saiz maksimum 25 MB per fail (Boleh muat naik pelbagai fail)</span>
+                    <span class="upload-zone-sub d-block text-muted" style="font-size:0.75rem;">PDF, Word, Excel, Imej — saiz maksimum 20 MB per fail (Boleh muat naik pelbagai fail)</span>
                     <input type="file" id="general-input-dokumen" name="dokumen_umum[]" multiple hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg">
                 </label>
 
@@ -434,7 +434,7 @@
                                     </svg>
                                 </div>
                                 <span class="upload-zone-label d-block fw-semibold text-dark small mb-1">Klik di sini untuk memuat naik dokumen</span>
-                                <span class="upload-zone-sub d-block text-muted" style="font-size:0.75rem;">PDF, Word, Excel, Imej — saiz maksimum 25 MB per fail (Pilih pelbagai fail)</span>
+                                <span class="upload-zone-sub d-block text-muted" style="font-size:0.75rem;">PDF, Word, Excel, Imej — saiz maksimum 20 MB per fail (Pilih pelbagai fail)</span>
                                 <input type="file" id="modal-input-dokumen" name="kakitangan_dokumen[]" multiple hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg">
                             </label>
 
@@ -592,11 +592,11 @@ $(document).ready(function () {
             zoneId     : 'modal-upload-zone',
             inputId    : 'modal-input-dokumen',
             chipListId : 'modal-file-chip-list',
-            maxFileSize: 25 * 1024 * 1024,
+            maxFileSize: 20 * 1024 * 1024,
             allowedExtensions: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'png', 'jpg', 'jpeg'],
             onInvalidFile: function (file, reason) {
                 showToast(reason === 'size'
-                    ? file.name + ' melebihi had 25 MB.'
+                    ? file.name + ' melebihi had 20 MB.'
                     : 'Jenis fail ' + file.name + ' tidak dibenarkan.', 'warning');
             }
         });
@@ -605,11 +605,11 @@ $(document).ready(function () {
                 zoneId     : 'general-upload-zone',
                 inputId    : 'general-input-dokumen',
                 chipListId : 'general-file-chip-list',
-                maxFileSize: 25 * 1024 * 1024,
+                maxFileSize: 20 * 1024 * 1024,
                 allowedExtensions: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'png', 'jpg', 'jpeg'],
                 onInvalidFile: function (file, reason) {
                     showToast(reason === 'size'
-                        ? file.name + ' melebihi had 25 MB.'
+                        ? file.name + ' melebihi had 20 MB.'
                         : 'Jenis fail ' + file.name + ' tidak dibenarkan.', 'warning');
                 }
             });

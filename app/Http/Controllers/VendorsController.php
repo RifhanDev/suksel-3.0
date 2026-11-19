@@ -244,16 +244,16 @@ class VendorsController extends Controller
 			$data,
 			[
 				'ssm_expiry' => Vendor::ssmExpiryValidationRules($data['organization_type'] ?? null),
-				// 'ssm'        => 'required|max:5120|mimes:pdf',
-				// 'bumiputera' => 'max:5120|mimes:pdf',
-				// 'mof'        => 'max:5120|mimes:pdf',
-				// 'cidb'       => 'max:5120|mimes:pdf',
+				// 'ssm'        => 'required|max:20480|mimes:pdf',
+				// 'bumiputera' => 'max:20480|mimes:pdf',
+				// 'mof'        => 'max:20480|mimes:pdf',
+				// 'cidb'       => 'max:20480|mimes:pdf',
 
-				// 'mof'             => ['nullable', 'mimes:pdf', 'max:5120'],
-				// 'cidb'            => ['nullable', 'mimes:pdf', 'max:5120'],
-				// 'ssm'             => ['required', 'mimes:pdf', 'max:5120'],
-				// 'mof_bumiputera'  => ['nullable', 'mimes:pdf', 'max:5120'],
-				// 'cidb_bumiputera' => ['nullable', 'mimes:pdf', 'max:5120'],
+				// 'mof'             => ['nullable', 'mimes:pdf', 'max:20480'],
+				// 'cidb'            => ['nullable', 'mimes:pdf', 'max:20480'],
+				// 'ssm'             => ['required', 'mimes:pdf', 'max:20480'],
+				// 'mof_bumiputera'  => ['nullable', 'mimes:pdf', 'max:20480'],
+				// 'cidb_bumiputera' => ['nullable', 'mimes:pdf', 'max:20480'],
 			]
 		);
 		if ($validator->fails()) {
@@ -572,11 +572,11 @@ class VendorsController extends Controller
 
 		$validator = Validator::make($request->all(), [
 			'ssm_expiry'      => Vendor::ssmExpiryValidationRules($request->input('organization_type') ?: $vendor->organization_type),
-			'mof'             => ['nullable', 'mimes:pdf', 'max:5120'],
-			'cidb'            => ['nullable', 'mimes:pdf', 'max:5120'],
-			'ssm'             => ['nullable', 'mimes:pdf', 'max:5120'],
-			'mof_bumiputera'  => ['nullable', 'mimes:pdf', 'max:5120'],
-			'cidb_bumiputera' => ['nullable', 'mimes:pdf', 'max:5120'],
+			'mof'             => ['nullable', 'mimes:pdf', 'max:20480'],
+			'cidb'            => ['nullable', 'mimes:pdf', 'max:20480'],
+			'ssm'             => ['nullable', 'mimes:pdf', 'max:20480'],
+			'mof_bumiputera'  => ['nullable', 'mimes:pdf', 'max:20480'],
+			'cidb_bumiputera' => ['nullable', 'mimes:pdf', 'max:20480'],
 		]);
 
 		if ($validator->fails())

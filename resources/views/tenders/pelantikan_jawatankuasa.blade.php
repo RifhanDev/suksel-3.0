@@ -279,7 +279,7 @@
 												<path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
 											</svg>
 											<p class="mb-1 fw-semibold text-dark" style="font-size: 0.82rem;">Klik untuk muat naik dokumen</p>
-											<p class="mb-0 text-muted" style="font-size: 0.72rem;">PDF, Word, Imej — saiz maksimum 10MB</p>
+											<p class="mb-0 text-muted" style="font-size: 0.72rem;">PDF, Word, Imej — saiz maksimum 20MB</p>
 										</div>
 
 										<div class="mt-2 d-flex align-items-center gap-2 px-3 py-2 rounded-2 committee-file-name-wrapper"

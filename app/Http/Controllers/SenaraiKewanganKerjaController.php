@@ -174,7 +174,7 @@ class SenaraiKewanganKerjaController extends Controller
         $this->ensureAccess();
 
         $request->validate([
-            'file' => \App\Support\AllowedAttachment::rules(true, 25600),
+            'file' => \App\Support\AllowedAttachment::rules(true, 20480),
             'file_type' => ['nullable', 'string', 'max:50'],
             'checklist_item_uuid' => ['nullable', 'string'],
         ]);
