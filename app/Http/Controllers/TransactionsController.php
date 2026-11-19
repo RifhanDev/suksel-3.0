@@ -35,273 +35,277 @@ class TransactionsController extends Controller
 		}
 
 		if ($request->ajax()) {
+			try {
+				return $this->indexDatatable($request);
+			} catch (\Throwable $e) {
+				Log::error('Transactions DataTable failed', [
+					'error' => $e->getMessage(),
+					'file' => $e->getFile(),
+					'line' => $e->getLine(),
+				]);
 
-			$state = $request->state ?? "";
-			$status = $request->status ?? "";
-
-			if ($state) {
-				switch ($state) {
-					case 'subscription':
-						$transactions = Transaction::where('type', 'subscription')->orderBy('transactions.created_at', 'desc');
-						break;
-					case 'purchase':
-						$transactions = Transaction::where('type', 'purchase')->orderBy('transactions.created_at', 'asc');
-						break;
-				}
+				return response()->json([
+					'draw' => (int) $request->get('draw', 0),
+					'recordsTotal' => 0,
+					'recordsFiltered' => 0,
+					'data' => [],
+					'error' => 'Gagal memuatkan senarai transaksi. Sila cuba lagi.',
+				]);
 			}
-			else {
-				$transactions = Transaction::whereNotNull('transactions.id')->orderBy('transactions.created_at', 'desc');
-			}
-
-			$transactions->join('vendors', 'vendors.id', '=', 'transactions.vendor_id')->orderBy('transactions.created_at', 'desc');
-
-			if (!auth()->user()->can('Transaction:all')) {
-				$transactions->where('transactions.organization_unit_id', auth()->user()->organization_unit_id);
-			}		
-
-			$transactions->select([
-				'transactions.id',
-				'transactions.created_at',
-				'vendors.name',
-				'transactions.number',
-				'transactions.gateway_reference',
-				'transactions.type',
-				'transactions.method',
-				'transactions.amount',
-				'transactions.status',
-				'transactions.vendor_id'
-			]);
-
-			$start 		= $request->start ?? 0;  						// Get starting point for data to be retrieved
-			$length 	= $request->length ?? 10;						// Get how much data to be retrieved
-			$draw 		= $request->draw ?? 1;							// Get original draw request
-			$keyword 	= $request->get('search')["value"] ?? "";
-			$keyword 	= Str::lower($keyword);
-			$status 	= $request->status ?? "";
-
-			if($status != "")
-			{
-				$transactions->where('transactions.status', $status );
-			}
-
-			$recordsTotal = (clone $transactions)->count() ?? 0;
-
-
-			// Penapis carian hanya dikenakan apabila pengguna benar-benar menaip
-			// sesuatu. Sebelum ini ia sentiasa dikenakan, jadi setiap muatan halaman
-			// menjalankan lima syarat LIKE dengan corak '%%' - termasuk subkueri ke
-			// atas `vendors` - yang tiada satu pun boleh menggunakan indeks. Pada
-			// jadual 1.4 juta baris itu memaksa imbasan penuh untuk kiraan DAN untuk
-			// pengambilan halaman, walaupun kotak carian kosong.
-			if ($keyword !== "") {
-				$transactions->where( function($q) use($keyword){
-					$q->whereRaw(" (case when transactions.status = 'pending' then 'belum diterima' when transactions.status = 'success' then 'berjaya' when transactions.status = 'declined' then 'ditolak' when transactions.status = 'failed' then 'gagal' when transactions.status = 'pending_authorization' then 'dalam proses pengesahan' end ) like ?", '%'.$keyword.'%')
-					->orWhereRaw(" (case when transactions.type = 'subscription' then 'langganan' when transactions.type = 'purchase' then 'pembelian dokumen' end ) like ?", '%'.$keyword.'%')
-					->orWhereRaw("transactions.vendor_id in (select id from vendors where name like ?)", '%'.$keyword.'%')
-					->orWhereRaw("transactions.number like ?", '%'.$keyword.'%')
-					->orWhereRaw("transactions.gateway_reference like ?", '%'.$keyword.'%');
-				});
-
-				$recordsFiltered = (clone $transactions)->count() ?? 0;
-			} else {
-				// Tiada penapis dikenakan, jadi bilangan yang ditapis semestinya sama
-				// dengan jumlah keseluruhan - mengiranya semula bermakna satu lagi
-				// imbasan penuh untuk jawapan yang sudah diketahui.
-				$recordsFiltered = $recordsTotal;
-			}
-
-			$sortColumns = [
-				'created_at' => 'transactions.created_at',
-				'vendors.name' => 'vendors.name',
-				'number' => 'transactions.number',
-				'type' => 'transactions.type',
-				'amount' => 'transactions.amount',
-				'status' => 'transactions.status',
-			];
-			$sortName = (string) $request->input('columns.' . $request->input('order.0.column') . '.name');
-			if (isset($sortColumns[$sortName])) {
-				$transactions->reorder($sortColumns[$sortName], $request->input('order.0.dir') === 'asc' ? 'asc' : 'desc');
-			}
-
-			$results = $transactions->offset($start)->limit($length)->get();
-
-			$datatable_data = [];
-			$statusBadges = ['success' => 'success', 'pending' => 'warning', 'pending_authorization' => 'info', 'failed' => 'danger', 'declined' => 'danger'];
-			foreach ($results as $rows) {
-
-				$actions  = [];
-				$actions[] = $rows->canShow() ? link_to_route('transactions.show', 'Papar', $rows->id, ['class' => 'btn btn-sm btn-primary rounded-8 px-3 text-nowrap']) : '';
-				$actions[] = $rows->canUpdate() ? link_to_route('transactions.edit', 'Kemaskini', $rows->id, ['class' => 'btn btn-sm btn-warning rounded-8 px-3 text-nowrap']) : '';
-				$action_column = '<div class="d-flex gap-2 justify-content-center flex-nowrap">' . implode('', $actions) . '</div>';
-
-				$year = date('d-m-Y', strtotime($rows->created_at));
-				$new_receipt = '';
-				if ($rows->number != "")
-				{
-					$receipt = $this->receiptNumGenerator($rows->number,$year);
-					$new_receipt = ($receipt!='old') ? $receipt : $rows->vendor_id . '-' . $rows->gateway_reference;
-				}
-				
-				if($rows->status != 'success')
-				{
-					$new_receipt = '';
-				}
-
-				$datatable_data[] = array(
-					"created_at" => Carbon::parse($rows->created_at)->format('d/m/Y H:i:s'),
-					"name" => $rows->name,
-					"number" => $rows->number,
-					"gateway_reference" => $rows->gateway_reference,
-					"no_resit" => $new_receipt,
-					"type" => Transaction::$types[$rows->type] ?? $rows->type,
-					"method" => strtoupper((string) $rows->method),
-					"amount" => 'RM ' . number_format((float) $rows->amount, 2),
-					"status" => '<span class="badge-status badge-status-' . ($statusBadges[$rows->status] ?? 'neutral') . '">' . e(Transaction::$statuses[$rows->status] ?? $rows->status) . '</span>',
-					"actions" => $action_column,
-				);
-			}
-
-			$datatable_response = array(
-				"draw" => $draw,
-				"recordsTotal" => $recordsTotal,
-  				"recordsFiltered" => $recordsFiltered,
-				"data" => $datatable_data
-			);
-
-			return response()->json($datatable_response);
 		}
 
 		return view('transactions.index');
 	}
 
+	/**
+	 * Server-side DataTables for /transactions.
+	 * Avoid COUNT(*)+JOIN on the full 1.4M-row table on every page load.
+	 */
+	protected function indexDatatable(Request $request)
+	{
+		$state = (string) ($request->state ?? '');
+		$status = (string) ($request->status ?? '');
+		$start = max(0, (int) ($request->start ?? 0));
+		$length = max(1, min(100, (int) ($request->length ?? 25)));
+		$draw = (int) ($request->draw ?? 1);
+		$keyword = Str::lower(trim((string) ($request->input('search.value') ?? '')));
+
+		$base = Transaction::query();
+
+		if ($state === 'subscription') {
+			$base->where('transactions.type', 'subscription');
+		} elseif ($state === 'purchase') {
+			$base->where('transactions.type', 'purchase');
+		}
+
+		if ($status !== '') {
+			$base->where('transactions.status', $status);
+		}
+
+		if (! auth()->user()->can('Transaction:all')) {
+			$base->where('transactions.organization_unit_id', auth()->user()->organization_unit_id);
+		}
+
+		$counts = $this->transactionSummaryCounts();
+
+		// Prefer cached totals — a live COUNT(*) on this table routinely stalls the page.
+		if ($keyword === '') {
+			if ($status !== '') {
+				$map = [
+					'success' => 'success_trans_count',
+					'pending' => 'pending_trans_count',
+					'failed' => 'failed_trans_count',
+					'declined' => 'declined_trans_count',
+					'pending_authorization' => 'pending_authorization_trans_count',
+				];
+				$recordsTotal = (int) ($counts[$map[$status] ?? ''] ?? 0);
+			} elseif ($state === 'subscription') {
+				$recordsTotal = (int) ($counts['subscribe_trans_count'] ?? 0);
+			} elseif ($state === 'purchase') {
+				$recordsTotal = (int) ($counts['purchase_trans_count'] ?? 0);
+			} else {
+				$recordsTotal = (int) ($counts['total_trans_count'] ?? 0);
+			}
+			$recordsFiltered = $recordsTotal;
+		} else {
+			$searchQuery = (clone $base)->leftJoin('vendors', 'vendors.id', '=', 'transactions.vendor_id')
+				->where(function ($q) use ($keyword) {
+					$q->where('transactions.number', 'like', '%' . $keyword . '%')
+						->orWhere('transactions.gateway_reference', 'like', '%' . $keyword . '%')
+						->orWhere('vendors.name', 'like', '%' . $keyword . '%')
+						->orWhere('vendors.registration', 'like', '%' . $keyword . '%')
+						->orWhereRaw(
+							"(case when transactions.status = 'pending' then 'belum diterima' when transactions.status = 'success' then 'berjaya' when transactions.status = 'declined' then 'ditolak' when transactions.status = 'failed' then 'gagal' when transactions.status = 'pending_authorization' then 'dalam proses pengesahan' end) like ?",
+							['%' . $keyword . '%']
+						)
+						->orWhereRaw(
+							"(case when transactions.type = 'subscription' then 'langganan' when transactions.type = 'purchase' then 'pembelian dokumen' end) like ?",
+							['%' . $keyword . '%']
+						);
+				});
+
+			$recordsFiltered = (int) (clone $searchQuery)->count(DB::raw('DISTINCT transactions.id'));
+			$recordsTotal = (int) ($counts['total_trans_count'] ?? $recordsFiltered);
+			$base = $searchQuery;
+		}
+
+		$sortColumns = [
+			'created_at' => 'transactions.created_at',
+			'vendors.name' => 'vendors.name',
+			'number' => 'transactions.number',
+			'type' => 'transactions.type',
+			'amount' => 'transactions.amount',
+			'status' => 'transactions.status',
+		];
+		$sortName = (string) $request->input('columns.' . $request->input('order.0.column') . '.name');
+		$sortCol = $sortColumns[$sortName] ?? 'transactions.created_at';
+		$sortDir = $request->input('order.0.dir') === 'asc' ? 'asc' : 'desc';
+
+		// Id-first page: ORDER BY + LIMIT on transactions only, then hydrate vendor names.
+		$idQuery = (clone $base)->select('transactions.id')->reorder($sortCol, $sortDir);
+		if ($keyword !== '' && $sortCol === 'vendors.name') {
+			// join already present for search
+		} elseif ($sortCol === 'vendors.name') {
+			$idQuery->leftJoin('vendors', 'vendors.id', '=', 'transactions.vendor_id');
+		}
+
+		$ids = $idQuery->offset($start)->limit($length)->pluck('transactions.id')->all();
+
+		$results = collect();
+		if ($ids !== []) {
+			$results = Transaction::query()
+				->leftJoin('vendors', 'vendors.id', '=', 'transactions.vendor_id')
+				->whereIn('transactions.id', $ids)
+				->select([
+					'transactions.id',
+					'transactions.created_at',
+					'vendors.name',
+					'transactions.number',
+					'transactions.gateway_reference',
+					'transactions.type',
+					'transactions.method',
+					'transactions.amount',
+					'transactions.status',
+					'transactions.vendor_id',
+				])
+				->orderByRaw('FIELD(transactions.id,' . implode(',', array_map('intval', $ids)) . ')')
+				->get();
+		}
+
+		$datatable_data = [];
+		$statusBadges = ['success' => 'success', 'pending' => 'warning', 'pending_authorization' => 'info', 'failed' => 'danger', 'declined' => 'danger'];
+		$canShow = auth()->user()->ability(['Admin', 'Agency Admin'], ['Transaction:show']);
+		$canEditPerm = auth()->user()->can('Transaction:edit');
+
+		foreach ($results as $rows) {
+			$actions = [];
+			if ($canShow) {
+				$actions[] = link_to_route('transactions.show', 'Papar', $rows->id, ['class' => 'btn btn-sm btn-primary rounded-8 px-3 text-nowrap']);
+			}
+			if ($rows->status !== 'success' && $canEditPerm) {
+				$actions[] = link_to_route('transactions.edit', 'Kemaskini', $rows->id, ['class' => 'btn btn-sm btn-warning rounded-8 px-3 text-nowrap']);
+			}
+			$action_column = '<div class="d-flex gap-2 justify-content-center flex-nowrap">' . implode('', $actions) . '</div>';
+
+			$new_receipt = '';
+			if ($rows->status === 'success' && $rows->number != '') {
+				$year = date('d-m-Y', strtotime($rows->created_at));
+				$receipt = $this->receiptNumGenerator($rows->number, $year);
+				$new_receipt = ($receipt != 'old') ? $receipt : $rows->vendor_id . '-' . $rows->gateway_reference;
+			}
+
+			$datatable_data[] = [
+				'created_at' => Carbon::parse($rows->created_at)->format('d/m/Y H:i:s'),
+				'name' => $rows->name,
+				'number' => $rows->number,
+				'gateway_reference' => $rows->gateway_reference,
+				'no_resit' => $new_receipt,
+				'type' => Transaction::$types[$rows->type] ?? $rows->type,
+				'method' => strtoupper((string) $rows->method),
+				'amount' => 'RM ' . number_format((float) $rows->amount, 2),
+				'status' => '<span class="badge-status badge-status-' . ($statusBadges[$rows->status] ?? 'neutral') . '">' . e(Transaction::$statuses[$rows->status] ?? $rows->status) . '</span>',
+				'actions' => $action_column,
+			];
+		}
+
+		return response()->json([
+			'draw' => $draw,
+			'recordsTotal' => $recordsTotal,
+			'recordsFiltered' => $recordsFiltered,
+			'data' => $datatable_data,
+		]);
+	}
+
 	public function updateFpxCount(Request $request)
 	{
-		// $data tidak pernah dimulakan sebelum ini - ia hanya wujud apabila salah
-		// satu cabang di bawah menetapkan kunci. Permintaan dengan type atau
-		// status yang tidak dikenali sampai ke response()->json($data) dengan
-		// pembolehubah yang tidak wujud, iaitu 500.
 		$data = [];
 
-		// Kad statistik dikira TANPA sebarang semakan vendor.
-		//
-		// Skop asal menyertai `vendors`, yang saya kekalkan sebagai EXISTS untuk
-		// menjaga bilangan tetap sama. Itu satu kesilapan: EXPLAIN menunjukkan
-		// semakan itu menghalang MySQL menjawab GROUP BY daripada indeks, memaksa
-		// bacaan jadual dan satu carian kunci utama bagi setiap baris. Di staging
-		// pertanyaan itu berjalan lebih 600 saat, tidak pernah selesai, tidak
-		// pernah mengisi cache, dan bertimbun sehingga lebih 50 salinan serentak
-		// menepukan pangkalan data dan menjatuhkan pelayan.
-		//
-		// Tanpa semakan itu GROUP BY dijawab terus daripada indeks. Kesannya:
-		// transaksi yang vendor_id-nya NULL atau menunjuk kepada vendor yang sudah
-		// tiada kini TERMASUK dalam kiraan kad, sedangkan sebelum ini ia
-		// dikecualikan. Untuk kiraan ringkasan itu boleh dipertahankan - dan
-		// nombor yang sedikit berbeza jauh lebih baik daripada nombor yang tidak
-		// pernah muncul.
-		$m_transactions = Transaction::query();
-
-		if (!auth()->user()->can('Transaction:all')) {
-			$m_transactions->where('transactions.organization_unit_id', auth()->user()->organization_unit_id);
-		}
-
-		if($request->type != "")
-		{
-			$type = $request->type;
-			
-			switch ($type) {
-				case 'subscribe':
-					$data["subscribe_trans_count"] = (clone $m_transactions)->where('type', 'subscription')->count();
-					break;
-				case 'purchase':
-					$data["purchase_trans_count"] = (clone $m_transactions)->where('type', 'purchase')->count();
-					break;
-				case 'total':
-					$data["total_trans_count"] = (clone $m_transactions)->count();
-					break;
-				
-				default:
-					# code...
-					break;
+		try {
+			if ($request->type === 'custom_all') {
+				return response()->json($this->transactionSummaryCounts());
 			}
-		}
 
-		if($request->status != "")
-		{
-			$status = $request->status;
-			
-			switch ($status) {
-				case 'success':
-					$data["success_trans_count"] = (clone $m_transactions)->where('status', 'success')->count();
-					break;
-				case 'pending':
-					$data["pending_trans_count"] = (clone $m_transactions)->where('status', 'pending')->count();
-					break;
-				case 'pending_authorization':
-					$data["pending_authorization_trans_count"] = (clone $m_transactions)->where('status', 'pending_authorization')->count();
-					break;
-				case 'failed':
-					$data["failed_trans_count"] = (clone $m_transactions)->where('status', 'failed')->count();
-					break;
-				case 'declined':
-					$data["declined_trans_count"] = (clone $m_transactions)->where('status', 'declined')->count();
-					break;
-				
-				default:
-					# code...
-					break;
+			$counts = $this->transactionSummaryCounts();
+
+			if ($request->type != '') {
+				switch ($request->type) {
+					case 'subscribe':
+						$data['subscribe_trans_count'] = $counts['subscribe_trans_count'];
+						break;
+					case 'purchase':
+						$data['purchase_trans_count'] = $counts['purchase_trans_count'];
+						break;
+					case 'total':
+						$data['total_trans_count'] = $counts['total_trans_count'];
+						break;
+				}
 			}
-		}
 
-		if($request->type == "custom_all")
-		{
-			// Kiraan ini merentasi keseluruhan jadual transaksi - 1.4 juta baris di
-			// staging. EXPLAIN menunjukkan GROUP BY sahaja boleh dijawab daripada
-			// indeks, tetapi semakan EXISTS ke atas `vendors` memaksa MySQL membaca
-			// baris jadual untuk mendapatkan vendor_id dan melakukan satu carian
-			// kunci utama bagi SETIAP baris. Itulah kosnya, dan ia tidak boleh
-			// dibuang tanpa mengubah nombor: vendor_id boleh null dan tiada FK,
-			// jadi baris tanpa vendor sepadan memang dikecualikan hari ini.
-			//
-			// Jadi hasilnya di-cache. Kad menyegar setiap 20 dan 30 saat, jadi tanpa
-			// cache setiap pelawat membayar kos itu berulang kali. Satu minit dipilih
-			// supaya penyegaran berkala dilayan daripada cache sambil nombor kekal
-			// segar dalam lingkungan seminit - sesuai untuk kiraan ringkasan.
-			$scopeKey = auth()->user()->can('Transaction:all')
-				? 'all'
-				: 'ou:' . auth()->user()->organization_unit_id;
-
-			$counts = Cache::remember('transactions:counts:' . $scopeKey, 60, function () use ($m_transactions) {
-				$byStatus = (clone $m_transactions)
-					->select('transactions.status', DB::raw('COUNT(*) as aggregate'))
-					->groupBy('transactions.status')
-					->pluck('aggregate', 'status');
-
-				$byType = (clone $m_transactions)
-					->select('transactions.type', DB::raw('COUNT(*) as aggregate'))
-					->groupBy('transactions.type')
-					->pluck('aggregate', 'type');
-
-				return [
-					"subscribe_trans_count" => (int) ($byType['subscription'] ?? 0),
-					"purchase_trans_count"  => (int) ($byType['purchase'] ?? 0),
-
-					// Jumlah kumpulan sentiasa sama dengan bilangan baris dalam skop -
-					// baris berstatus NULL menjadi kumpulannya sendiri dan tetap dikira -
-					// jadi jumlah keseluruhan tidak memerlukan pertanyaan tambahan.
-					"total_trans_count"     => (int) $byStatus->sum(),
-
-					"success_trans_count"   => (int) ($byStatus['success'] ?? 0),
-					"pending_trans_count"   => (int) ($byStatus['pending'] ?? 0),
-					"failed_trans_count"    => (int) ($byStatus['failed'] ?? 0),
-					"declined_trans_count"  => (int) ($byStatus['declined'] ?? 0),
-					"pending_authorization_trans_count" => (int) ($byStatus['pending_authorization'] ?? 0),
-				];
-			});
-
-			return response()->json(array_merge($data, $counts));
+			if ($request->status != '') {
+				switch ($request->status) {
+					case 'success':
+						$data['success_trans_count'] = $counts['success_trans_count'];
+						break;
+					case 'pending':
+						$data['pending_trans_count'] = $counts['pending_trans_count'];
+						break;
+					case 'pending_authorization':
+						$data['pending_authorization_trans_count'] = $counts['pending_authorization_trans_count'];
+						break;
+					case 'failed':
+						$data['failed_trans_count'] = $counts['failed_trans_count'];
+						break;
+					case 'declined':
+						$data['declined_trans_count'] = $counts['declined_trans_count'];
+						break;
+				}
+			}
+		} catch (\Throwable $e) {
+			Log::error('Transactions summary counts failed', ['error' => $e->getMessage()]);
 		}
 
 		return response()->json($data);
+	}
+
+	/**
+	 * Cached GROUP BY counts for cards + DataTables totals.
+	 *
+	 * @return array<string, int>
+	 */
+	protected function transactionSummaryCounts(): array
+	{
+		$scopeKey = auth()->user()->can('Transaction:all')
+			? 'all'
+			: 'ou:' . auth()->user()->organization_unit_id;
+
+		return Cache::remember('transactions:counts:' . $scopeKey, 300, function () {
+			$m_transactions = Transaction::query();
+
+			if (! auth()->user()->can('Transaction:all')) {
+				$m_transactions->where('transactions.organization_unit_id', auth()->user()->organization_unit_id);
+			}
+
+			$byStatus = (clone $m_transactions)
+				->select('transactions.status', DB::raw('COUNT(*) as aggregate'))
+				->groupBy('transactions.status')
+				->pluck('aggregate', 'status');
+
+			$byType = (clone $m_transactions)
+				->select('transactions.type', DB::raw('COUNT(*) as aggregate'))
+				->groupBy('transactions.type')
+				->pluck('aggregate', 'type');
+
+			return [
+				'subscribe_trans_count' => (int) ($byType['subscription'] ?? 0),
+				'purchase_trans_count' => (int) ($byType['purchase'] ?? 0),
+				'total_trans_count' => (int) $byStatus->sum(),
+				'success_trans_count' => (int) ($byStatus['success'] ?? 0),
+				'pending_trans_count' => (int) ($byStatus['pending'] ?? 0),
+				'failed_trans_count' => (int) ($byStatus['failed'] ?? 0),
+				'declined_trans_count' => (int) ($byStatus['declined'] ?? 0),
+				'pending_authorization_trans_count' => (int) ($byStatus['pending_authorization'] ?? 0),
+			];
+		});
 	}
 
 	public function subscriptionIndex()

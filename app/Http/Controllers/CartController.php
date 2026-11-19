@@ -233,7 +233,14 @@ class CartController extends Controller
 		$transaction = Transaction::findOrFail($transaction_id);
 		$vendor      = $transaction->vendor;
 
-		$items       = unserialize($transaction->cached_data);
+		// Safety net: if FPX marked success but unlock only partially ran, finish it here.
+		if ($transaction->status === 'success' && $transaction->type === 'purchase') {
+			$transaction->generateTenderVendor();
+		}
+
+		$items       = method_exists($transaction, 'cachedPurchaseTenderIds')
+			? $transaction->cachedPurchaseTenderIds()
+			: (array) @unserialize($transaction->cached_data);
 		$tenders     = Tender::whereIn('id', $items)->get();
 
 		$fpx = null;

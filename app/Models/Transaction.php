@@ -245,47 +245,69 @@ class Transaction extends Model
 		}
 	}
 	
-	public function generateTenderVendor() {
-	
+	/**
+	 * Unlock every tender in a successful purchase cart.
+	 * Idempotent: safe to call again if a previous attempt only linked some items.
+	 */
+	public function generateTenderVendor()
+	{
 		if ($this->type !== 'purchase' || $this->status !== 'success') {
 			return;
 		}
 
-		$justSucceeded = $this->wasRecentlyCreated || $this->getOriginal('status') !== 'success';
-
-		if (! $justSucceeded) {
+		$items = $this->cachedPurchaseTenderIds();
+		if ($items === []) {
 			return;
 		}
 
-		$items = unserialize($this->cached_data);
-		$tenders = Tender::whereIn('id', $items)->get();
-	
-		foreach ($tenders as $tender) {
-			$purchase = $tender->participants()->where('vendor_id', $this->vendor_id)->first();
-			
-			if ($purchase) {
-				if ((int) $purchase->participate === 0) {
-					$purchase->participate = 1;
+		DB::transaction(function () use ($items) {
+			$tenders = Tender::whereIn('id', $items)->get();
+
+			foreach ($tenders as $tender) {
+				$purchase = $tender->participants()
+					->where('vendor_id', $this->vendor_id)
+					->lockForUpdate()
+					->first();
+
+				if ($purchase) {
+					if ((int) $purchase->participate !== 1) {
+						$purchase->participate = 1;
+					}
 					if (empty($purchase->ref_number)) {
 						$purchase->ref_number = TenderVendor::generateNumber($tender->id);
 					}
+					$purchase->amount = $tender->price;
+					$purchase->transaction_id = $this->id;
+					$purchase->save();
+					// kod_pembekal assigned on hantar dokumen, not on payment
+				} else {
+					$tender->participants()->save(new TenderVendor([
+						'ref_number' => TenderVendor::generateNumber($tender->id),
+						'transaction_id' => $this->id,
+						'participate' => 1,
+						'amount' => $tender->price,
+						'vendor_id' => $this->vendor_id,
+					]));
+					// kod_pembekal assigned on hantar dokumen, not on payment
 				}
-
-				$purchase->amount = $tender->price;
-				$purchase->transaction_id = $this->id;
-				$purchase->save();
-				// kod_pembekal assigned on hantar dokumen, not on payment
-			} else {
-				$tender->participants()->save(new TenderVendor([
-				'ref_number' => TenderVendor::generateNumber($tender->id),
-				'transaction_id' => $this->id,
-				'participate' => 1,
-				'amount' => $tender->price,
-				'vendor_id' => $this->vendor_id
-				]));
-				// kod_pembekal assigned on hantar dokumen, not on payment
 			}
+		});
+	}
+
+	/**
+	 * @return list<int>
+	 */
+	public function cachedPurchaseTenderIds(): array
+	{
+		$raw = @unserialize($this->cached_data);
+		if ($raw instanceof \Illuminate\Support\Collection) {
+			$raw = $raw->all();
 		}
+		if (! is_array($raw)) {
+			return [];
+		}
+
+		return array_values(array_unique(array_filter(array_map('intval', $raw))));
 	}
 	
 	public function generateSubscription() {
