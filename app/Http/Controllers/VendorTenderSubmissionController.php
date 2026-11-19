@@ -83,5 +83,11 @@ class VendorTenderSubmissionController extends Controller
         if ($tender->usesIklanDokumen()) {
             abort(403, 'Kaedah dokumen ini tidak memerlukan penghantaran tawaran melalui sistem.');
         }
+
+        // Tender 2.0: tawaran dihantar secara manual seperti dalam 2.0. Penghantaran
+        // 3.0 akan menaikkan status_process_id ke 6 dan menolaknya ke aliran penilaian.
+        if ($tender->isLegacy20()) {
+            abort(403, 'Tender ini tidak memerlukan penghantaran tawaran melalui sistem.');
+        }
     }
 }

@@ -79,7 +79,14 @@ class TendersController extends Controller
 				'tenders.briefing_address',
 				'tenders.tender_peringkat',
 				'tenders.kaedah_dokumen_id',
-			]);
+				// Lajur untuk label status (TenderStatusPresenter) — elak status dianggap 0.
+				'tenders.type',
+				'tenders.status_process_id',
+				'tenders.only_advertise',
+				'tenders.advertise_stop_date',
+				'tenders.is_ebidding',
+				'tenders.ebidding_process_stage_id',
+			])->with('kaedahDokumen');
 
 			if ($request->filled('filter_no_tender')) {
 				$filterNoTender = trim((string) $request->input('filter_no_tender'));
@@ -174,7 +181,7 @@ class TendersController extends Controller
 					return \Carbon\Carbon::parse($tender->submission_datetime)->format('j M Y');
 				})
 				->editColumn('approver_id', function ($tender) {
-					return $tender->status;
+					return \App\Support\TenderStatusPresenter::html($tender);
 				})
 				->addColumn('actions', function ($tender) {
 					return \App\Support\CommitteeAction::button($tender);
@@ -190,7 +197,13 @@ class TendersController extends Controller
 				->removeColumn('briefing_address')
 				->removeColumn('publish_prices')
 				->removeColumn('tender_peringkat')
-				->removeColumn('kaedah_dokumen_id');
+				->removeColumn('kaedah_dokumen_id')
+				->removeColumn('type')
+				->removeColumn('status_process_id')
+				->removeColumn('only_advertise')
+				->removeColumn('advertise_stop_date')
+				->removeColumn('is_ebidding')
+				->removeColumn('ebidding_process_stage_id');
 
 			if (!auth()->check() || auth()->user()->hasRole('Vendor')) $datatable = $datatable->removeColumn('approver_id');
 

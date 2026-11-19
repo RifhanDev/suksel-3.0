@@ -231,7 +231,14 @@ class OrganizationUnitsController extends Controller
 				'created_at',
 				'tender_peringkat',
 				'kaedah_dokumen_id',
-			]);
+				// Lajur untuk label status (TenderStatusPresenter) — elak status dianggap 0.
+				'type',
+				'status_process_id',
+				'only_advertise',
+				'advertise_stop_date',
+				'is_ebidding',
+				'ebidding_process_stage_id',
+			])->with('kaedahDokumen');
 
 			$datatable = Datatables::of($tenders)->editColumn('name', function ($tender)
 			{
@@ -291,7 +298,7 @@ class OrganizationUnitsController extends Controller
 			// ia kini berada dalam kolum 'actions' melalui CommitteeAction.
 			->addColumn('status', function ($tender)
 			{
-				return $tender->status;
+				return \App\Support\TenderStatusPresenter::html($tender);
 			})
 			->addColumn('codes', function ($tender)
 			{
@@ -522,7 +529,7 @@ class OrganizationUnitsController extends Controller
 					return sprintf('RM %.2f', $tender->price);
 				})
 				->addColumn('status', function ($tender) {
-					if (in_array($tender->status, ['Tiada Jawatan Kuasa', 'Draf Pelantikan Jawatankuasa']) && auth()->check() && auth()->user()->ability([], ['committee:create'])) {
+					if (!$tender->isLegacy20() && in_array($tender->status, ['Tiada Jawatan Kuasa', 'Draf Pelantikan Jawatankuasa']) && auth()->check() && auth()->user()->ability([], ['committee:create'])) {
 						$p = $tender->tender_peringkat ?? null;
 						$url = ((int) $p === 1) ? '/pelantikan-jawatankuasa-1-peringkat?tender=' . $tender->uuid : '/pelantikan-jawatankuasa?tender=' . $tender->uuid;
 						$btnText = $p ? 'Sambung Proses Lantikan' : 'Lantik Jawatan Kuasa';

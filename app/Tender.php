@@ -19,6 +19,9 @@ class Tender extends Model
 
 	private bool $kaedahPerolehanKindResolved = false;
 
+	/** Cache per-instance untuk isLegacy20() bila lajur tidak dipilih dalam query. */
+	private ?bool $legacy20Cache = null;
+
 	use Helper;
 	use RevisionableTrait;
 
@@ -331,10 +334,54 @@ class Tender extends Model
 			&& (int) $this->organization_unit_id === (int) $user->organization_unit_id;
 	}
 
+	/**
+	 * Tender 2.0 (dipindah dari sistem lama). Kedua-dua lajur ini hanya wujud
+	 * dalam 3.0 dan diisi oleh setiap laluan cipta 3.0 (Cipta Tender, borang
+	 * lama store(), Siar, Pembelian/Lantikan Terus). Tender 2.0 ada kedua-duanya NULL.
+	 */
+	public function isLegacy20(): bool
+	{
+		if ($this->legacy20Cache !== null) {
+			return $this->legacy20Cache;
+		}
+
+		$attributes = $this->getAttributes();
+
+		if (array_key_exists('status_process_id', $attributes) && array_key_exists('kaedah_dokumen_id', $attributes)) {
+			$statusProcessId = $attributes['status_process_id'];
+			$kaedahDokumenId = $attributes['kaedah_dokumen_id'];
+		} elseif ($this->exists && $this->getKey()) {
+			// Query senarai yang tidak memilih lajur ini — ambil sekali, jangan anggap 2.0.
+			$row = static::query()->whereKey($this->getKey())->first(['status_process_id', 'kaedah_dokumen_id']);
+			if (! $row) {
+				return $this->legacy20Cache = false;
+			}
+			$statusProcessId = $row->getAttributes()['status_process_id'] ?? null;
+			$kaedahDokumenId = $row->getAttributes()['kaedah_dokumen_id'] ?? null;
+		} else {
+			return false;
+		}
+
+		return $this->legacy20Cache = ($statusProcessId === null && $kaedahDokumenId === null);
+	}
+
+	public function scopeLegacy20($q)
+	{
+		return $q->whereNull($q->qualifyColumn('status_process_id'))
+			->whereNull($q->qualifyColumn('kaedah_dokumen_id'));
+	}
+
 	public function publishedByKetuaJabatan(): bool
 	{
 		if (empty($this->approver_id)) {
 			return false;
+		}
+
+		// 2.0 menyimpan approvals.id (bukan users.id) dalam approver_id, jadi semakan
+		// peranan di bawah akan melihat pengguna yang salah. Dalam 2.0, approver_id
+		// hanya diisi semasa Siar — ia sudah disiarkan.
+		if ($this->isLegacy20()) {
+			return true;
 		}
 
 		$approver = $this->relationLoaded('approver') ? $this->approver : $this->approver()->first();
@@ -2321,6 +2368,15 @@ class Tender extends Model
 							$roles->whereIn('name', ['Agency Ketua Jabatan', 'Admin']);
 						});
 					});
+			})->orWhere(function ($legacy) use ($q) {
+				// Tender 2.0: approver_id = approvals.id (bukan users.id), jadi semakan
+				// peranan di atas melihat pengguna yang salah. Disiar dalam 2.0 bermaksud
+				// approver_id diisi — jangan sorok daripada syarikat.
+				$legacy->whereIn('type', ['tender', 'quotation'])
+					->whereNull($q->qualifyColumn('status_process_id'))
+					->whereNull($q->qualifyColumn('kaedah_dokumen_id'))
+					->whereNotNull($q->qualifyColumn('approver_id'))
+					->where($q->qualifyColumn('approver_id'), '>', 0);
 			})->orWhereNotIn('type', ['tender', 'quotation']);
 		});
 	}

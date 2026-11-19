@@ -40,6 +40,12 @@ class CommitteeAction
             return '';
         }
 
+        // Tender 2.0 telah disiar dalam sistem lama — tiada proses jawatankuasa 3.0.
+        // Melantik jawatankuasa akan menolaknya ke aliran 3.0 separuh jalan.
+        if (method_exists($tender, 'isLegacy20') && $tender->isLegacy20()) {
+            return '';
+        }
+
         // Bayaran Dokumen Secara Online / Pembelian Manual (Iklan Sahaja)
         // skip pelantikan jawatankuasa — go straight to penyediaan iklan.
         if (method_exists($tender, 'usesIklanDokumen') && $tender->usesIklanDokumen()) {

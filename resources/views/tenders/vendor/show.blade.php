@@ -447,8 +447,9 @@
 		</div>
 	@endif
 
-	{{-- Online / Manual iklan kaedah: tawaran dihantar secara manual ke kaunter, bukan melalui sistem. --}}
-	@if ($vendorHasPurchased && !$tender->usesIklanDokumen())
+	{{-- Online / Manual iklan kaedah: tawaran dihantar secara manual ke kaunter, bukan melalui sistem.
+	     Tender 2.0 juga: tiada penghantaran tawaran 3.0 (menghantar akan menaikkan status ke 6). --}}
+	@if ($vendorHasPurchased && !$tender->usesIklanDokumen() && !$tender->isLegacy20())
 		<div class="mb-4" id="vendor-submission-panel">
 			@if ($vendorSubmitted)
 				<div class="alert alert-success d-flex align-items-start gap-2 mb-0 py-3 px-3" style="font-size:0.84rem;">
@@ -1620,7 +1621,7 @@
 		@include('tenders.forms._online_form_modal')
 	@endif
 
-	@if ($vendorHasPurchased && !$vendorSubmitted && !$tender->usesIklanDokumen())
+	@if ($vendorHasPurchased && !$vendorSubmitted && !$tender->usesIklanDokumen() && !$tender->isLegacy20())
 		<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 		<script>
 			$(function() {
