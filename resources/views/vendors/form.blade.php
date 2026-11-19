@@ -992,9 +992,14 @@
 
             <div class="form-grid-1">
                 <?php $ssm = Former::file('ssm')->label('Sijil SSM')->accept('application/pdf')->addClass('file_input'); ?>
-                <?php if (!isset($vendor) || !$vendor->completed || !$vendor->hasFile('ssm')) {
-                    $ssm = $ssm->required();
-                } ?>
+                <?php
+                    // Wajib hanya untuk syarikat baharu. Kemaskini syarikat sedia ada:
+                    // SSM pilihan (server rule pun 'nullable'), supaya boleh kemaskini
+                    // maklumat lain tanpa muat naik semula sijil.
+                    if (!isset($vendor)) {
+                        $ssm = $ssm->required();
+                    }
+                ?>
                 {!! $ssm !!}
 
                 @if (!isset($vendor) || !$vendor->completed || Auth::user()->hasRole('Admin'))
