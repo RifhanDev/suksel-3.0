@@ -1735,9 +1735,18 @@ class TendersController extends Controller
 		if (!$purchase->canViewReceipt())
 			return $this->_access_denied();
 
+		// Receipt only for unlocked purchases (paid / participate=1).
+		if ((int) $purchase->participate !== 1) {
+			return $this->_access_denied();
+		}
+
 		$transaction = $purchase->transaction;
 		// transaction_id 0 / missing = bypass / manual / agency-recorded purchase
 		$hasTransaction = $transaction && (int) ($purchase->transaction_id ?? 0) > 0;
+
+		if ($hasTransaction && $transaction->status !== 'success') {
+			return $this->_access_denied();
+		}
 
 		$type = 'SALINAN';
 		$receipt = 'old';

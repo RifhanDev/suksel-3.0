@@ -123,7 +123,12 @@
                                 RM {{ number_format($tender->price, 2) }}
                             </td>
                             @if ($transaction->status == 'success')
-                                @php $participant = $tender->participants()->whereVendorId(Auth::user()->vendor_id)->first(); @endphp
+                                @php
+                                    $participant = $tender->participants()
+                                        ->where('vendor_id', Auth::user()->vendor_id)
+                                        ->where('participate', 1)
+                                        ->first();
+                                @endphp
                                 <td style="padding:12px 20px;border-color:#f1f5f9;text-align:center;">
                                     @if ($participant)
                                         <div class="d-flex flex-column gap-1 align-items-center">
@@ -138,6 +143,8 @@
                                                 No. Siri
                                             </a>
                                         </div>
+                                    @else
+                                        <span style="font-size:0.72rem;font-weight:600;color:#b45309;">Dalam proses buka kunci</span>
                                     @endif
                                 </td>
                             @endif

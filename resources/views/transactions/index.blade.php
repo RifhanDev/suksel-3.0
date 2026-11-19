@@ -102,25 +102,24 @@
 		$(document).ready(function() {
 			updateFpxCount();
 
-			// Update count every 20 seconds
-			setInterval(function() {
-				updateFpxCount1();
-			}, 20000);
+			// Match server cache TTL (5 min) — avoid hammering COUNT on a huge table.
+			setInterval(updateFpxCount, 300000);
 
-			// Update count every 30 seconds
-			setInterval(function() {
-				updateFpxCount2();
-			}, 30000);
-
-			// Check payment transaction status every 4 minutes
 			setInterval(function() {
 				updateFpxRequery();
 			}, 240000);
 		});
 
-		// Sebelum ini setiap kad statistik menembak permintaannya sendiri - lapan
-		// permintaan pada muatan halaman, setiap satu COUNT ke atas jadual transaksi
-		// yang sama. Satu permintaan kini memulangkan kesemuanya sekali gus.
+		function setCardDash() {
+			[
+				'success_trans_count', 'pending_trans_count', 'pending_authorization_trans_count',
+				'failed_trans_count', 'declined_trans_count', 'subscribe_trans_count',
+				'purchase_trans_count', 'total_trans_count'
+			].forEach(function(id) {
+				$("#" + id).html('-');
+			});
+		}
+
 		function updateFpxCount() {
 			$.ajax({
 				type: "POST",
@@ -128,6 +127,7 @@
 				data: {
 					type: "custom_all"
 				},
+				timeout: 60000,
 				success: function(response) {
 					var cards = {
 						success_trans_count: response.success_trans_count,
@@ -142,22 +142,17 @@
 
 					Object.keys(cards).forEach(function(id) {
 						var value = cards[id];
-						if (value === undefined || value === null) return;
+						if (value === undefined || value === null) {
+							$("#" + id).html('-');
+							return;
+						}
 						$("#" + id).html(Number(value).toLocaleString("en-US"));
 					});
+				},
+				error: function() {
+					setCardDash();
 				}
 			});
-		}
-
-		// Penyegaran berkala menggunakan panggilan tunggal yang sama; tiada sebab
-		// untuk memecahkannya kepada subset apabila satu permintaan memulangkan
-		// semua kiraan.
-		function updateFpxCount1() {
-			updateFpxCount();
-		}
-
-		function updateFpxCount2() {
-			updateFpxCount();
 		}
 
 		function updateTotalTrans() {
@@ -287,7 +282,16 @@
 		let table = $('.DT-index').DataTable({
 			processing: true,
 			serverSide: true,
-			ajax: path,
+			ajax: {
+				url: path,
+				error: function(xhr) {
+					var msg = (xhr.responseJSON && xhr.responseJSON.error)
+						? xhr.responseJSON.error
+						: 'Gagal memuatkan senarai. Sila muat semula.';
+					$('.dataTables_processing').hide();
+					alert(msg);
+				}
+			},
 			columns: [{
 					data: 'created_at',
 					name: 'created_at',

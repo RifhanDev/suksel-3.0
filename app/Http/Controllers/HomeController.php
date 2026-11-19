@@ -459,6 +459,7 @@ class HomeController extends Controller
 
 				$purchases  = TenderVendor::whereNotNull('ref_number')
 					->where('vendor_id', $vendorId)
+					->where('participate', 1)
 					->orderBy('created_at', 'desc')
 					->get();
 
@@ -469,6 +470,7 @@ class HomeController extends Controller
 				$invites   = collect([]);
 
 				$purchases = TenderVendor::whereNotNull('ref_number')
+					->where('participate', 1)
 					->with(['tender.tenderer'])
 					->orderBy('created_at', 'desc')
 					->take(100)

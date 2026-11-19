@@ -138,19 +138,25 @@ class FpxController extends Controller
 		// Must run before the switch below — never let an unverified payload reach 'success'.
 		if($this->rejectOnBadSignature($data, 'fpx-respond')) return $this->_access_denied();
 
-		switch(true) {
-			case $data['fpx_debitAuthCode'] == '00' && $data['fpx_creditAuthCode'] == '00':
-				$transaction->status            = 'success';
-				$transaction->response_message  = sprintf('%s|%s - %s', $data['fpx_debitAuthCode'], $data['fpx_creditAuthCode'], 'SUCCESSFUL');
-				break;
-			case $data['fpx_debitAuthCode'] == '99':
-				$transaction->status            = 'pending_authorization';
-				$transaction->response_message  = sprintf('%s|%s - %s', $data['fpx_debitAuthCode'], $data['fpx_creditAuthCode'], 'PENDING FOR AUTHORIZER TO APPROVE');
-				break;
-			default:
-				$transaction->status            = 'failed';
-				$transaction->response_message  = sprintf('%s|%s - %s', $data['fpx_debitAuthCode'], $data['fpx_creditAuthCode'], 'UNSUCCESSFUL');
-				break;
+		// Never downgrade an already-successful payment (listen already protects this).
+		// A late/failed browser AC must not wipe unlock after AE success.
+		$alreadySuccess = $transaction->status === 'success';
+
+		if (! $alreadySuccess) {
+			switch(true) {
+				case $data['fpx_debitAuthCode'] == '00' && $data['fpx_creditAuthCode'] == '00':
+					$transaction->status            = 'success';
+					$transaction->response_message  = sprintf('%s|%s - %s', $data['fpx_debitAuthCode'], $data['fpx_creditAuthCode'], 'SUCCESSFUL');
+					break;
+				case $data['fpx_debitAuthCode'] == '99':
+					$transaction->status            = 'pending_authorization';
+					$transaction->response_message  = sprintf('%s|%s - %s', $data['fpx_debitAuthCode'], $data['fpx_creditAuthCode'], 'PENDING FOR AUTHORIZER TO APPROVE');
+					break;
+				default:
+					$transaction->status            = 'failed';
+					$transaction->response_message  = sprintf('%s|%s - %s', $data['fpx_debitAuthCode'], $data['fpx_creditAuthCode'], 'UNSUCCESSFUL');
+					break;
+			}
 		}
 	
 		$message = [];
@@ -162,6 +168,11 @@ class FpxController extends Controller
 		$transaction->gateway_auth      = implode('|', [$data['fpx_debitAuthNo'], $data['fpx_creditAuthNo']]);
 		$transaction->gateway_response  = implode(' | ', $message);
 		$transaction->save();
+
+		// Backfill tender_vendors if unlock only partially completed earlier.
+		if ($transaction->status === 'success' && $transaction->type === 'purchase') {
+			$transaction->generateTenderVendor();
+		}
 	
 		if($returning) {
 			if($transaction->type == 'purchase') {
@@ -210,7 +221,11 @@ class FpxController extends Controller
 		if($this->rejectOnBadSignature($data, 'fpx-listen')) return $this->_access_denied();
 
 		if($transaction->status == 'success') {
-				echo 'OK';
+			// Already paid: still repair any missing tender_vendors unlocks, then ACK.
+			if ($transaction->type === 'purchase') {
+				$transaction->generateTenderVendor();
+			}
+			echo 'OK';
 			return;
 		}
 	
