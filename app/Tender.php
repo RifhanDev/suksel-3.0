@@ -423,7 +423,7 @@ class Tender extends Model
 
 			if ($user->hasRole('Admin')) {
 				return true;
-			} elseif ($user->ability(['Agency Admin', 'Agency User'], ['Tender:edit']) && $organization_unit_id === $user->organization_unit_id) {
+			} elseif ($user->ability(['Agency Admin', 'Agency User'], ['Tender:edit']) && (int) $organization_unit_id === (int) $user->organization_unit_id) {
 				return true;
 			} else {
 				return false;
