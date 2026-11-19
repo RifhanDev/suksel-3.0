@@ -397,6 +397,8 @@ class User extends Authenticatable
 
 	/**
 	 * Admin: any user. Agency Admin: same organization_unit only.
+	 * Vendor accounts belong to no organization unit, so the unit check is
+	 * skipped for them (same behaviour as 2.0: role/permission only).
 	 *
 	 * @param  array<int, string>  $roles
 	 * @param  array<int, string>  $permissions
@@ -408,6 +410,10 @@ class User extends Authenticatable
 		}
 
 		if (auth()->user()->hasRole('Admin')) {
+			return true;
+		}
+
+		if (! empty($this->vendor_id) || $this->hasRole('Vendor')) {
 			return true;
 		}
 

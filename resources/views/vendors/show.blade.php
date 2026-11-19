@@ -138,9 +138,22 @@
                                 </li>
                             @endif
 
-                            @if ($vendor->canUpdate())
+                            @php
+                                // Vendor viewing own profile → own change-password page (asks current password).
+                                // Staff → admin reset page, only when they actually pass canSetPassword().
+                                $isOwnVendorProfile = auth()->user()->vendor_id && auth()->user()->vendor_id == $vendor->id;
+                                $passwordUrl = null;
+                                if ($vendor->user) {
+                                    if ($isOwnVendorProfile) {
+                                        $passwordUrl = route('change_password');
+                                    } elseif ($vendor->user->canSetPassword()) {
+                                        $passwordUrl = action('UsersController@getSetPassword', $vendor->user->id);
+                                    }
+                                }
+                            @endphp
+                            @if ($passwordUrl)
                                 <li>
-                                    <a class="dropdown-item d-flex align-items-center gap-2" href="{{ action('UsersController@getSetPassword', $vendor->user->id) }}">
+                                    <a class="dropdown-item d-flex align-items-center gap-2" href="{{ $passwordUrl }}">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                                         Tukar Kata Laluan
                                     </a>

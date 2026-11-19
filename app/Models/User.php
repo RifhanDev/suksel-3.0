@@ -311,6 +311,11 @@ class User extends Authenticatable
 			return true;
 		}
 
+		// Vendor accounts belong to no organization unit: role/permission only (as in 2.0).
+		if (! empty($this->vendor_id) || $this->hasRole('Vendor')) {
+			return true;
+		}
+
 		return (int) auth()->user()->organization_unit_id === (int) $this->organization_unit_id;
 	}
 
