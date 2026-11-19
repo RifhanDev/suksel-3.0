@@ -86,6 +86,7 @@ class TendersController extends Controller
 				'tenders.advertise_stop_date',
 				'tenders.is_ebidding',
 				'tenders.ebidding_process_stage_id',
+				'tenders.created_at',
 			])->with('kaedahDokumen');
 
 			if ($request->filled('filter_no_tender')) {
@@ -203,7 +204,8 @@ class TendersController extends Controller
 				->removeColumn('only_advertise')
 				->removeColumn('advertise_stop_date')
 				->removeColumn('is_ebidding')
-				->removeColumn('ebidding_process_stage_id');
+				->removeColumn('ebidding_process_stage_id')
+				->removeColumn('created_at');
 
 			if (!auth()->check() || auth()->user()->hasRole('Vendor')) $datatable = $datatable->removeColumn('approver_id');
 

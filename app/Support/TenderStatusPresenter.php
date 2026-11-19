@@ -18,8 +18,8 @@ use Carbon\Carbon;
  *
  * Jenis 1 dalam tempoh iklan: status boleh naik ke 6/7 sebelum tarikh tutup
  * (syarikat pertama hantar dokumen / jemputan mesyuarat). Bila status masih 5,
- * label utama = "Sedang Diiklankan"; bila >= 6, label utama = peringkat semasa
- * dan "Sedang Diiklankan" menjadi baris kecil sehingga tarikh tutup.
+ * label utama = "Telah Disiarkan"; bila >= 6, label utama = peringkat semasa
+ * dan "Telah Disiarkan" menjadi baris kecil sehingga tarikh tutup.
  */
 final class TenderStatusPresenter
 {
@@ -31,7 +31,7 @@ final class TenderStatusPresenter
 
     public const KIND_TERUS = 'terus';
 
-    public const SEDANG_DIIKLANKAN = 'Sedang Diiklankan';
+    public const SEDANG_DIIKLANKAN = 'Telah Disiarkan';
 
     public const IKLAN_DITUTUP = 'Iklan Telah Ditutup';
 
@@ -159,7 +159,7 @@ final class TenderStatusPresenter
             return ['main' => self::iklanLabel($tender), 'sub' => null, 'tags' => $tags];
         }
 
-        // Status >= 6: label utama = peringkat semasa; "Sedang Diiklankan" jadi baris kecil.
+        // Status >= 6: label utama = peringkat semasa; "Telah Disiarkan" jadi baris kecil.
         $main = self::PENILAIAN_STAGE_LABELS[$status] ?? 'Dalam Proses';
         $sub = self::isClosed($tender) ? null : self::SEDANG_DIIKLANKAN;
 

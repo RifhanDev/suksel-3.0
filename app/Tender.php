@@ -335,9 +335,18 @@ class Tender extends Model
 	}
 
 	/**
-	 * Tender 2.0 (dipindah dari sistem lama). Kedua-dua lajur ini hanya wujud
-	 * dalam 3.0 dan diisi oleh setiap laluan cipta 3.0 (Cipta Tender, borang
-	 * lama store(), Siar, Pembelian/Lantikan Terus). Tender 2.0 ada kedua-duanya NULL.
+	 * Tarikh go-live 3.0 (config app.tender_v3_golive, .env TENDER_V3_GOLIVE).
+	 */
+	public static function v3GoLiveAt(): string
+	{
+		return \Carbon\Carbon::parse(config('app.tender_v3_golive', '2026-11-16'))->startOfDay()->format('Y-m-d H:i:s');
+	}
+
+	/**
+	 * Tender 2.0 = dicipta sebelum go-live 3.0 DAN tiada kaedah dokumen.
+	 * kaedah_dokumen_id hanya wujud dalam 3.0 dan diisi oleh Cipta Tender 3.0.
+	 * Tidak bergantung pada status_process_id kerana tender 2.0 boleh mendapat
+	 * status selepas migrasi (cth. Siar semula dalam 3.0 menetapkan status 5).
 	 */
 	public function isLegacy20(): bool
 	{
@@ -347,28 +356,32 @@ class Tender extends Model
 
 		$attributes = $this->getAttributes();
 
-		if (array_key_exists('status_process_id', $attributes) && array_key_exists('kaedah_dokumen_id', $attributes)) {
-			$statusProcessId = $attributes['status_process_id'];
+		if (array_key_exists('created_at', $attributes) && array_key_exists('kaedah_dokumen_id', $attributes)) {
+			$createdAt = $attributes['created_at'];
 			$kaedahDokumenId = $attributes['kaedah_dokumen_id'];
 		} elseif ($this->exists && $this->getKey()) {
-			// Query senarai yang tidak memilih lajur ini — ambil sekali, jangan anggap 2.0.
-			$row = static::query()->whereKey($this->getKey())->first(['status_process_id', 'kaedah_dokumen_id']);
+			// Query senarai yang tidak memilih lajur ini — ambil sekali, jangan teka.
+			$row = static::query()->whereKey($this->getKey())->first(['created_at', 'kaedah_dokumen_id']);
 			if (! $row) {
 				return $this->legacy20Cache = false;
 			}
-			$statusProcessId = $row->getAttributes()['status_process_id'] ?? null;
+			$createdAt = $row->getAttributes()['created_at'] ?? null;
 			$kaedahDokumenId = $row->getAttributes()['kaedah_dokumen_id'] ?? null;
 		} else {
 			return false;
 		}
 
-		return $this->legacy20Cache = ($statusProcessId === null && $kaedahDokumenId === null);
+		if ($kaedahDokumenId !== null || empty($createdAt)) {
+			return $this->legacy20Cache = false;
+		}
+
+		return $this->legacy20Cache = \Carbon\Carbon::parse($createdAt)->lt(\Carbon\Carbon::parse(static::v3GoLiveAt()));
 	}
 
 	public function scopeLegacy20($q)
 	{
-		return $q->whereNull($q->qualifyColumn('status_process_id'))
-			->whereNull($q->qualifyColumn('kaedah_dokumen_id'));
+		return $q->whereNull($q->qualifyColumn('kaedah_dokumen_id'))
+			->where($q->qualifyColumn('created_at'), '<', static::v3GoLiveAt());
 	}
 
 	public function publishedByKetuaJabatan(): bool
@@ -2373,8 +2386,8 @@ class Tender extends Model
 				// peranan di atas melihat pengguna yang salah. Disiar dalam 2.0 bermaksud
 				// approver_id diisi — jangan sorok daripada syarikat.
 				$legacy->whereIn('type', ['tender', 'quotation'])
-					->whereNull($q->qualifyColumn('status_process_id'))
 					->whereNull($q->qualifyColumn('kaedah_dokumen_id'))
+					->where($q->qualifyColumn('created_at'), '<', static::v3GoLiveAt())
 					->whereNotNull($q->qualifyColumn('approver_id'))
 					->where($q->qualifyColumn('approver_id'), '>', 0);
 			})->orWhereNotIn('type', ['tender', 'quotation']);

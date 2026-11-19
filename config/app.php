@@ -250,6 +250,8 @@ return [
     'global_cart_ou'   => 22,
     // Temporary test fee for vendor daftar/renew (was 100). Change back to 100 for live.
     'vendor_registration_fee' => (float) env('VENDOR_REGISTRATION_FEE', 0.10),
+    // Tarikh go-live 3.0. Tender dicipta sebelum tarikh ini tanpa kaedah dokumen = tender 2.0.
+    'tender_v3_golive' => env('TENDER_V3_GOLIVE', '2026-11-16'),
     'email_blacklists' => [
         'streamyx.com',
         'tm.net.my'
