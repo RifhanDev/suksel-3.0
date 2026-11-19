@@ -57,173 +57,220 @@ class HomeController extends Controller
 		}
 
 		if ($request->ajax()) {
-			Log::debug('This is a debug message');
-			Log::debug($request->post());
+			$formatDate = static function ($value, string $format = 'j M Y'): string {
+				if ($value === null || $value === '' || $value === '0000-00-00' || $value === '0000-00-00 00:00:00') {
+					return '-';
+				}
+				try {
+					return Carbon::parse($value)->format($format);
+				} catch (\Throwable $e) {
+					return '-';
+				}
+			};
 
-			$base = Tender::orderBy('advertise_start_date', 'desc')
-				->orderBy('submission_datetime', 'desc')
-				->open()
-				->advertised()
-				->forPublic()
-				->published();
+			try {
+				$base = Tender::orderBy('advertise_start_date', 'desc')
+					->orderBy('submission_datetime', 'desc')
+					->open()
+					->advertised()
+					->forPublic()
+					->published();
 
-			switch ($request->type) {
-				case 'tenders':
-					$tenders = $base->whereType('tender');
-					break;
-				case 'quotations':
-					$tenders = $base->whereType('quotation');
-					break;
-				case 'pembelian_terus':
-					$tenders = $base->whereType('pembelian_terus')->where('status_process_id', '>=', 5);
-					break;
-				case 'lantikan_terus':
-					$tenders = $base->whereType('lantikan_terus')->where('status_process_id', '>=', 5);
-					break;
-				default:
-					$tenders = $base->whereIn('type', ['tender', 'quotation', 'pembelian_terus', 'lantikan_terus']);
-					break;
+				switch ($request->type) {
+					case 'tenders':
+						$tenders = $base->whereType('tender');
+						break;
+					case 'quotations':
+						$tenders = $base->whereType('quotation');
+						break;
+					case 'pembelian_terus':
+						$tenders = $base->whereType('pembelian_terus')->where('status_process_id', '>=', 5);
+						break;
+					case 'lantikan_terus':
+						$tenders = $base->whereType('lantikan_terus')->where('status_process_id', '>=', 5);
+						break;
+					default:
+						$tenders = $base->whereIn('type', ['tender', 'quotation', 'pembelian_terus', 'lantikan_terus']);
+						break;
+				}
+
+				$tenders = $tenders->select([
+					'id',
+					'name',
+					'type',
+					'document_start_date',
+					'submission_datetime',
+					'price',
+					'ref_number',
+					'no_tender',
+					'organization_unit_id',
+					'briefing_required',
+					'briefing_address',
+					'briefing_datetime'
+				])->with(['tenderer', 'siteVisits']);
+
+				return Datatables::of($tenders)
+
+					->filterColumn('name', function ($query, $keyword) {
+						$sql = "CONCAT(name,'-',COALESCE(NULLIF(no_tender,''),ref_number)) like ?";
+						$query->whereRaw($sql, ["%{$keyword}%"]);
+					})
+					->editColumn('name', function ($tender) use ($formatDate) {
+						try {
+							$string   = [];
+							$agencyName = html_entity_decode((string) (optional($tender->tenderer)->name ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+							$string[] = '<strong><u>' . e($agencyName !== '' ? $agencyName : '-') . '</u></strong>';
+							$string[] = '<small><strong>' . e($tender->displayNoTender()) . '</strong></small>';
+							$detailUrl = match ($tender->type) {
+								'pembelian_terus' => route('pembelianTerus.detailProject', $tender->id),
+								'lantikan_terus' => route('sebutHargaTerus.show', $tender->id),
+								default => route('tenders.show', $tender->id),
+							};
+							$string[] = '<a class="table-tender-title" href="' . e($detailUrl) . '">' . e($tender->name) . '</a>';
+
+							if ($tender->briefing_required) {
+								$string[] = '';
+								$string[] = '<span class="glyphicon glyphicon-bullhorn"></span> <b><u><small>Kehadiran Taklimat Diwajibkan</small></u></b>';
+								$string[] = $formatDate($tender->briefing_datetime, 'j M Y H:i');
+								$string[] = nl2br(e((string) $tender->briefing_address));
+							}
+
+							if ($tender->siteVisits && count($tender->siteVisits) > 0) {
+								$string[] = '';
+								$string[] = '<span class="glyphicon glyphicon-road"></span> <b><u><small>Lawatan Tapak</small></u></b>';
+
+								foreach ($tender->siteVisits->sortBy('id') as $visit) {
+									$string[] = '';
+									$string[] = $formatDate($visit->datetime, 'j M Y H:i');
+									$visitAddress = html_entity_decode((string) $visit->address, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+									$string[] = nl2br(e($visitAddress));
+
+									if ($visit->required) {
+										$string[] = '<small><span class="glyphicon glyphicon-ok"></span> Wajib Hadir</small>';
+									}
+								}
+							}
+
+							return implode('<br>', $string);
+						} catch (\Throwable $e) {
+							Log::error('Homepage DT name column failed', [
+								'tender_id' => $tender->id ?? null,
+								'error' => $e->getMessage(),
+							]);
+
+							return e($tender->name ?? '-');
+						}
+					})
+					->addColumn('codes', function ($tender) {
+						try {
+							$string = '';
+
+							if (count($tender->mof_codes) > 0) {
+								$string .= '<strong><u>MOF</u></strong><br>';
+
+								foreach (tender_code_groups_display($tender->mof_code_groups_by_code) as $order => $data) {
+									$code_count = count($data['codes']);
+									$i = 1;
+									$string .= '<small>';
+
+									foreach ($data['codes'] as $id => $code) {
+										$string .= e((string) $code);
+										if ($i != $code_count)
+											$string .= tender_code_rule_html($data['inner_rule'], 'or');
+										$i++;
+									}
+
+									$string .= '</small>';
+
+									if ($data['join_after'] !== null)
+										$string .= '<br>' . tender_code_rule_html($data['join_after']) . '<br>';
+								}
+
+								$string .= '<br><br>';
+							}
+
+							if (count($tender->cidb_grades) > 0) {
+								$string .= '<strong><u>Gred CIDB</u></strong><br><small>';
+
+								foreach ($tender->cidb_grades as $code) {
+									$grade = optional($code->code)->code;
+									if ($grade) {
+										$string .= e($grade) . '&nbsp;&nbsp;';
+									}
+								}
+
+								$string .= '</small><br><br>';
+							}
+
+							if (count($tender->cidb_codes) > 0) {
+								$string .= '<strong><u>CIDB</u></strong><br>';
+
+								foreach (tender_code_groups_display($tender->cidb_code_groups_by_code) as $order => $data) {
+									$code_count = count($data['codes']);
+									$i = 1;
+									$string .= '<small>';
+
+									foreach ($data['codes'] as $id => $code) {
+										$string .= e((string) $code);
+										if ($i != $code_count)
+											$string .= tender_code_rule_html($data['inner_rule']);
+										$i++;
+									}
+
+									$string .= '</small>';
+
+									if ($data['join_after'] !== null)
+										$string .= '<br>' . tender_code_rule_html($data['join_after'], 'or') . '<br>';
+								}
+
+								$string .= '<br><br>';
+							}
+
+							return $string;
+						} catch (\Throwable $e) {
+							Log::error('Homepage DT codes column failed', [
+								'tender_id' => $tender->id ?? null,
+								'error' => $e->getMessage(),
+							]);
+
+							return '';
+						}
+					})
+					->editColumn('document_start_date', function ($tender) use ($formatDate) {
+						return $formatDate($tender->document_start_date);
+					})
+					->editColumn('submission_datetime', function ($tender) use ($formatDate) {
+						return $formatDate($tender->submission_datetime);
+					})
+					->editColumn('price', function ($tender) {
+						return sprintf('RM %.2f', $tender->price);
+					})
+
+					->removeColumn('organization_unit_id')
+					->removeColumn('id')
+					->removeColumn('briefing_required')
+					->removeColumn('briefing_datetime')
+					->removeColumn('briefing_address')
+					->removeColumn('ref_number')
+					->removeColumn('no_tender')
+					->rawColumns(['name', 'codes', 'document_start_date', 'submission_datetime', 'price'])
+					->make();
+			} catch (\Throwable $e) {
+				Log::error('Homepage tender list AJAX failed', [
+					'type' => $request->type,
+					'error' => $e->getMessage(),
+					'file' => $e->getFile(),
+					'line' => $e->getLine(),
+				]);
+
+				return response()->json([
+					'draw' => (int) $request->get('draw', 0),
+					'recordsTotal' => 0,
+					'recordsFiltered' => 0,
+					'data' => [],
+					'error' => 'Gagal memuatkan senarai. Sila cuba lagi.',
+				], 200);
 			}
-
-			$tenders = $tenders->select([
-				'id',
-				'name',
-				'type',
-				'document_start_date',
-				'submission_datetime',
-				'price',
-				'ref_number',
-				'no_tender',
-				'organization_unit_id',
-				'briefing_required',
-				'briefing_address',
-				'briefing_datetime'
-			]);
-
-			return Datatables::of($tenders)
-
-				->filterColumn('name', function ($query, $keyword) {
-					$sql = "CONCAT(name,'-',COALESCE(NULLIF(no_tender,''),ref_number)) like ?";
-					$query->whereRaw($sql, ["%{$keyword}%"]);
-				})
-				->editColumn('name', function ($tender) {
-					$string   = [];
-					$agencyName = html_entity_decode((string) $tender->tenderer->name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-					$string[] = '<strong><u>' . e($agencyName) . '</u></strong>';
-					$string[] = '<small><strong>' . e($tender->displayNoTender()) . '</strong></small>';
-					$detailUrl = match ($tender->type) {
-						'pembelian_terus' => route('pembelianTerus.detailProject', $tender->id),
-						'lantikan_terus' => route('sebutHargaTerus.show', $tender->id),
-						default => route('tenders.show', $tender->id),
-					};
-					$string[] = '<a class="table-tender-title" href="' . e($detailUrl) . '">' . e($tender->name) . '</a>';
-
-					if ($tender->briefing_required) {
-						$string[] = '';
-						$string[] = '<span class="glyphicon glyphicon-bullhorn"></span> <b><u><small>Kehadiran Taklimat Diwajibkan</small></u></b>';
-						$string[] = Carbon::parse($tender->briefing_datetime)->format('j M Y H:i');
-						$string[] = nl2br(e($tender->briefing_address));
-					}
-
-					if (count($tender->siteVisits) > 0) {
-						$string[] = '';
-						$string[] = '<span class="glyphicon glyphicon-road"></span> <b><u><small>Lawatan Tapak</small></u></b>';
-
-						foreach ($tender->siteVisits->sortBy('id') as $visit) {
-							$string[] = '';
-							$string[] = Carbon::parse($visit->datetime)->format('j M Y H:i');
-							$visitAddress = html_entity_decode((string) $visit->address, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-							$string[] = nl2br(e($visitAddress));
-
-							if ($visit->required) {
-								$string[] = '<small><span class="glyphicon glyphicon-ok"></span> Wajib Hadir</small>';
-							}
-						}
-					}
-
-					return implode('<br>', $string);
-				})
-				->addColumn('codes', function ($tender) {
-					$string = '';
-
-					if (count($tender->mof_codes) > 0) {
-						$string .= '<strong><u>MOF</u></strong><br>';
-
-						foreach (tender_code_groups_display($tender->mof_code_groups_by_code) as $order => $data) {
-							$code_count = count($data['codes']);
-							$i = 1;
-							$string .= '<small>';
-
-							foreach ($data['codes'] as $id => $code) {
-								$string .= $code;
-								if ($i != $code_count)
-									$string .= tender_code_rule_html($data['inner_rule'], 'or');
-								$i++;
-							}
-
-							$string .= '</small>';
-
-							if ($data['join_after'] !== null)
-								$string .= '<br>' . tender_code_rule_html($data['join_after']) . '<br>';
-						}
-
-						$string .= '<br><br>';
-					}
-
-					if (count($tender->cidb_grades) > 0) {
-						$string .= '<strong><u>Gred CIDB</u></strong><br><small>';
-
-						foreach ($tender->cidb_grades as $code)
-							$string .= $code->code->code . '&nbsp;&nbsp;';
-
-						$string .= '</small><br><br>';
-					}
-
-					if (count($tender->cidb_codes) > 0) {
-						$string .= '<strong><u>CIDB</u></strong><br>';
-
-						foreach (tender_code_groups_display($tender->cidb_code_groups_by_code) as $order => $data) {
-							$code_count = count($data['codes']);
-							$i = 1;
-							$string .= '<small>';
-
-							foreach ($data['codes'] as $id => $code) {
-								$string .= $code;
-								if ($i != $code_count)
-									$string .= tender_code_rule_html($data['inner_rule']);
-								$i++;
-							}
-
-							$string .= '</small>';
-
-							if ($data['join_after'] !== null)
-								$string .= '<br>' . tender_code_rule_html($data['join_after'], 'or') . '<br>';
-						}
-
-						$string .= '<br><br>';
-					}
-
-					return $string;
-				})
-				->editColumn('document_start_date', function ($tender) {
-					return Carbon::parse($tender->document_start_date)->format('j M Y');
-				})
-				->editColumn('submission_datetime', function ($tender) {
-					return Carbon::parse($tender->submission_datetime)->format('j M Y');
-				})
-				->editColumn('price', function ($tender) {
-					return sprintf('RM %.2f', $tender->price);
-				})
-
-				->removeColumn('organization_unit_id')
-				->removeColumn('id')
-				->removeColumn('briefing_required')
-				->removeColumn('briefing_datetime')
-				->removeColumn('briefing_address')
-				->removeColumn('ref_number')
-				->removeColumn('no_tender')
-				->rawColumns(['name', 'codes', 'document_start_date', 'submission_datetime', 'price'])
-				->make();
 		}
 
 		switch ($request->type) {

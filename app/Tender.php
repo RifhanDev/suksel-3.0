@@ -1025,6 +1025,9 @@ class Tender extends Model
 		$groups = array();
 
 		foreach ($data as $d) {
+			if (! $d->code) {
+				continue;
+			}
 			$order = $d['order'];
 			if (isset($groups[$order])) {
 				$groups[$order]['codes'][$d['code_id']] =  $d->code->label2;
@@ -1048,6 +1051,9 @@ class Tender extends Model
 		$groups = array();
 
 		foreach ($data as $d) {
+			if (! $d->code) {
+				continue;
+			}
 			$order = $d['order'];
 			if (isset($groups[$order])) {
 				$groups[$order]['codes'][$d['code_id']] =  $d->code->code;
@@ -1077,6 +1083,9 @@ class Tender extends Model
 		$groups = array();
 
 		foreach ($data as $d) {
+			if (! $d->code) {
+				continue;
+			}
 			$order = $d['order'];
 			if (isset($groups[$order])) {
 				$groups[$order]['codes'][$d['code_id']] =  $d->code->label2;
@@ -1100,6 +1109,9 @@ class Tender extends Model
 		$groups = array();
 
 		foreach ($data as $d) {
+			if (! $d->code) {
+				continue;
+			}
 			$order = $d['order'];
 			if (isset($groups[$order])) {
 				$groups[$order]['codes'][$d['code_id']] =  $d->code->code;
