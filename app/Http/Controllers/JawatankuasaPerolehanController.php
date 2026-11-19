@@ -519,7 +519,7 @@ class JawatankuasaPerolehanController extends Controller
             ],
             'keputusan' => ['nullable', 'in:Lulus,Tawaran Semula,Batal,Tangguh'],
             'catatan' => ['nullable', 'string', 'max:65535'],
-            'lampiran' => ['nullable', 'file', 'max:10240'],
+            'lampiran' => ['nullable', 'file', 'max:20480'],
             'buang_lampiran' => ['nullable', 'in:0,1'],
         ]);
 
@@ -555,7 +555,7 @@ class JawatankuasaPerolehanController extends Controller
             ],
             'keputusan' => ['required', 'in:Lulus,Tawaran Semula,Batal,Tangguh'],
             'catatan' => ['nullable', 'string', 'max:65535'],
-            'lampiran' => ['nullable', 'file', 'max:10240'],
+            'lampiran' => ['nullable', 'file', 'max:20480'],
             'buang_lampiran' => ['nullable', 'in:0,1'],
         ], [
             'pengesyoran_catatan.required' => 'Ruangan Pengesyoran adalah wajib.',

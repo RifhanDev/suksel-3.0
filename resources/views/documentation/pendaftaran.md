@@ -68,7 +68,7 @@ Isikan maklumat lengkap untuk "Pendaftaran Syarikat":-Pemegang Saham . Sila klik
 Isikan maklumat lengkap untuk "Pendaftaran Syarikat":- Fail . Maklumat lanjut untuk [Cara membuat fail pdf](/manuals/membuat_pdf).
 
     Peringatan : Sila muat naik dokumen mengikut kategori masing-masing seperti gambar di bawah. 
-    Hanya fail beformat PDF dan bersaiz maksimum 5MB setiap satu dibenarkan untuk dimuat naik. 
+    Hanya fail beformat PDF dan bersaiz maksimum 20MB setiap satu dibenarkan untuk dimuat naik. 
     Sijil SSM ialah wajib.
 
 ![](/docs/public/content/images/registration/upload.png)

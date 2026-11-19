@@ -193,9 +193,9 @@ class KerjaDalamTanganController extends Controller
                     continue;
                 }
 
-                $maxSize = 10240 * 1024; // 10MB
+                $maxSize = 20480 * 1024; // 20MB
                 if ($file->getSize() > $maxSize) {
-                    $fileErrors[] = $file->getClientOriginalName() . ': saiz fail melebihi had 10MB.';
+                    $fileErrors[] = $file->getClientOriginalName() . ': saiz fail melebihi had 20MB.';
                     continue;
                 }
 

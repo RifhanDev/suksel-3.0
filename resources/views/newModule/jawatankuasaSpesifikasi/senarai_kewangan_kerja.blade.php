@@ -187,7 +187,7 @@
             </div>
 
             {{-- Main Table --}}
-            <p class="small text-muted mb-2">Bagi setiap item dengan mekanisma <strong>PTJ Muat Naik</strong>, muat naik satu dokumen sahaja (maksimum 25 MB) sebelum menekan <strong>Hantar</strong>.</p>
+            <p class="small text-muted mb-2">Bagi setiap item dengan mekanisma <strong>PTJ Muat Naik</strong>, muat naik satu dokumen sahaja (maksimum 20 MB) sebelum menekan <strong>Hantar</strong>.</p>
             <div class="table-responsive">
                 <table id="tbl-kewangan" class="table table-modern w-100 mb-0">
                     <thead>
@@ -333,7 +333,7 @@
                     </svg>
                 </div>
                 <span class="upload-zone-label">Klik atau seret fail ke sini untuk muat naik</span>
-                <span class="upload-zone-sub">PDF, Word, Excel, Imej — saiz maksimum 10 MB setiap fail</span>
+                <span class="upload-zone-sub">PDF, Word, Excel, Imej — saiz maksimum 20 MB setiap fail</span>
                 <input type="file" id="input-dokumen-sokongan" multiple hidden
                     accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg">
             </label>
@@ -457,12 +457,12 @@ $(document).ready(function () {
     }
     const USER_ID      = @json(auth()->id());
     const IS_SUBMITTED = @json(($checklistData['status'] ?? null) === 'submitted');
-    const MAX_PTJ_FILE_BYTES = 25 * 1024 * 1024;
+    const MAX_PTJ_FILE_BYTES = 20 * 1024 * 1024;
 
     var serverData     = @json($checklistData ?? null);
 
     var EDIT_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
-    var PTJ_UPLOAD_BTN = '<label class="btn btn-sm btn-primary d-inline-flex align-items-center justify-content-center p-1 mb-0 btn-ptj-upload" style="width:30px;height:30px;cursor:pointer;" title="Muat Naik satu dokumen (maksimum 25 MB)"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg><input type="file" name="dokumen_ptj[]" accept=".pdf,.png,.jpg,.jpeg,.xls,.xlsx,.doc,.docx" hidden></label>';
+    var PTJ_UPLOAD_BTN = '<label class="btn btn-sm btn-primary d-inline-flex align-items-center justify-content-center p-1 mb-0 btn-ptj-upload" style="width:30px;height:30px;cursor:pointer;" title="Muat Naik satu dokumen (maksimum 20 MB)"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg><input type="file" name="dokumen_ptj[]" accept=".pdf,.png,.jpg,.jpeg,.xls,.xlsx,.doc,.docx" hidden></label>';
 
     // ── Init ──────────────────────────────────────────────────────────────────
     if (serverData && serverData.items && serverData.items.length > 0) {
@@ -773,7 +773,7 @@ $(document).ready(function () {
             }
         });
         if (missingPtjDocuments.length > 0) {
-            showToast('Sila muat naik satu dokumen (maksimum 25 MB) bagi setiap item PTJ Muat Naik: ' + missingPtjDocuments.join(', '), 'danger');
+            showToast('Sila muat naik satu dokumen (maksimum 20 MB) bagi setiap item PTJ Muat Naik: ' + missingPtjDocuments.join(', '), 'danger');
             return false;
         }
         if (multiplePtjDocuments.length > 0) {
@@ -1169,7 +1169,7 @@ $(document).ready(function () {
             return;
         }
         if (file.size > MAX_PTJ_FILE_BYTES) {
-            showToast('Saiz dokumen melebihi had maksimum 25 MB.', 'danger');
+            showToast('Saiz dokumen melebihi had maksimum 20 MB.', 'danger');
             return;
         }
 

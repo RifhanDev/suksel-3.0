@@ -330,7 +330,7 @@ class FinancialChecklistController extends Controller
         $this->ensureAccess();
 
         $request->validate([
-            'file' => ['required', 'file', 'max:10240'],
+            'file' => ['required', 'file', 'max:20480'],
             'file_type' => ['nullable', 'string', 'max:50'],
             'checklist_item_uuid' => ['nullable', 'string'],
         ]);

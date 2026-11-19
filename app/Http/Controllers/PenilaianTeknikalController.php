@@ -1347,7 +1347,7 @@ class PenilaianTeknikalController extends Controller
     public function uploadLampiranKerja(Request $request, Tender $tender): JsonResponse
     {
         $data = $request->validate([
-            'file' => 'required|file|max:10240',
+            'file' => 'required|file|max:20480',
             'display_name' => 'nullable|string|max:255',
         ]);
 

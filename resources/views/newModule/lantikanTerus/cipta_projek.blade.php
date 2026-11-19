@@ -538,7 +538,7 @@
                             </svg>
                         </div>
                         <span class="upload-zone-label">Klik atau seret fail BQ ke sini untuk muat naik</span>
-                        <span class="upload-zone-sub">PDF, Word, Excel — saiz maksimum 10 MB · satu fail sahaja</span>
+                        <span class="upload-zone-sub">PDF, Word, Excel — saiz maksimum 20 MB · satu fail sahaja</span>
                         <input type="file" id="input-dokumen-bq" name="dokumen_bq" hidden
                             accept=".pdf,.doc,.docx,.xls,.xlsx">
                     </label>
