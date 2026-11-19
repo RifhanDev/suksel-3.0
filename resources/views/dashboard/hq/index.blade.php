@@ -720,6 +720,9 @@
 					$("#subscriptionCount h2").text(response.subscription_count);
 					$("#purchaseCount h2").text(response.purchase_count);
 					$("#transactionTotal h2").text(response.total_transaction);
+				},
+				error: function() {
+					$("#subscriptionCount h2, #purchaseCount h2, #transactionTotal h2").text('-');
 				}
 			});
 
@@ -738,6 +741,9 @@
 					$("#subscriptionValueSum h2").text('RM' + response.subscription_sum);
 					$("#purchaseValueSum h2").text('RM' + response.purchase_sum);
 					$("#transactionValueTotal h2").text('RM' + response.total_transaction);
+				},
+				error: function() {
+					$("#subscriptionValueSum h2, #purchaseValueSum h2, #transactionValueTotal h2").text('-');
 				}
 			});
 		}

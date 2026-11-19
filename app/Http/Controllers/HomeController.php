@@ -1430,44 +1430,54 @@ class HomeController extends Controller
 
 	public function transaction_summary_dashboard(Request $request)
 	{
-		if (!isset($request->year_summary)) {
-			$request->year_summary = date('Y');
-		}
+		$stats = $this->hqTransactionYearStats($request->year_summary ?? date('Y'));
 
-		$transaction = DB::table('view_transaction_dashboard')->select(DB::raw('coalesce(count(*), 0) as total'))->where('year', $request->year_summary)->groupBy('type');
+		$subscription = (int) ($stats['subscription']->total_count ?? 0);
+		$purchase = (int) ($stats['purchase']->total_count ?? 0);
 
-		$data['subscription_count'] = (clone $transaction)->where('type', 'subscription')->first();
-		$data['purchase_count'] = (clone $transaction)->where('type', 'purchase')->first();
-
-		$subscription = $data['subscription_count']->total ?? 0;
-		$purchase = $data['purchase_count']->total ?? 0;
-
-		$data['total_transaction'] = number_format($subscription + $purchase);
-		$data['subscription_count'] = number_format($subscription);
-		$data['purchase_count'] = number_format($purchase);
-
-		return response()->json($data);
+		return response()->json([
+			'total_transaction' => number_format($subscription + $purchase),
+			'subscription_count' => number_format($subscription),
+			'purchase_count' => number_format($purchase),
+		]);
 	}
 
 	public function transaction_value_summary_dashboard(Request $request)
 	{
-		if (!isset($request->year_summary)) {
-			$request->year_summary = date('Y');
-		}
+		$stats = $this->hqTransactionYearStats($request->year_summary ?? date('Y'));
 
-		$transaction = DB::table('view_transaction_dashboard')->select(DB::raw('coalesce(sum(amount), 0) as total'))->where('year', $request->year_summary)->groupBy('type');
+		$subscription = (float) ($stats['subscription']->total_amount ?? 0);
+		$purchase = (float) ($stats['purchase']->total_amount ?? 0);
 
-		$data['subscription_sum'] = (clone $transaction)->where('type', 'subscription')->first();
-		$data['purchase_sum'] = (clone $transaction)->where('type', 'purchase')->first();
+		return response()->json([
+			'total_transaction' => number_format($subscription + $purchase, 2),
+			'subscription_sum' => number_format($subscription, 2),
+			'purchase_sum' => number_format($purchase, 2),
+		]);
+	}
 
-		$subscription = $data['subscription_sum']->total ?? 0;
-		$purchase = $data['purchase_sum']->total ?? 0;
+	/**
+	 * HQ cards: one indexed range scan on transactions instead of scanning
+	 * view_transaction_dashboard twice per card group (that view + YEAR()
+	 * filter is what leaves the cards stuck on "Loading.." / 504).
+	 *
+	 * @return array{subscription?:object,purchase?:object}
+	 */
+	protected function hqTransactionYearStats($year): array
+	{
+		$year = (int) $year;
+		$start = Carbon::create($year, 1, 1)->startOfDay();
+		$end = Carbon::create($year, 12, 31)->endOfDay();
 
-		$data['total_transaction'] = number_format($subscription + $purchase, 2);
-		$data['subscription_sum'] = number_format($subscription, 2);
-		$data['purchase_sum'] = number_format($purchase, 2);
-
-		return response()->json($data);
+		return DB::table('transactions')
+			->selectRaw('type, COUNT(*) as total_count, COALESCE(SUM(amount), 0) as total_amount')
+			->where('status', 'success')
+			->whereIn('type', ['subscription', 'purchase'])
+			->whereBetween('created_at', [$start, $end])
+			->groupBy('type')
+			->get()
+			->keyBy('type')
+			->all();
 	}
 
 	public function circulars()
