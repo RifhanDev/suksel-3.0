@@ -37,7 +37,7 @@ class VendorTenderDokumenController extends Controller
         }
 
         $data = $request->validate([
-            'file' => 'required|file|max:10240',
+            'file' => 'required|file|max:20480',
             'section' => 'required|string|in:technical,financial,kewangan_kerja,spesifikasi_kerja',
         ]);
 

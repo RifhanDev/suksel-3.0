@@ -162,11 +162,11 @@ class RegistrationController extends Controller
             'ssm_expiry'      => Vendor::ssmExpiryValidationRules(
                 $request->input('organization_type') ?: auth()->user()?->vendor?->organization_type
             ),
-            'mof'             => ['nullable', 'mimes:pdf', 'max:5120'],
-            'cidb'            => ['nullable', 'mimes:pdf', 'max:5120'],
-            'ssm'             => ['nullable', 'mimes:pdf', 'max:5120'],
-            'mof_bumiputera'  => ['nullable', 'mimes:pdf', 'max:5120'],
-            'cidb_bumiputera' => ['nullable', 'mimes:pdf', 'max:5120'],
+            'mof'             => ['nullable', 'mimes:pdf', 'max:20480'],
+            'cidb'            => ['nullable', 'mimes:pdf', 'max:20480'],
+            'ssm'             => ['nullable', 'mimes:pdf', 'max:20480'],
+            'mof_bumiputera'  => ['nullable', 'mimes:pdf', 'max:20480'],
+            'cidb_bumiputera' => ['nullable', 'mimes:pdf', 'max:20480'],
         ]);
 
         if ($validator->fails())

@@ -357,7 +357,7 @@
                     </svg>
                 </div>
                 <span class="upload-zone-label">Klik atau seret fail ke sini untuk muat naik</span>
-                <span class="upload-zone-sub">PDF, Word, Excel, Imej, ZIP — saiz maksimum 10 MB setiap fail</span>
+                <span class="upload-zone-sub">PDF, Word, Excel, Imej, ZIP — saiz maksimum 20 MB setiap fail</span>
                 <input type="file" id="input-dokumen-sokongan" name="dokumen_sokongan[]" multiple hidden
                     accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg">
             </label>

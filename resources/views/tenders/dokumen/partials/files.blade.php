@@ -90,7 +90,7 @@
                         <line x1="12" y1="3" x2="12" y2="15"></line>
                     </svg>
                     <div class="fw-semibold">Muat Naik Dokumen</div>
-                    <div class="mt-1">PDF, Word, Excel atau imej (maks. 10MB{{ $action === 'download_upload' ? ', satu fail sahaja' : '' }})</div>
+                    <div class="mt-1">PDF, Word, Excel atau imej (maks. 20MB{{ $action === 'download_upload' ? ', satu fail sahaja' : '' }})</div>
                 </label>
                 <div class="text-danger small mt-1 d-none dokumen-upload-error"></div>
             </div>

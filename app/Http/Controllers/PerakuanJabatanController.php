@@ -236,7 +236,7 @@ class PerakuanJabatanController extends Controller
 
         $request->validate([
             'pengesahan_bidaan' => ['required', 'accepted'],
-            'laporan_bidaan' => [$hasExistingLaporan ? 'nullable' : 'required', 'file', 'max:10240'],
+            'laporan_bidaan' => [$hasExistingLaporan ? 'nullable' : 'required', 'file', 'max:20480'],
         ], [
             'pengesahan_bidaan.accepted' => 'Sila tandakan pengesahan bidaan.',
             'laporan_bidaan.required' => 'Sila muat naik Laporan Bidaan sebelum menghantar.',
@@ -1035,7 +1035,7 @@ class PerakuanJabatanController extends Controller
             'rows.*.id' => ['nullable', 'integer'],
             'rows.*.kandungan' => ['required_with:rows', 'string', 'max:500'],
             'rows.*.files' => ['nullable', 'array'],
-            'rows.*.files.*' => ['file', 'max:10240'],
+            'rows.*.files.*' => ['file', 'max:20480'],
             'deleted_item_ids' => ['nullable', 'array'],
             'deleted_item_ids.*' => ['integer'],
             'deleted_file_ids' => ['nullable', 'array'],

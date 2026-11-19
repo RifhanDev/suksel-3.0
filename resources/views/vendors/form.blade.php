@@ -987,7 +987,7 @@
                     <line x1="12" y1="16" x2="12" y2="12"></line>
                     <line x1="12" y1="8" x2="12.01" y2="8"></line>
                 </svg>
-                Hanya fail beformat PDF dan bersaiz maksimum 5MB boleh dimuat naik.
+                Hanya fail beformat PDF dan bersaiz maksimum 20MB boleh dimuat naik.
             </div>
 
             <div class="form-grid-1">
