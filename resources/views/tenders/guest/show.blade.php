@@ -137,20 +137,32 @@
 @section('content')
 
 	{{-- Breadcrumb + Header --}}
-	<div class="mb-4">
-		<div class="d-flex align-items-center gap-2 mb-1">
-			<a href="{{ url('/') }}" class="text-muted small text-decoration-none">Laman Utama</a>
-			<span class="text-muted small">/</span>
-			<span class="text-muted small">{{ App\Tender::$types[$tender->type] ?? 'Tender' }}</span>
+	<div class="mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3">
+		<div class="flex-grow-1" style="min-width:0;">
+			<div class="d-flex align-items-center gap-2 mb-1">
+				<a href="{{ url('/') }}" class="text-muted small text-decoration-none">Laman Utama</a>
+				<span class="text-muted small">/</span>
+				<span class="text-muted small">{{ App\Tender::$types[$tender->type] ?? 'Tender' }}</span>
+			</div>
+			<h3 class="fw-bold text-dark m-0" style="letter-spacing:-0.5px;">{{ $tender->name }}</h3>
+			<div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
+				<span class="text-muted small">{{ optional($tender->tenderer)->name }}</span>
+				@if ($tender->displayNoTender() !== '-')
+					<span class="text-muted small">·</span>
+					<span class="fw-semibold small text-dark">{{ $tender->displayNoTender() }}</span>
+				@endif
+			</div>
 		</div>
-		<h3 class="fw-bold text-dark m-0" style="letter-spacing:-0.5px;">{{ $tender->name }}</h3>
-		<div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
-			<span class="text-muted small">{{ optional($tender->tenderer)->name }}</span>
-			@if ($tender->displayNoTender() !== '-')
-				<span class="text-muted small">·</span>
-				<span class="fw-semibold small text-dark">{{ $tender->displayNoTender() }}</span>
-			@endif
-		</div>
+
+		<a href="{{ route('tenders.print', $tender->id) }}" class="btn-form btn-form-secondary flex-shrink-0 align-self-start" target="_blank" rel="noopener">
+			<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+				stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2" />
+				<path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4" />
+				<path d="M7 15a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-6a2 2 0 0 1 -2 -2z" />
+			</svg>
+			Cetak
+		</a>
 	</div>
 
 	@include('tenders._notification')

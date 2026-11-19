@@ -633,6 +633,41 @@ class TendersController extends Controller
 		$pdf = Pdf::loadView('tenders.print', compact('tender', 'pegawaiDisplay', 'mejaTerkawal', 'showTenderFiles'))
 			->setPaper('a4', 'portrait');
 
+		// When Kod Bidang runs over a page, its cut edges turn dashed with BERSAMBUNG / SAMBUNGAN
+		$codePieces = [];
+		$pdf->getDomPDF()->setCallbacks([
+			['event' => 'end_frame', 'f' => function ($frame, $canvas) use (&$codePieces) {
+				$node = $frame->get_node();
+				if ($node instanceof \DOMElement && $node->getAttribute('class') === 'tp-codes') {
+					$codePieces[$canvas->get_page_number()] = $frame->get_border_box();
+				}
+			}],
+			['event' => 'end_document', 'f' => function ($page, $pageCount, $canvas, $fontMetrics) use (&$codePieces) {
+				if (count($codePieces) < 2 || ! isset($codePieces[$page])) {
+					return;
+				}
+
+				[$x, $y, $w, $h] = $codePieces[$page];
+				$font = $fontMetrics->getFont('helvetica', 'bold');
+				$slate = [0.39, 0.45, 0.55];
+				$edges = [];
+
+				if ($page !== array_key_last($codePieces)) {
+					$edges[] = [$y + $h, 'BERSAMBUNG', 3];
+				}
+				if ($page !== array_key_first($codePieces)) {
+					$edges[] = [$y, 'SAMBUNGAN', -10];
+				}
+
+				foreach ($edges as [$edgeY, $label, $labelOffset]) {
+					$canvas->line($x, $edgeY, $x + $w, $edgeY, [1, 1, 1], 1.6);
+					$canvas->line($x, $edgeY, $x + $w, $edgeY, $slate, 0.8, [3, 2]);
+					$labelWidth = $fontMetrics->getTextWidth($label, $font, 6.5, 0, 0.8);
+					$canvas->text($x + ($w - $labelWidth) / 2, $edgeY + $labelOffset, $label, $font, 6.5, $slate, 0, 0.8);
+				}
+			}],
+		]);
+
 		$fileName = 'maklumat-tender-' . $tender->id . '.pdf';
 
 		return $pdf->stream($fileName, ['Attachment' => false]);
