@@ -253,6 +253,19 @@ class Tender extends Model
 	public function canShow()
 	{
 		if (auth()->check()) $user = auth()->user();
+
+		// Dashboard "Muat Turun" opens this page. Vendors who already bought /
+		// participate must be able to open it even for jemputan tenders (invite
+		// row missing) or after batal siar (approver_id cleared).
+		if (
+			auth()->check()
+			&& $user->hasRole('Vendor')
+			&& $user->vendor_id
+			&& $this->hasParticipate($user->vendor_id)
+		) {
+			return true;
+		}
+
 		if ($this->invitation) {
 			if (auth()->check()) {
 				if ($user->hasRole('Admin')) {
