@@ -35,6 +35,118 @@
             max-height: 300px;
             overflow-y: auto;
         }
+
+        /* CIDB Gred & Bidang Pengkhususan */
+        .cidb-grade {
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            background: #fff;
+            overflow: hidden;
+        }
+
+        .cidb-grade + .cidb-grade {
+            margin-top: 0.75rem;
+        }
+
+        .cidb-grade-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.65rem 0.9rem;
+            background: #fff1f2;
+            border-bottom: 1px solid #fecaca;
+        }
+
+        .cidb-grade-badge {
+            flex-shrink: 0;
+            min-width: 2.6rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 6px;
+            background: #c41e3a;
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        .cidb-grade-title {
+            flex-grow: 1;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #9f1239;
+        }
+
+        .cidb-grade-count {
+            flex-shrink: 0;
+            font-size: 0.75rem;
+            color: #64748b;
+            white-space: nowrap;
+        }
+
+        .cidb-grade-body {
+            padding: 0.75rem 0.9rem;
+            max-height: 460px;
+            overflow-y: auto;
+        }
+
+        .cidb-category + .cidb-category {
+            margin-top: 0.9rem;
+        }
+
+        .cidb-category-title {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin-bottom: 0.4rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            color: #475569;
+        }
+
+        .cidb-category-title .cidb-category-count {
+            padding: 0 0.45rem;
+            border-radius: 999px;
+            background: #f1f5f9;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .cidb-spec-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 0.35rem;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .cidb-spec-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            padding: 0.35rem 0.5rem;
+            border: 1px solid #f1f5f9;
+            border-radius: 6px;
+            background: #f8fafc;
+            font-size: 0.8rem;
+            line-height: 1.35;
+            color: #1e293b;
+        }
+
+        .cidb-spec-code {
+            flex-shrink: 0;
+            min-width: 2.9rem;
+            padding: 0.05rem 0.35rem;
+            border-radius: 4px;
+            background: #e2e8f0;
+            color: #334155;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-align: center;
+        }
     </style>
 @endpush
 
@@ -502,63 +614,70 @@
 
                         <hr class="my-4">
 
+                        @php
+                            // One query for grades + their specialisations (was 1 + 5 queries per grade).
+                            $cidbGradeRows = $vendor->cidbGrades()->with(['code', 'children.code'])->orderBy('id')->get();
+                            $cidbCategoryNames = [
+                                'B'  => 'B · Bangunan',
+                                'CE' => 'CE · Kejuruteraan Awam',
+                                'ME' => 'ME · Mekanikal & Elektrikal',
+                                'A'  => 'A',
+                                'X'  => 'Lain-lain',
+                            ];
+                        @endphp
+
                         <label class="small text-muted fw-bold text-uppercase d-block mb-2">Gred & Bidang
                             Pengkhususan</label>
-                        <div class="bg-light p-3 rounded border code-list-scroll">
-                            @forelse($vendor->cidbGrades()->orderBy('id')->get() as $grade)
-                                <div class="mb-3">
-                                    <strong class="text-danger">{{ $grade->code->label }}</strong>
-                                    <div class="ps-3 mt-1 small">
-                                        {{-- Group A --}}
-                                        @php
-                                            $a_codes = App\Code::whereIn('id', $grade->children->pluck('code_id'))
-                                                ->where('code', 'LIKE', 'A%')
-                                                ->orderBy('code')
-                                                ->get();
-                                        @endphp
-                                        @if (count($a_codes) > 0)
-                                            <div><strong>A:</strong>
-                                                {{ $a_codes->pluck('description')->implode(', ') }}</div>
-                                        @endif
-                                        {{-- Group B --}}
-                                        @php
-                                            $b_codes = App\Code::whereIn('id', $grade->children->pluck('code_id'))
-                                                ->where('code', 'LIKE', 'B%')
-                                                ->orderBy('code')
-                                                ->get();
-                                        @endphp
-                                        @if (count($b_codes) > 0)
-                                            <div><strong>B:</strong>
-                                                {{ $b_codes->pluck('description')->implode(', ') }}</div>
-                                        @endif
-                                        {{-- Group CE --}}
-                                        @php
-                                            $ce_codes = App\Code::whereIn('id', $grade->children->pluck('code_id'))
-                                                ->where('code', 'LIKE', 'CE%')
-                                                ->orderBy('code')
-                                                ->get();
-                                        @endphp
-                                        @if (count($ce_codes) > 0)
-                                            <div><strong>CE:</strong>
-                                                {{ $ce_codes->pluck('description')->implode(', ') }}</div>
-                                        @endif
-                                        {{-- Group ME --}}
-                                        @php
-                                            $me_codes = App\Code::whereIn('id', $grade->children->pluck('code_id'))
-                                                ->where('code', 'REGEXP', '^[ME]')
-                                                ->orderBy('code')
-                                                ->get();
-                                        @endphp
-                                        @if (count($me_codes) > 0)
-                                            <div><strong>ME:</strong>
-                                                {{ $me_codes->pluck('description')->implode(', ') }}</div>
-                                        @endif
-                                    </div>
+
+                        @forelse ($cidbGradeRows as $grade)
+                            @php
+                                $specs = $grade->children->pluck('code')->filter()->unique('id')
+                                    ->sortBy('code', SORT_NATURAL);
+
+                                // Group by the start of the code; anything unexpected goes to
+                                // "Lain-lain" so it is still shown instead of silently dropped.
+                                $specGroups = $specs->groupBy(function ($code) {
+                                    $c = strtoupper((string) $code->code);
+                                    if (str_starts_with($c, 'CE')) return 'CE';
+                                    if (str_starts_with($c, 'B')) return 'B';
+                                    if (str_starts_with($c, 'M') || str_starts_with($c, 'E')) return 'ME';
+                                    if (str_starts_with($c, 'A')) return 'A';
+                                    return 'X';
+                                });
+                            @endphp
+                            <div class="cidb-grade">
+                                <div class="cidb-grade-header">
+                                    <span class="cidb-grade-badge">{{ optional($grade->code)->code ?? '-' }}</span>
+                                    <span class="cidb-grade-title">{{ optional($grade->code)->name }}</span>
+                                    <span class="cidb-grade-count">{{ $specs->count() }} bidang</span>
                                 </div>
-                            @empty
-                                <div class="text-muted text-center fst-italic">Tiada maklumat Gred.</div>
-                            @endforelse
-                        </div>
+                                <div class="cidb-grade-body">
+                                    @foreach (array_keys($cidbCategoryNames) as $category)
+                                        @continue(!isset($specGroups[$category]))
+                                        <div class="cidb-category">
+                                            <div class="cidb-category-title">
+                                                <span>{{ $cidbCategoryNames[$category] }}</span>
+                                                <span class="cidb-category-count">{{ $specGroups[$category]->count() }}</span>
+                                            </div>
+                                            <ul class="cidb-spec-list">
+                                                @foreach ($specGroups[$category] as $spec)
+                                                    <li class="cidb-spec-item">
+                                                        <span class="cidb-spec-code">{{ $spec->code }}</span>
+                                                        <span>{{ $spec->description ?: $spec->name }}</span>
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        </div>
+                                    @endforeach
+                                    @if ($specs->isEmpty())
+                                        <div class="text-muted small fst-italic">Tiada bidang pengkhususan.</div>
+                                    @endif
+                                </div>
+                            </div>
+                        @empty
+                            <div class="bg-light p-3 rounded border text-muted text-center fst-italic">Tiada maklumat
+                                Gred.</div>
+                        @endforelse
 
                     </div>
                 </div>
