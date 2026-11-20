@@ -23,7 +23,7 @@
 		$hasTransaction = $hasTransaction ?? ($purchase->transaction && (int) ($purchase->transaction_id ?? 0) > 0);
 		$txn = $hasTransaction ? $purchase->transaction : null;
 		$receiptDate = $txn?->created_at ?? $purchase->created_at;
-		$paymentMethod = $txn ? strtoupper((string) $txn->method) : 'MANUAL / BYPASS';
+		$paymentMethod = $txn ? strtoupper((string) $txn->method) : 'MANUAL (BAYARAN DI KAUNTER)';
 		$txnNumber = $txn?->number ?? ($purchase->ref_number ?: '-');
 		$accountCode = ($txn && $txn->type === 'purchase') || ! $txn ? '73105' : '71399';
 	@endphp

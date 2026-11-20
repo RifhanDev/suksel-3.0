@@ -2159,7 +2159,7 @@ class TendersController extends Controller
 				preg_split('/\s*,\s*/', (string) $data['vendor_ids'])
 			))));
 			$newIds = array_diff($ids, $existingVendorIds);
-			$recordsCounterPurchase = $tender->usesIklanDokumen();
+			$recordsCounterPurchase = $tender->shouldBypassDokumenPayment();
 
 			foreach ($newIds as $vendorId) {
 				if (!Vendor::query()->whereKey($vendorId)->exists()) {
