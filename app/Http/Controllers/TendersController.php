@@ -397,6 +397,7 @@ class TendersController extends Controller
 
 		$rules = [
 			'ref_number' => ['required', 'string', 'max:255'],
+			'no_tender' => ['required', 'string', 'max:255'],
 			'submission_key' => ['required', 'uuid'],
 		];
 		if ((string) $request->input('zon_lokasi', '0') === '1') {
@@ -409,10 +410,23 @@ class TendersController extends Controller
 
 		$request->validate($rules, [
 			'ref_number.required' => 'No. Rujukan Fail adalah wajib.',
+			'no_tender.required' => 'No. Tender / Sebut Harga adalah wajib.',
 			'submission_key.required' => 'Kunci penghantaran tidak sah. Sila muat semula borang.',
 			'lokaliti_id.required' => 'Sila pilih Lokaliti Liputan.',
 			'coverage_district_ids.required' => 'Sila pilih sekurang-kurangnya satu daerah liputan.',
 		]);
+
+		$duplicateTenderNumber = Tender::query()
+			->where('ref_number', $request->input('ref_number'))
+			->orWhere('no_tender', $request->input('no_tender'))
+			->exists();
+
+		if ($duplicateTenderNumber) {
+			return redirect()->back()->withInput()->with(
+				'duplicate_application_error',
+				'No. Rujukan Fail atau No. Tender / Sebut Harga telah wujud dalam sistem. Sila gunakan nombor yang berbeza.'
+			);
+		}
 
 		if ((string) $request->input('zon_lokasi', '0') === '1') {
 			$lokalitiName = \App\Models\Ref\RefLokaliti::whereKey($request->input('lokaliti_id'))->value('name');

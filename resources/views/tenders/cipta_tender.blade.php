@@ -1286,6 +1286,18 @@
 @endsection
 
 @section('scripts')
+	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+	@if (session('duplicate_application_error'))
+		<script>
+			Swal.fire({
+				icon: 'warning',
+				title: 'Nombor telah wujud',
+				text: @json(session('duplicate_application_error')),
+				confirmButtonText: 'Tutup',
+				confirmButtonColor: '#c41e3a'
+			});
+		</script>
+	@endif
 	<script>
 		// --- DROPDOWN OPTIONS FOR DYNAMIC ROWS FOR SECTION 2 FORM ---
 		var mofOptions =
