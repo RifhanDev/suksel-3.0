@@ -98,15 +98,19 @@ class VendorTenderDokumenController extends Controller
 
     public function download(string $fileUuid)
     {
+        $stage = 'vendor_document_lookup';
+
         try {
             $file = TenderVendorDokumenFile::query()->where('uuid', $fileUuid)->first();
 
             if (! $file) {
+                $stage = 'bank_document_lookup';
                 $pbFile = \App\Models\PenyataBankFile::query()->where('uuid', $fileUuid)->first();
                 if (! $pbFile) {
                     abort(404, 'Fail dokumen tidak dijumpai.');
                 }
 
+                $stage = 'bank_document_authorization';
                 $pbFile->loadMissing('penyataBank');
                 $tenderId = (int) ($pbFile->penyataBank?->tender_id ?? 0);
                 if ($tenderId > 0) {
@@ -117,15 +121,19 @@ class VendorTenderDokumenController extends Controller
                     }
                 }
 
+                $stage = 'bank_document_stream';
                 return $this->streamStoredDokumenFile(
                     path: (string) $pbFile->path,
                     name: $pbFile->original_name ?: $pbFile->stored_name ?: 'Dokumen Sokongan',
                     mime: $pbFile->mime_type,
-                    missingMessage: 'Fail penyata bank tidak dijumpai pada storan sistem.'
+                    missingMessage: 'Fail penyata bank tidak dijumpai pada storan sistem.',
+                    diagnosticId: $fileUuid
                 );
             }
 
+            $stage = 'tender_lookup';
             $tender = Tender::query()->findOrFail($file->tender_id);
+            $stage = 'document_authorization';
             $bqTemplateItem = collect(TenderDokumenPresenter::for($tender)->items('admin'))
                 ->first(fn (array $item) => ($item['uuid'] ?? '') === $file->checklist_item_uuid
                     && ! empty($item['admin_content']['bq_template_mode']));
@@ -136,24 +144,36 @@ class VendorTenderDokumenController extends Controller
             }
             $this->assertCanAccessTenderFile($tender, (int) $file->vendor_id);
             if ($file->section === 'spesifikasi_kerja') {
+                $stage = 'specification_file_stream';
                 return \App\Support\SukselStoredFile::response((string) $file->path, $file->original_name ?: 'Dokumen BQ');
             }
 
+            $stage = 'vendor_document_stream';
             return $this->streamStoredDokumenFile(
                 path: (string) $file->path,
                 name: $file->original_name ?: $file->stored_name ?: 'Dokumen Sokongan',
                 mime: $file->mime_type,
-                missingMessage: 'Fail dokumen tidak dijumpai pada storan sistem.'
+                missingMessage: 'Fail dokumen tidak dijumpai pada storan sistem.',
+                diagnosticId: $fileUuid
             );
         } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $e) {
             throw $e;
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            Log::notice('Tender dokumen download record relationship missing.', [
+                'file_uuid' => $fileUuid,
+                'stage' => $stage,
+                'exception_class' => $e::class,
+            ]);
+
+            abort(404, 'Rekod tender berkaitan dokumen tidak dijumpai.');
         } catch (\Throwable $e) {
             Log::error('Vendor dokumen download failed.', [
                 'file_uuid' => $fileUuid,
-                'error' => $e->getMessage(),
+                'stage' => $stage,
+                'exception_class' => $e::class,
             ]);
 
-            abort(404, 'Fail dokumen tidak dijumpai pada storan sistem.');
+            abort(500, 'Permintaan dokumen gagal diproses.');
         }
     }
 
@@ -161,7 +181,7 @@ class VendorTenderDokumenController extends Controller
      * Serve vendor / penyata attachments from local disk, STOS disk, or STOS /storage URL.
      * Penilaian Teknikal "Dokumen Sokongan" links hit this path.
      */
-    private function streamStoredDokumenFile(string $path, string $name, ?string $mime, string $missingMessage)
+    private function streamStoredDokumenFile(string $path, string $name, ?string $mime, string $missingMessage, string $diagnosticId)
     {
         $cleanPath = ltrim(str_replace(['\\', 'public/'], ['/', ''], $path), '/');
         $stosBase = rtrim((string) config('services.stos_backend.url'), '/');
@@ -175,15 +195,11 @@ class VendorTenderDokumenController extends Controller
                 'path' => $cleanPath,
                 'mime_type' => $mime,
                 'url' => $remoteUrl,
-            ]);
+                'missing_message' => $missingMessage,
+                'diagnostic_id' => $diagnosticId,
+            ], reportRemoteFailures: true);
         } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $e) {
             throw $e;
-        } catch (\Throwable $e) {
-            Log::warning('StosStoredFile failed for vendor dokumen.', [
-                'path' => $cleanPath,
-                'error' => $e->getMessage(),
-            ]);
-            abort(404, $missingMessage);
         }
     }
 

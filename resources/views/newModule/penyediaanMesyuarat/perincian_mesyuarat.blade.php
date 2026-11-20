@@ -333,7 +333,7 @@
                     .val(String(member.peranan || '3'));
                 const $ppWrap = $('<label class="form-check d-flex align-items-center gap-2 mb-0 small text-nowrap"><input type="checkbox" class="form-check-input committee-pp m-0"><span>P&P</span></label>');
                 $ppWrap.find('input').prop('checked', String(member.p_p) === '1');
-                const $remove = $('<button type="button" class="btn btn-sm btn-outline-danger btn-remove-committee-member">Buang</button>');
+                const $remove = $('<button type="button" class="btn btn-sm btn-outline-danger btn-remove-committee-member">Hapus</button>');
 
                 $row.append($identity, $('<div class="committee-role-wrap" style="min-width:150px"></div>').append($role), $ppWrap, $remove);
                 return $row;

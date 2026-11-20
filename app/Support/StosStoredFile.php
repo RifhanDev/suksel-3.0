@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Services\StosBackendClient;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -13,7 +14,7 @@ class StosStoredFile
      *
      * @param  array<string, mixed>  $file  Optional keys: path, url, original_name, mime_type, download_api
      */
-    public static function response(array $file)
+    public static function response(array $file, bool $reportRemoteFailures = false)
     {
         $name = (string) ($file['original_name'] ?? $file['name'] ?? 'Dokumen');
         $path = ltrim((string) ($file['path'] ?? ''), '/');
@@ -43,49 +44,88 @@ class StosStoredFile
 
         $apiPath = trim((string) ($file['download_api'] ?? ''));
         if ($apiPath !== '' && StosBackendClient::isConfigured()) {
+            $apiResponse = null;
+            $apiFailure = null;
             try {
                 $apiResponse = StosBackendClient::http()
                     ->timeout(5)
                     ->withHeaders(['Accept' => '*/*'])
                     ->get(StosBackendClient::apiUrl($apiPath));
-                if ($apiResponse->successful()) {
-                    $mimeType = (string) ($file['mime_type'] ?? $apiResponse->header('Content-Type') ?? $mime);
+            } catch (\Throwable $e) {
+                $apiFailure = $e;
+            }
 
-                    return new StreamedResponse(function () use ($apiResponse) {
-                        echo $apiResponse->body();
-                    }, 200, [
-                        'Content-Type' => $mimeType,
-                        'Content-Disposition' => self::contentDisposition('inline', $name),
-                    ]);
-                }
-            } catch (\Throwable) {
-                // Ignore API timeout/connection failure and proceed to 404
+            if ($apiResponse?->successful()) {
+                $mimeType = (string) ($file['mime_type'] ?? $apiResponse->header('Content-Type') ?? $mime);
+
+                return new StreamedResponse(function () use ($apiResponse) {
+                    echo $apiResponse->body();
+                }, 200, [
+                    'Content-Type' => $mimeType,
+                    'Content-Disposition' => self::contentDisposition('inline', $name),
+                ]);
+            }
+
+            if ($reportRemoteFailures) {
+                self::logRemoteFailure('api_download', $apiResponse?->status(), $apiFailure, $file['diagnostic_id'] ?? null);
+                self::abortForRemoteFailure($apiResponse?->status(), $apiFailure);
             }
         }
 
         $remoteUrl = trim((string) ($file['url'] ?? ''));
         if ($remoteUrl !== '' && filter_var($remoteUrl, FILTER_VALIDATE_URL)) {
+            $response = null;
+            $remoteFailure = null;
             try {
                 $response = StosBackendClient::http()
                     ->timeout(5)
                     ->withHeaders(['Accept' => '*/*'])
                     ->get($remoteUrl);
-                if ($response->successful()) {
-                    $mimeType = (string) ($file['mime_type'] ?? $response->header('Content-Type') ?? $mime);
+            } catch (\Throwable $e) {
+                $remoteFailure = $e;
+            }
 
-                    return new StreamedResponse(function () use ($response) {
-                        echo $response->body();
-                    }, 200, [
-                        'Content-Type' => $mimeType,
-                        'Content-Disposition' => self::contentDisposition('inline', $name),
-                    ]);
-                }
-            } catch (\Throwable) {
-                // Ignore remote URL failure and proceed to 404
+            if ($response?->successful()) {
+                $mimeType = (string) ($file['mime_type'] ?? $response->header('Content-Type') ?? $mime);
+
+                return new StreamedResponse(function () use ($response) {
+                    echo $response->body();
+                }, 200, [
+                    'Content-Type' => $mimeType,
+                    'Content-Disposition' => self::contentDisposition('inline', $name),
+                ]);
+            }
+
+            if ($reportRemoteFailures) {
+                self::logRemoteFailure('remote_storage', $response?->status(), $remoteFailure, $file['diagnostic_id'] ?? null);
+                self::abortForRemoteFailure($response?->status(), $remoteFailure);
             }
         }
 
-        abort(404, 'Fail dokumen tidak dijumpai pada storan sistem.');
+        abort(404, (string) ($file['missing_message'] ?? 'Fail dokumen tidak dijumpai pada storan sistem.'));
+    }
+
+    private static function logRemoteFailure(string $source, ?int $status, ?\Throwable $exception, mixed $diagnosticId = null): void
+    {
+        Log::warning('Remote document retrieval failed.', [
+            'diagnostic_id' => $diagnosticId,
+            'source' => $source,
+            'http_status' => $status,
+            'exception_class' => $exception ? $exception::class : null,
+        ]);
+    }
+
+    private static function abortForRemoteFailure(?int $status, ?\Throwable $exception): void
+    {
+        if ($status === 404) {
+            return;
+        }
+
+        if ($exception !== null || $status === null || $status >= 500) {
+            abort(503, 'Storan dokumen tidak tersedia buat sementara waktu.');
+        }
+
+        abort(502, 'Storan dokumen gagal memproses permintaan.');
     }
 
     /**
