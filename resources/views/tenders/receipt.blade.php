@@ -23,7 +23,12 @@
 		$hasTransaction = $hasTransaction ?? ($purchase->transaction && (int) ($purchase->transaction_id ?? 0) > 0);
 		$txn = $hasTransaction ? $purchase->transaction : null;
 		$receiptDate = $txn?->created_at ?? $purchase->created_at;
-		$paymentMethod = $txn ? strtoupper((string) $txn->method) : 'MANUAL (BAYARAN DI KAUNTER)';
+		$paymentMethod = match (true) {
+			! $txn => 'MANUAL (BAYARAN DI KAUNTER)',
+			str_contains((string) $txn->gateway_message, 'fpx_msgToken: 01') => 'FPX - PERBANKAN PERIBADI (B2C)',
+			str_contains((string) $txn->gateway_message, 'fpx_msgToken: 02') => 'FPX - PERBANKAN KORPORAT (B2B)',
+			default => strtoupper((string) $txn->method),
+		};
 		$txnNumber = $txn?->number ?? ($purchase->ref_number ?: '-');
 		$accountCode = ($txn && $txn->type === 'purchase') || ! $txn ? '73105' : '71399';
 	@endphp
@@ -70,7 +75,7 @@
 				<div class="col-xs-6">
 					<ul class="list-unstyled">
 						<li>Kaedah Bayaran: <strong>{{ $paymentMethod }}</strong></li>
-						<li>Bank: -</li>
+						<li>Bank: {{ $txn?->bank_name ?: '-' }}</li>
 						<li>No Rujukan Bayaran/ Transaksi : <strong>{{ $txnNumber }}</strong></li>
 						@if ($txn && $txn->gateway_auth)
 							<li>No Pengesahan : <strong>{{ $txn->gateway_auth }}</strong></li>
