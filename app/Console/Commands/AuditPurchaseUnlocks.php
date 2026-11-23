@@ -11,23 +11,24 @@ use Illuminate\Console\Command;
 class AuditPurchaseUnlocks extends Command
 {
 	protected $signature = 'purchase:audit-unlocks
-                            {--date=2026-11-17 : Calendar day to audit (Y-m-d)}
+                            {--date= : Single calendar day (Y-m-d); ignored if --from is set}
+                            {--from=2026-11-17 : Range start (Y-m-d)}
+                            {--to= : Range end (Y-m-d), default today}
                             {--repair : Re-run generateTenderVendor() for incomplete success carts}
                             {--vendor= : Limit to one vendor_id}';
 
-	protected $description = 'Find successful multi-tender carts where some tenders were never unlocked (participate=1)';
+	protected $description = 'Find successful purchase carts where some tenders were never unlocked (participate=1) so vendor cannot see dokumen/resit';
 
 	public function handle(): int
 	{
-		$date = Carbon::parse($this->option('date'))->startOfDay();
-		$end = $date->copy()->endOfDay();
+		[$start, $end] = $this->resolveRange();
 		$vendorId = $this->option('vendor');
 		$repair = (bool) $this->option('repair');
 
 		$query = Transaction::query()
 			->where('type', 'purchase')
 			->where('status', 'success')
-			->whereBetween('created_at', [$date, $end])
+			->whereBetween('created_at', [$start, $end])
 			->orderBy('id');
 
 		if ($vendorId !== null && $vendorId !== '') {
@@ -36,8 +37,9 @@ class AuditPurchaseUnlocks extends Command
 
 		$txns = $query->get();
 		$this->info(sprintf(
-			'Success purchase txns on %s: %d',
-			$date->toDateString(),
+			'Success purchase txns from %s to %s: %d',
+			$start->toDateString(),
+			$end->toDateString(),
 			$txns->count()
 		));
 
@@ -77,7 +79,7 @@ class AuditPurchaseUnlocks extends Command
 				implode(',', $unlocked),
 				implode(',', $missing),
 				number_format((float) $txn->amount, 2),
-				$txn->created_at,
+				(string) $txn->created_at,
 			];
 
 			$this->warn(sprintf(
@@ -108,7 +110,7 @@ class AuditPurchaseUnlocks extends Command
 		}
 
 		if ($rows === []) {
-			$this->info('No incomplete unlocks found for that day.');
+			$this->info('No incomplete unlocks found in that range.');
 			return self::SUCCESS;
 		}
 
@@ -118,10 +120,28 @@ class AuditPurchaseUnlocks extends Command
 		);
 		$this->line("Problem carts: {$problems}");
 		if (! $repair) {
-			$this->comment('Re-run with --repair to backfill missing tender_vendors unlocks.');
+			$this->comment('Re-run with --repair to backfill missing tender_vendors unlocks (dokumen + resit).');
 		}
 
 		return self::SUCCESS;
+	}
+
+	/**
+	 * @return array{0: Carbon, 1: Carbon}
+	 */
+	protected function resolveRange(): array
+	{
+		// --date wins for a single-day check; otherwise scan --from..--to.
+		if ($this->option('date')) {
+			$date = Carbon::parse($this->option('date'))->startOfDay();
+
+			return [$date, $date->copy()->endOfDay()];
+		}
+
+		$start = Carbon::parse($this->option('from') ?: '2026-11-17')->startOfDay();
+		$end = Carbon::parse($this->option('to') ?: now()->toDateString())->endOfDay();
+
+		return [$start, $end];
 	}
 
 	/**
