@@ -2164,7 +2164,8 @@ class TendersController extends Controller
 
 		$tender->participants()->update(['winner' => 0]);
 
-		foreach ($tender->participants as $purchase) {
+		// foreach ($tender->participants as $purchase) {  // REVERT: original, stale copies lost a re-saved winner
+		foreach ($tender->participants()->get() as $purchase) {
 			if (in_array((int) $purchase->id, $deleteIds, true)) {
 				continue;
 			}
@@ -2214,7 +2215,8 @@ class TendersController extends Controller
 				preg_split('/\s*,\s*/', (string) $data['vendor_ids'])
 			))));
 			$newIds = array_diff($ids, $existingVendorIds);
-			$recordsCounterPurchase = $tender->shouldBypassDokumenPayment();
+			// Added companies are never marked bought: Iklan Sahaja cannot be purchased online (paid at the agency counter), Online pays via FPX
+			$recordsCounterPurchase = false;
 
 			foreach ($newIds as $vendorId) {
 				if (!Vendor::query()->whereKey($vendorId)->exists()) {

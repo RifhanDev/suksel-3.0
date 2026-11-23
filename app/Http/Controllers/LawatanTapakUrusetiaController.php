@@ -22,6 +22,8 @@ class LawatanTapakUrusetiaController extends Controller
     public function index(Request $request)
     {
         $query = Tender::query()
+            // Open tenders only (closing date not passed); keeps the list and status index small
+            ->where('submission_datetime', '>', now())
             // Dahulunya diikuti where(lawatan_tapak = 1 OR hasSiteVisits). Cabang
             // kedua itu sama dengan syarat di atas, jadi kumpulan itu sentiasa
             // benar dan syarat lawatan_tapak tidak pernah menapis apa-apa. Ia
@@ -146,12 +148,14 @@ class LawatanTapakUrusetiaController extends Controller
         $visits = $tender->siteVisits->sortBy('id')->values();
 
         $attendanceRows = $this->buildAttendanceRows($tender, $purchases, $visits);
+        $visitTabs = $this->visitTabs($visits, $attendanceRows);
 
         return view('newModule.lawatanTapak.pengesahanLawatanTapak', compact(
             'tender',
             'purchases',
             'visits',
-            'attendanceRows'
+            'attendanceRows',
+            'visitTabs'
         ));
     }
 
@@ -177,14 +181,20 @@ class LawatanTapakUrusetiaController extends Controller
             'rows.*.vendor_id' => 'nullable|integer',
             'rows.*.vendor_registration' => 'nullable|string|max:64',
             'rows.*.rep_id' => 'nullable|integer',
-            'rows.*.ic_no' => 'nullable|digits:12',
-            'rows.*.name' => 'nullable|string|max:255',
+            // A company added by ROC must come with its wakil's IC and name
+            'rows.*.ic_no' => 'nullable|required_with:rows.*.vendor_registration|digits:12',
+            'rows.*.name' => 'nullable|required_with:rows.*.vendor_registration|string|max:255',
             'rows.*.attended' => 'nullable|boolean',
+        ], [
+            'rows.*.ic_no.digits' => 'No. IC wakil mesti 12 digit. Sila semak semula.',
+            'rows.*.ic_no.required_with' => 'No. IC wakil diperlukan untuk menambah syarikat.',
+            'rows.*.name.required_with' => 'Nama wakil diperlukan untuk menambah syarikat.',
         ]);
 
         $visitIds = $tender->siteVisits()->pluck('id')->all();
+        $notFound = [];
 
-        DB::transaction(function () use ($data, $visitIds) {
+        DB::transaction(function () use ($data, $visitIds, &$notFound) {
             $touched = [];
 
             foreach ($data['rows'] ?? [] as $row) {
@@ -199,6 +209,10 @@ class LawatanTapakUrusetiaController extends Controller
                     $vendorId = (int) (Vendor::query()
                         ->where('registration', trim($row['vendor_registration']))
                         ->value('id') ?? 0);
+
+                    if ($vendorId <= 0) {
+                        $notFound[] = trim($row['vendor_registration']);
+                    }
                 }
 
                 if ($vendorId <= 0 || !Vendor::where('id', $vendorId)->exists()) {
@@ -212,13 +226,11 @@ class LawatanTapakUrusetiaController extends Controller
 
                 if (empty($ic) && empty($name) && empty($row['rep_id'])) {
                     if ($attended) {
-                        TenderVisitRepresentative::create([
-                            'visit_id' => $visitId,
-                            'vendor_id' => $vendorId,
-                            'ic_no' => null,
-                            'name' => null,
-                            'attended' => true,
-                        ]);
+                        // Reuse the blank wakil row so a resubmitted stale page does not list the company twice
+                        TenderVisitRepresentative::updateOrCreate(
+                            ['visit_id' => $visitId, 'vendor_id' => $vendorId, 'ic_no' => null, 'name' => null],
+                            ['attended' => true]
+                        );
                     }
                     continue;
                 }
@@ -237,13 +249,23 @@ class LawatanTapakUrusetiaController extends Controller
                         ]);
                     }
                 } elseif ($ic || $name) {
-                    TenderVisitRepresentative::create([
-                        'visit_id' => $visitId,
-                        'vendor_id' => $vendorId,
-                        'ic_no' => $ic ?: null,
-                        'name' => $name ?: null,
-                        'attended' => $attended,
-                    ]);
+                    // Same IC for this company and visit is the same wakil, e.g. a resubmitted stale page
+                    $existing = $ic ? TenderVisitRepresentative::where('visit_id', $visitId)
+                        ->where('vendor_id', $vendorId)
+                        ->where('ic_no', $ic)
+                        ->first() : null;
+
+                    if ($existing) {
+                        $existing->update(['name' => $name ?: $existing->name, 'attended' => $attended]);
+                    } else {
+                        TenderVisitRepresentative::create([
+                            'visit_id' => $visitId,
+                            'vendor_id' => $vendorId,
+                            'ic_no' => $ic ?: null,
+                            'name' => $name ?: null,
+                            'attended' => $attended,
+                        ]);
+                    }
                 }
             }
 
@@ -276,6 +298,13 @@ class LawatanTapakUrusetiaController extends Controller
             return response()->json(['message' => 'Kehadiran lawatan tapak berjaya dikemaskini.']);
         }
 
+        // Unknown ROC is not saved, so show only the error instead of a false success
+        if ($notFound) {
+            return redirect()
+                ->route('pengesahanLawatanTapak', $tender->id)
+                ->with('error', 'Syarikat dengan No. ROC ' . implode(', ', $notFound) . ' tidak dijumpai. Sila semak semula.');
+        }
+
         return redirect()
             ->route('pengesahanLawatanTapak', $tender->id)
             ->with('success', 'Kehadiran lawatan tapak berjaya dikemaskini.');
@@ -287,13 +316,31 @@ class LawatanTapakUrusetiaController extends Controller
         $purchases = $this->purchasedVendors($tender);
         $visits = $tender->siteVisits->sortBy('id')->values();
         $attendanceRows = $this->buildAttendanceRows($tender, $purchases, $visits);
+        $visitTabs = $this->visitTabs($visits, $attendanceRows);
 
         return view('newModule.lawatanTapak.kelulusanLawatanTapak', compact(
             'tender',
             'purchases',
             'visits',
-            'attendanceRows'
+            'attendanceRows',
+            'visitTabs'
         ));
+    }
+
+    // One tab per visit; rows keep their original index so every input name stays unique in the form
+    protected function visitTabs($visits, array $attendanceRows)
+    {
+        return $visits->values()->map(function ($visit, $i) use ($attendanceRows) {
+            $rows = collect($attendanceRows)->filter(fn ($row) => $row['visit']->id === $visit->id);
+
+            return [
+                'visit' => $visit,
+                'label' => 'Lawatan Tapak ' . ($i + 1),
+                'rows' => $rows,
+                'total' => $rows->pluck('vendor.id')->unique()->count(),
+                'attended' => $rows->where('attended', true)->pluck('vendor.id')->unique()->count(),
+            ];
+        });
     }
 
     protected function findTenderForUrusetia($tenderId): Tender
@@ -357,6 +404,18 @@ class LawatanTapakUrusetiaController extends Controller
         $vendors = Vendor::query()->whereIn('id', $vendorIds)->get()->keyBy('id');
         $purchasesByVendor = $purchases->keyBy('vendor_id');
 
+        // Load every wakil and visitor once instead of two queries per company per visit
+        $visitIds = $visits->pluck('id')->all();
+        $repsByPair = TenderVisitRepresentative::whereIn('visit_id', $visitIds)
+            ->whereIn('vendor_id', $vendorIds)
+            ->orderBy('id')
+            ->get()
+            ->groupBy(fn ($rep) => $rep->visit_id . '-' . $rep->vendor_id);
+        $visitedPairs = TenderVisitor::whereIn('visit_id', $visitIds)
+            ->whereIn('vendor_id', $vendorIds)
+            ->get()
+            ->mapWithKeys(fn ($visitor) => [$visitor->visit_id . '-' . $visitor->vendor_id => true]);
+
         foreach ($visits as $visit) {
             foreach ($vendorIds as $vendorId) {
                 $vendor = $vendors->get($vendorId);
@@ -365,11 +424,9 @@ class LawatanTapakUrusetiaController extends Controller
                 }
 
                 $purchase = $purchasesByVendor->get($vendorId);
-
-                $reps = TenderVisitRepresentative::where('visit_id', $visit->id)
-                    ->where('vendor_id', $vendor->id)
-                    ->orderBy('id')
-                    ->get();
+                $pair = $visit->id . '-' . $vendor->id;
+                $reps = $repsByPair->get($pair, collect());
+                $hasVisit = $visitedPairs->has($pair);
 
                 if ($reps->isEmpty()) {
                     $rows[] = [
@@ -377,7 +434,7 @@ class LawatanTapakUrusetiaController extends Controller
                         'purchase' => $purchase,
                         'vendor' => $vendor,
                         'rep' => null,
-                        'attended' => TenderVisitor::hasVisit($visit->id, $vendor->id),
+                        'attended' => $hasVisit,
                     ];
                     continue;
                 }
@@ -388,7 +445,7 @@ class LawatanTapakUrusetiaController extends Controller
                         'purchase' => $purchase,
                         'vendor' => $vendor,
                         'rep' => $rep,
-                        'attended' => (bool) $rep->attended || TenderVisitor::hasVisit($visit->id, $vendor->id),
+                        'attended' => (bool) $rep->attended || $hasVisit,
                     ];
                 }
             }
