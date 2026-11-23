@@ -63,4 +63,5 @@ Route::get('/mail-manager/unsend-monthly-email', [MailManagerController::class, 
 Route::get('/decrypt/{string}', [MailManagerController::class, 'decrypt']);
 Route::get('/encrypt/{id}', [MailManagerController::class, 'encrypt']);
 Route::get('/test-email', [MailManagerController::class, 'test_email']);
-Route::post('regen-tender-eligible', [TendersController::class, 'regen_tender_eligible']);
+Route::post('regen-tender-eligible', [TendersController::class, 'regen_tender_eligible'])
+    ->middleware('stos.api');

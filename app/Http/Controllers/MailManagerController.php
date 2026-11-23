@@ -216,7 +216,7 @@ class MailManagerController extends Controller
 
         foreach ($list_pending_send as $rows) {
             $unique_id = $this->encryptString($rows->id);
-            dispatch(new SendEmailJob($unique_id));
+            dispatch(new SendEmailJob($unique_id, (int) $rows->id));
         }
 
         return response()->json(["Today unsend email has been added to queue"]);
@@ -232,7 +232,7 @@ class MailManagerController extends Controller
 
         foreach ($list_pending_send as $rows) {
             $unique_id = $this->encryptString($rows->id);
-            dispatch(new SendEmailJob($unique_id));
+            dispatch(new SendEmailJob($unique_id, (int) $rows->id));
         }
 
         return response()->json(["This week unsend email has been added to queue"]);
@@ -248,7 +248,7 @@ class MailManagerController extends Controller
 
         foreach ($list_pending_send as $rows) {
             $unique_id = $this->encryptString($rows->id);
-            dispatch(new SendEmailJob($unique_id));
+            dispatch(new SendEmailJob($unique_id, (int) $rows->id));
         }
 
         return response()->json(["This month unsend email has been added to queue"]);

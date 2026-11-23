@@ -63,7 +63,7 @@ class RetryUnsentMail extends Command
         }
 
         foreach ($rows as $row) {
-            dispatch_sync(new SendEmailJob($this->encryptString((string) $row->id)));
+            dispatch_sync(new SendEmailJob($this->encryptString((string) $row->id), (int) $row->id));
         }
 
         // The mail server writes the outcome back to the same row, so this shows

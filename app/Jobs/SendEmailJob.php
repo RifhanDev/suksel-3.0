@@ -11,6 +11,8 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use App\Models\MailQueue;
+use App\Models\TenderEligible;
 
 class SendEmailJob implements ShouldQueue
 {
@@ -22,7 +24,7 @@ class SendEmailJob implements ShouldQueue
      *
      * @return void
      */
-    public function __construct($unique_id)
+    public function __construct($unique_id, public ?int $mailQueueId = null)
     {
         $this->unique_id = $unique_id;
     }
@@ -34,20 +36,60 @@ class SendEmailJob implements ShouldQueue
      */
     public function handle()
     {
-        Log::info('[SendEmailJob] Dispatching email to mail server.', ['unique_id' => $this->unique_id]);
+        Log::info('[SendEmailJob] Dispatching email to mail server.', ['mail_queue_id' => $this->mailQueueId]);
 
         try {
             ob_start();
             $this->trigger_mail_server($this->unique_id);
             ob_end_clean();
+
+            $this->syncEligibilityStatusFromMailQueue();
         } catch (\Exception $e) {
             ob_end_clean();
             Log::error('[SendEmailJob] Job threw an exception.', [
-                'unique_id' => $this->unique_id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+                'mail_queue_id' => $this->mailQueueId,
+                'exception' => get_class($e),
             ]);
             throw $e;
+        }
+    }
+
+    /**
+     * Update Senarai Layak only after the mail server records an SMTP result.
+     * A queued (N) message is not reported as sent.
+     */
+    protected function syncEligibilityStatusFromMailQueue(): void
+    {
+        if (!$this->mailQueueId) {
+            return;
+        }
+
+        $mailQueue = MailQueue::query()->find($this->mailQueueId);
+        if (!$mailQueue) {
+            return;
+        }
+
+        $payload = json_decode((string) $mailQueue->payload, true);
+        $eligibleId = data_get($payload, 'tracking.tender_eligible_id');
+        if (!$eligibleId) {
+            return;
+        }
+
+        $eligible = TenderEligible::query()->find($eligibleId);
+        if (!$eligible) {
+            return;
+        }
+
+        if ($mailQueue->status === 'S') {
+            $eligible->update([
+                'email' => 2,
+                'sent_at' => $mailQueue->email_send_at ?: now(),
+            ]);
+        } elseif (in_array($mailQueue->status, ['T', 'F'], true)) {
+            $eligible->update([
+                'email' => 4,
+                'sent_at' => null,
+            ]);
         }
     }
 }

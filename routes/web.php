@@ -819,7 +819,7 @@ Route::middleware(['auth'])->group(function () {
 
 	// Test routes (keep for now)
 	// Route::get('tenders/send-eligible', [TendersController::class, 'sendEligible']);
-	Route::get('hanif', [TendersController::class, 'sendEligible']);
+	Route::post('hanif', [TendersController::class, 'sendEligible'])->middleware('role:Admin');
 	// Iskandar Hantar e-mail Account Review Request kepada User Sistem 
 	Route::get('iskandar', [UsersController::class, 'sendArr']);
 

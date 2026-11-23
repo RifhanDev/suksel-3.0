@@ -28,7 +28,6 @@ use DB;
 use Datatables;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\Hash;
 use App\Services\StosBackendClient;
 use App\Support\TenderProcessStatus;
 use App\Http\Controllers\Concerns\RestrictsTenderByRole;
@@ -1902,7 +1901,14 @@ class TendersController extends Controller
 			return $this->_access_denied();
 
 		if ($request->ajax()) {
+			$canSend = auth()->user() && auth()->user()->ability(['Admin'], []);
 			$eligibles = TenderEligible::with('vendor')->whereTenderId($tender->id)
+				->whereIn('tender_eligibles.email', [1, 2, 3, 4])
+				->whereHas('vendor', function ($query) {
+					$query->canParticipate()
+						->where('registration_paid', 1)
+						->whereDate('expiry_date', '>=', date('Y-m-d'));
+				})
 				->select(
 					'tender_eligibles.id',
 					'vendors.registration',
@@ -1913,12 +1919,11 @@ class TendersController extends Controller
 					'users.email',
 					'tender_eligibles.created_at',
 					'tender_eligibles.sent_at',
+					'tender_eligibles.email as email_status',
 					'tender_eligibles.vendor_id'
 				)
 				->leftJoin('vendors', 'tender_eligibles.vendor_id', '=', 'vendors.id')
 				->leftJoin('users', 'users.vendor_id', '=', 'vendors.id');
-
-			$canSend = auth()->user() && auth()->user()->ability(['Admin'], []);
 
 			$datatable = Datatables::of($eligibles)
 				->editColumn('vendor_registration', function ($eligible) {
@@ -1928,13 +1933,19 @@ class TendersController extends Controller
 				->editColumn('vendor_name', function ($eligible) {
 					return link_to_route('vendors.show', $eligible->vendor_name, $eligible->vendor_id);
 				})
-				->editColumn('user_email', function ($eligible) {
-					return $eligible->user_email;
+				->editColumn('user_email', function ($eligible) use ($canSend) {
+					return $canSend ? $eligible->user_email : '';
 				})
 				->editColumn('created_at', function ($eligible) {
 					return \Carbon\Carbon::parse($eligible->created_at)->format('d/m/Y H:i:s');
 				})
 				->editColumn('sent_at', function ($eligible) {
+					if ((int) $eligible->email_status === 3) {
+						return 'Dalam Barisan';
+					}
+					if ((int) $eligible->email_status === 4) {
+						return 'Gagal — perlu dihantar semula';
+					}
 					return $eligible->sent_at ? \Carbon\Carbon::parse($eligible->sent_at)->format('d/m/Y H:i:s') : boolean_icon(false);
 				})
 				->addColumn('actions', function ($eligible) use ($tender, $canSend) {
@@ -1942,8 +1953,11 @@ class TendersController extends Controller
 						return '';
 					}
 
-					$label = $eligible->sent_at ? 'Hantar Semula' : 'Hantar Emel';
-					$class = $eligible->sent_at ? 'btn-outline-primary' : 'btn-primary';
+					if ((int) $eligible->email_status === 3) {
+						return '<button type="button" class="btn btn-sm btn-secondary" disabled>Dalam Barisan</button>';
+					}
+					$label = in_array((int) $eligible->email_status, [2, 4], true) ? 'Hantar Semula' : 'Hantar Emel';
+					$class = in_array((int) $eligible->email_status, [2, 4], true) ? 'btn-outline-primary' : 'btn-primary';
 					$url = route('tenders.eligibles.send-email', [$tender->id, $eligible->id]);
 
 					return '<button type="button" class="btn btn-sm ' . $class . ' btn-send-eligible-email"'
@@ -1953,14 +1967,14 @@ class TendersController extends Controller
 						. '</button>';
 				});
 
-			return $datatable->rawColumns(['vendor_registration', 'vendor_name', 'user_email', 'created_at', 'sent_at', 'actions'])->make();
+			return $datatable->rawColumns(['vendor_registration', 'vendor_name', 'created_at', 'sent_at', 'actions'])->make();
 		}
 
 		return view('tenders.eligibles', compact('tender'));
 	}
 
 	/**
-	 * Manually send eligibility email to one vendor and update sent_at (Tarikh Email).
+	 * Queue one eligible vendor email; sent_at is recorded only after SMTP acceptance.
 	 */
 	public function sendEligibleEmail(Request $request, $id, $eligible)
 	{
@@ -1976,6 +1990,14 @@ class TendersController extends Controller
 		$eligibleRecord = TenderEligible::with('vendor.user')
 			->where('tender_id', $tender->id)
 			->findOrFail($eligible);
+
+		if ((int) $eligibleRecord->email === 3) {
+			$result = ['success' => false, 'message' => 'Emel syarikat ini sudah berada dalam barisan penghantaran.'];
+			if ($request->ajax() || $request->wantsJson()) {
+				return response()->json($result, 409);
+			}
+			return redirect()->route('tenders.eligibles', $tender->id)->with('error', $result['message']);
+		}
 
 		$result = $this->dispatchEligibleEmail($eligibleRecord, $tender);
 
@@ -2004,47 +2026,53 @@ class TendersController extends Controller
 
 		$eligibles = TenderEligible::with('vendor.user')
 			->where('tender_id', $tender->id)
+			->whereIn('email', [1, 4])
 			->whereNull('sent_at')
+			->whereHas('vendor', function ($query) {
+				$query->canParticipate()
+					->where('registration_paid', 1)
+					->whereDate('expiry_date', '>=', date('Y-m-d'));
+			})
 			->get();
 
-		$sent = 0;
+		$queued = 0;
 		$failed = 0;
 		$errors = [];
 
 		foreach ($eligibles as $eligibleRecord) {
 			$result = $this->dispatchEligibleEmail($eligibleRecord, $tender);
 			if ($result['success']) {
-				$sent++;
+				$queued++;
 			} else {
 				$failed++;
 				$errors[] = ($eligibleRecord->vendor->name ?? 'Syarikat') . ': ' . $result['message'];
 			}
 		}
 
-		$message = $sent > 0
-			? "Emel layak dihantar kepada {$sent} syarikat."
-			: 'Tiada emel dihantar.';
+		$message = $queued > 0
+			? "Emel layak dimasukkan ke barisan penghantaran untuk {$queued} syarikat."
+			: 'Tiada emel dimasukkan ke barisan penghantaran.';
 		if ($failed > 0) {
 			$message .= " {$failed} gagal.";
 		}
 
 		if ($request->ajax() || $request->wantsJson()) {
 			return response()->json([
-				'success' => $sent > 0 || $failed === 0,
+				'success' => $queued > 0 || $failed === 0,
 				'message' => $message,
-				'sent' => $sent,
+				'queued' => $queued,
 				'failed' => $failed,
 				'errors' => $errors,
-			], ($sent > 0 || $eligibles->isEmpty()) ? 200 : 422);
+			], ($queued > 0 || $eligibles->isEmpty()) ? 200 : 422);
 		}
 
 		return redirect()
 			->route('tenders.eligibles', $tender->id)
-			->with($sent > 0 ? 'success' : 'error', $message);
+			->with($queued > 0 ? 'success' : 'error', $message);
 	}
 
 	/**
-	 * Send one eligibility email and stamp sent_at on success.
+	 * Send one eligibility email and update its queue/send status.
 	 *
 	 * @return array{success:bool,message:string}
 	 */
@@ -2055,14 +2083,22 @@ class TendersController extends Controller
 		$to = trim((string) ($user->email ?? ''));
 
 		if (!$vendor || !$user) {
+			$eligible->update(['email' => 0, 'sent_at' => null]);
 			return ['success' => false, 'message' => 'Syarikat atau pengguna tidak dijumpai.'];
 		}
 
+		if (!$vendor->canParticipateInTenders()) {
+			$eligible->update(['email' => 0, 'sent_at' => null]);
+			return ['success' => false, 'message' => 'Syarikat tidak memenuhi syarat penyertaan semasa.'];
+		}
+
 		if ($user->isEmailBlacklist()) {
+			$eligible->update(['email' => 0, 'sent_at' => null]);
 			return ['success' => false, 'message' => 'Emel syarikat berada dalam senarai hitam.'];
 		}
 
 		if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
+			$eligible->update(['email' => 0, 'sent_at' => null]);
 			return ['success' => false, 'message' => 'Alamat emel tidak sah.'];
 		}
 
@@ -2070,24 +2106,29 @@ class TendersController extends Controller
 		$status = $this->sendMail('html', $to, $subject, '', 'tenders.emails.eligible', [
 			'tender_id' => $tender->id,
 			'vendor_id' => $vendor->id,
-		]);
+		], [], ['tender_eligible_id' => $eligible->id]);
 
-		if (!$this->emailSendSucceeded((string) $status)) {
-			return ['success' => false, 'message' => is_string($status) ? $status : 'Gagal menghantar emel.'];
+		if ($status === 'Email send to queue') {
+			$eligible->update(['email' => 3, 'sent_at' => null]);
+			return ['success' => true, 'message' => 'Emel dimasukkan ke dalam barisan penghantaran.'];
 		}
 
-		$eligible->update([
-			'sent_at' => Carbon::now(),
-			'email' => 2,
-		]);
+		if ($status === 'Email sent via Laravel mailer') {
+			$eligible->update(['email' => 2, 'sent_at' => now()]);
+			return [
+				'success' => true,
+				'message' => 'Emel diterima oleh mailer untuk penghantaran.',
+				'sent_at' => Carbon::parse($eligible->fresh()->sent_at)->format('d/m/Y H:i:s'),
+			];
+		}
 
-		$sentAt = Carbon::parse($eligible->fresh()->sent_at)->format('d/m/Y H:i:s');
+		$eligible->update(['email' => 4, 'sent_at' => null]);
 
-		return [
-			'success' => true,
-			'message' => 'Emel layak telah dihantar kepada ' . $vendor->name . '.',
-			'sent_at' => $sentAt,
-		];
+		if (!$this->emailSendSucceeded((string) $status)) {
+			return ['success' => false, 'message' => 'Gagal menghantar emel. Semak log pelayan untuk maklumat lanjut.'];
+		}
+
+		return ['success' => false, 'message' => 'Gagal menghantar emel.'];
 	}
 
 	public function printVendors($id)
@@ -2621,61 +2662,27 @@ class TendersController extends Controller
 
 	public function sendEligible()
 	{
+		if (!auth()->user() || !auth()->user()->ability(['Admin'], [])) {
+			return $this->_access_denied();
+		}
 
-		$eligibles = TenderEligible::with('tender', 'vendor')->whereNull('sent_at')
+		$eligibles = TenderEligible::with('tender', 'vendor.user')->whereNull('sent_at')
 			->where('email', 1)
 			->whereHas('vendor', function ($q) {
-				$q->whereRaw("blacklisted_until < current_date");
+				$q->canParticipate();
 			})
 			->whereHas('tender', function ($q) {
 				$q->whereRaw("submission_datetime > current_date");
 			})
-			->where('created_at', '>', '2023-04-1')
-			// ->orderBy('tender_id', 'desc', 'id')
+			->orderByDesc('tender_id')
+			->orderBy('id')
 			->limit(500)
 			->get();
 
-		$eligibles = $eligibles->sortBy([
-			['tender_id', 'desc'],
-			['id', 'asc'],
-		]);
-
-		// dd($eligibles);
-
 		foreach ($eligibles as $eligible) {
-			$vendor = $eligible->vendor;
 			$tender = $eligible->tender;
-
-
-
-			if ($tender && $vendor && $vendor->user && !$vendor->user->isEmailBlacklist() && $vendor->canParticipateInTenders()) {
-
-				// Check Email
-				if (filter_var(trim($vendor->user->email), FILTER_VALIDATE_EMAIL)) {
-
-					//DD($eligible,$vendor->user->email);
-					//var_dump($eligible,$vendor->user->email);
-
-					// Mail::send('tenders.emails.eligible', ['tender_id' => $tender->id, 'vendor_id' => $vendor->id], function($message) use($vendor, $tender) {
-					// 	$message->to(trim($vendor->user->email));
-					// 	$message->subject('Sistem Tender Online Selangor: Layak Sertai Tender / Sebut Harga - ' . $tender->name);   
-					// });
-
-					$to			= trim($vendor->user->email);
-					$subject 	= 'Sistem Tender Online Selangor: Layak Sertai Tender / Sebut Harga - ' . $tender->name;
-					$send_status = $this->sendMail("html", $to, $subject, "", "tenders.emails.eligible", ['tender_id' => $tender->id, 'vendor_id' => $vendor->id]);
-
-
-					$eligible->update([
-						'sent_at' => Carbon::now(),
-						'email' => '2'
-					]);
-				} else {
-				}
-			} else {
-				$eligible->update([
-					'email' => false
-				]);
+			if ($tender) {
+				$this->dispatchEligibleEmail($eligible, $tender);
 			}
 		}
 
@@ -2791,25 +2798,14 @@ class TendersController extends Controller
 
 	public function regen_tender_eligible(Request $request)
 	{
-		$tender_id = $request->post('tender_id') ?? -1;
-		$public_key = $request->post('pk') ?? "-1";
+		$validated = $request->validate([
+			'tender_id' => ['required', 'integer', 'min:1'],
+		]);
 
-		$special_id = Hash::make("8d8a32d3115554817987bc460a0c9bbf");
-
-		if (!Hash::check($public_key, $special_id)) {
-			return response()->json(["status" => "Access Denied"], 500);
-		}
-
-
-		if ($tender_id < 1) {
-			return response()->json(["status" => "Invalid Tender ID"], 500);
-		}
-
-
-		$tender = Tender::findOrFail($tender_id);
+		$tender = Tender::findOrFail($validated['tender_id']);
 
 		if ($tender->approver_id < 1) {
-			return response()->json(["status" => "Tender is not published yet"], 500);
+			return response()->json(["status" => "Tender is not published yet"], 409);
 		}
 
 		$this->generateEligible($tender->id);

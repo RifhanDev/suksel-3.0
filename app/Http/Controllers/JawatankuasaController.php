@@ -531,7 +531,7 @@ class JawatankuasaController extends Controller
                     ]);
 
                     $unique_id = $this->encryptString($new_queue->id);
-                    dispatch(new \App\Jobs\SendEmailJob($unique_id))->afterResponse();
+                    dispatch(new \App\Jobs\SendEmailJob($unique_id, (int) $new_queue->id))->afterResponse();
                 }
             } else {
                 ob_start();

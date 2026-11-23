@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use App\TenderEligible;
 use App\Traits\Helper;
-use Carbon\Carbon;
 use Illuminate\Console\Command;
 
 class SendEligibleEmail extends Command
@@ -41,9 +40,12 @@ class SendEligibleEmail extends Command
             ->whereNull('sent_at')
             ->where('email', 1)
             ->whereHas('vendor', function ($q) {
-                $q->whereRaw('blacklisted_until < current_date');
+                $q->canParticipate()
+                    ->where('registration_paid', 1)
+                    ->whereDate('expiry_date', '>=', date('Y-m-d'));
             })
-            ->where('created_at', '>', '2023-04-1');
+            ->orderByDesc('tender_id')
+            ->orderBy('id');
 
         if ($tenderId !== null && $tenderId !== '') {
             $query->where('tender_id', (int) $tenderId);
@@ -58,10 +60,7 @@ class SendEligibleEmail extends Command
         }
         // With --tender and no --limit: process all pending for that tender.
 
-        $eligibles = $query->get()->sortBy([
-            ['tender_id', 'desc'],
-            ['id', 'asc'],
-        ]);
+        $eligibles = $query->get();
 
         if ($eligibles->isEmpty()) {
             $this->info('No pending eligible emails to send.');
@@ -75,9 +74,11 @@ class SendEligibleEmail extends Command
             $tenderId ? " for tender {$tenderId}" : ''
         ));
 
+        $queued = 0;
         $sent = 0;
         $skipped = 0;
         $disabled = 0;
+        $failed = 0;
 
         foreach ($eligibles as $eligible) {
             $vendor = $eligible->vendor;
@@ -87,16 +88,23 @@ class SendEligibleEmail extends Command
                 if (filter_var(trim($vendor->user->email), FILTER_VALIDATE_EMAIL)) {
                     $to = trim($vendor->user->email);
                     $subject = 'Sistem Tender Online Selangor: Layak Sertai Tender / Sebut Harga - ' . $tender->name;
-                    $this->sendMail('html', $to, $subject, '', 'tenders.emails.eligible', [
+                    $result = $this->sendMail('html', $to, $subject, '', 'tenders.emails.eligible', [
                         'tender_id' => $tender->id,
                         'vendor_id' => $vendor->id,
-                    ]);
+                    ], [], ['tender_eligible_id' => $eligible->id]);
 
-                    $eligible->update([
-                        'sent_at' => Carbon::now(),
-                    ]);
-                    $sent++;
+                    if ($result === 'Email send to queue') {
+                        $eligible->update(['email' => 3, 'sent_at' => null]);
+                        $queued++;
+                    } elseif ($result === 'Email sent via Laravel mailer') {
+                        $eligible->update(['email' => 2, 'sent_at' => now()]);
+                        $sent++;
+                    } else {
+                        $eligible->update(['email' => 4, 'sent_at' => null]);
+                        $failed++;
+                    }
                 } else {
+                    $eligible->update(['email' => 0, 'sent_at' => null]);
                     $skipped++;
                 }
             } else {
@@ -107,7 +115,7 @@ class SendEligibleEmail extends Command
             }
         }
 
-        $this->info("Done. sent={$sent} skipped_invalid_email={$skipped} disabled={$disabled}");
+        $this->info("Done. queued={$queued} accepted_by_mailer={$sent} failed={$failed} skipped_invalid_email={$skipped} disabled={$disabled}");
 
         return self::SUCCESS;
     }
