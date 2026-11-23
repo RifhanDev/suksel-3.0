@@ -83,21 +83,26 @@ class FPXRequery extends Command
             $params = $fpx->request_keys;
 
             try {
-                    $client = new Client(['verify' => config('services.fpx.verify_tls', true)]);
+                    $client = new Client([
+                        'verify' => config('services.fpx.verify_tls', true),
+                        'connect_timeout' => (float) config('services.fpx.connect_timeout', 5),
+                        'timeout' => (float) config('services.fpx.timeout', 10),
+                    ]);
                     $response = $client->request('POST', $url, [
                         'form_params' => $params,
-                        'debug' => false
+                        'debug' => false,
                     ]);     
             }
             catch(Exception $e) {
-                Log::info('Gagal menghubungi FPX untuk transaksi '.$transaction->number);
+                Log::warning('FPX requery request failed.', [
+                    'transaction_id' => $transaction->id,
+                    'exception' => get_class($e),
+                ]);
                 continue;
             }
             $response = $response->getBody()->getContents();
             $response = explode('&', $response);
             $data     = [];
-
-            Log::info($response);
 
             if(count($response) > 1) {
                 foreach($response as $resp) {
@@ -152,6 +157,11 @@ class FPXRequery extends Command
                 $transaction->gateway_auth      = implode('|', [$data['fpx_debitAuthNo'], $data['fpx_creditAuthNo']]);
                 $transaction->gateway_response  = implode(' | ', $message);
                 $transaction->save();
+            } else {
+                Log::warning('FPX requery returned an unrecognized response.', [
+                    'transaction_id' => $transaction->id,
+                    'response_bytes' => strlen(implode('&', $response)),
+                ]);
             }
 
         }

@@ -455,11 +455,16 @@ class HomeController extends Controller
 			if ($user->vendor) {
 				$vendorId = $user->vendor_id;
 
-				$invites   = TenderInvite::has('tender')->where('vendor_id', $vendorId)->get();
+				$invites   = TenderInvite::query()
+					->where('vendor_id', $vendorId)
+					->whereHas('tender')
+					->with(['tender.tenderer'])
+					->get();
 
 				$purchases  = TenderVendor::whereNotNull('ref_number')
 					->where('vendor_id', $vendorId)
 					->where('participate', 1)
+					->with(['tender.tenderer'])
 					->orderBy('created_at', 'desc')
 					->get();
 
@@ -482,23 +487,29 @@ class HomeController extends Controller
 
 			// Temporarily commented out to fix column issue
 			// $eligibles = Tender::forPublic()->published()->where('submission_datetime', '>', date('Y-m-d H:i:s'))->has('codes', '=', '0')->get();
-			$eligibles = Tender::forPublic()->open()->has('codes', '=', '0')->get();
+			$eligibles = Tender::forPublic()->open()->has('codes', '=', '0')->with('tenderer')->get();
 
-			$eligibles = $eligibles->merge(Tender::whereIn('id', $eligibles_ids)->open()->get())->sortByDesc('submission_datetime');
-			$eligibles = $eligibles->merge(Tender::whereIn('id', $exception_ids)->open()->get())->sortByDesc('submission_datetime');
+			$purchasedTenderIds = $purchases->pluck('tender_id')->filter()->unique()->values();
+			$additionalEligibleIds = $eligibles_ids->merge($exception_ids)->filter()->unique()->values();
 			$eligibles = $eligibles
-				->reject(function ($eligible) use ($purchases) {
-					return in_array($eligible->id, (array) $purchases->pluck('tender_id'));
-				});
+				->merge(Tender::whereIn('id', $additionalEligibleIds)->open()->with('tenderer')->get())
+				->unique('id')
+				->reject(function ($eligible) use ($purchasedTenderIds) {
+					return $purchasedTenderIds->contains($eligible->id);
+				})
+				->sortByDesc('submission_datetime')
+				->values();
 
 			$refunds = $user->vendor
-				? Refund::where('vendor_id', $user->vendor_id)->get()
+				? Refund::where('vendor_id', $user->vendor_id)->with('transaction')->get()
 				: collect([]);
 
 			foreach ($refunds as $refund) {
 				$refund->ref_num = $this->refundNumGenerator($refund->number);
 				$refund->status = $refund->refundStatus();
-				$refund->receipt = $this->receiptNumGenerator($refund->transaction->number, date('d-m-Y', strtotime($refund->transaction->created_at)));
+				$refund->receipt = $refund->transaction
+					? $this->receiptNumGenerator($refund->transaction->number, date('d-m-Y', strtotime($refund->transaction->created_at)))
+					: '-';
 			}
 
 			// Projek Pembelian Terus / Lantikan Terus yang dimenangi oleh vendor.
@@ -1566,28 +1577,31 @@ class HomeController extends Controller
 			return collect();
 		}
 
-		$eligibleIds = TenderEligible::query()
-			->where('vendor_id', $vendorId)
-			->pluck('tender_id');
-
-		$petenderIds = collect();
-		if (\Illuminate\Support\Facades\Schema::hasTable('jawatankuasa_perolehan_pemilihan_petenders')
-			&& \Illuminate\Support\Facades\Schema::hasColumn('jawatankuasa_perolehan_pemilihan_petenders', 'vendor_id')) {
-			$petenderIds = DB::table('jawatankuasa_perolehan_pemilihan_petenders as p')
-				->join('jawatankuasa_perolehan_pemilihan_items as i', 'i.id', '=', 'p.pemilihan_item_id')
-				->where('p.vendor_id', $vendorId)
-				->pluck('i.tender_id');
-		}
-
-		$invitedIds = $eligibleIds->merge($petenderIds)->unique()->filter()->values();
-		if ($invitedIds->isEmpty()) {
-			return collect();
-		}
+		$hasPemilihanInvites = \Illuminate\Support\Facades\Schema::hasTable('jawatankuasa_perolehan_pemilihan_petenders')
+			&& \Illuminate\Support\Facades\Schema::hasColumn('jawatankuasa_perolehan_pemilihan_petenders', 'vendor_id')
+			&& \Illuminate\Support\Facades\Schema::hasTable('jawatankuasa_perolehan_pemilihan_items');
 
 		$tenders = Tender::query()
 			->with('tenderer')
 			->where('is_ebidding', 1)
-			->whereIn('id', $invitedIds)
+			->where(function ($query) use ($vendorId, $hasPemilihanInvites) {
+				$query->whereExists(function ($eligible) use ($vendorId) {
+					$eligible->selectRaw('1')
+						->from('tender_eligibles')
+						->whereColumn('tender_eligibles.tender_id', 'tenders.id')
+						->where('tender_eligibles.vendor_id', $vendorId);
+				});
+
+				if ($hasPemilihanInvites) {
+					$query->orWhereExists(function ($petender) use ($vendorId) {
+						$petender->selectRaw('1')
+							->from('jawatankuasa_perolehan_pemilihan_petenders as p')
+							->join('jawatankuasa_perolehan_pemilihan_items as i', 'i.id', '=', 'p.pemilihan_item_id')
+							->whereColumn('i.tender_id', 'tenders.id')
+							->where('p.vendor_id', $vendorId);
+					});
+				}
+			})
 			->where(function ($q) {
 				$q->whereIn('ebidding_process_stage_id', [2, 3, 4])
 					->orWhereIn('status_process_id', [5, 6, 7]);
@@ -1602,6 +1616,13 @@ class HomeController extends Controller
 		$tenderIds = $tenders->pluck('id');
 		$schedules = DB::table('ebidding_jadual_bidaans')
 			->whereIn('tender_id', $tenderIds)
+			->select([
+				'tender_id',
+				'tarikh_bidaan_mula',
+				'masa_bidaan_mula',
+				'tarikh_bidaan_tamat',
+				'masa_bidaan_tamat',
+			])
 			->get()
 			->keyBy('tender_id');
 
@@ -1612,7 +1633,8 @@ class HomeController extends Controller
 				->whereIn('tender_id', $tenderIds)
 				->whereNotNull('submitted_at')
 				->pluck('tender_id')
-				->unique();
+				->unique()
+				->flip();
 		}
 
 		$now = Carbon::now();
@@ -1635,7 +1657,7 @@ class HomeController extends Controller
 				$hasEnded = $endAt ? $now->greaterThan($endAt) : false;
 			}
 
-			$hasSubmitted = $submittedIds->contains($tender->id);
+			$hasSubmitted = $submittedIds->has($tender->id);
 
 			// Hide from vendor list once bidding window has ended.
 			if ($hasEnded) {

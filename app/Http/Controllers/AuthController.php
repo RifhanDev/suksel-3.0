@@ -46,7 +46,6 @@ class AuthController extends Controller
    {
 
       if (!is_null(session('attempt_again'))) {
-         Log::Debug('!is_null attempt_again');
          $now = time();
          if ($now >= session('attempt_again')) {
             session()->forget('attempt');
@@ -58,7 +57,6 @@ class AuthController extends Controller
       }
 
       if (is_null(session('attempt_again'))) {
-         Log::Debug('is_null attempt_again');
          if (is_null(session('attempt'))) {
             session()->put('attempt', 0);
          }

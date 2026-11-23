@@ -87,7 +87,7 @@
             </tr>
             <tr>
                 <th>Nama Syarikat</th>
-                <td>{{ $user->vendor->name }}</td>
+                <td>{{ optional($user->vendor)->name ?? '-' }}</td>
             </tr>
             <tr>
                 <th>Tarikh Didaftarkan</th>
