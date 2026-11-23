@@ -15,4 +15,29 @@
 	font-size: 13px;
 	line-height: 1.6;
 	color: #333;
+	overflow-wrap: break-word;
+}
+
+/* Safety net after syarat_html(): a table too wide for the page scrolls inside itself */
+.syarat-paper table {
+	display: block;
+	width: max-content;
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+.syarat-paper img {
+	max-width: 100%;
+	height: auto;
+}
+
+.syarat-paper td,
+.syarat-paper th {
+	padding: 2px 6px;
+}
+
+@media (max-width: 576px) {
+	.syarat-paper {
+		padding: 24px 16px;
+	}
 }

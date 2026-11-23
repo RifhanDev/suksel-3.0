@@ -435,7 +435,7 @@ class PenyediaanIklanService
                 $iklan['tarikh_tutup'] ?? null,
                 $iklan['masa_tutup'] ?? null
             ),
-            'tender_rules' => $iklan['syarat_tender'] ?? null,
+            'tender_rules' => isset($iklan['syarat_tender']) ? syarat_html($iklan['syarat_tender']) : null,
             'only_selangor' => isset($syarat['only_selangor']) ? (int) $syarat['only_selangor'] : null,
             'only_bumiputera' => array_key_exists('only_bumiputera', $syarat) ? (int) (bool) $syarat['only_bumiputera'] : null,
             'invitation' => array_key_exists('invitation', $syarat) ? (int) (bool) $syarat['invitation'] : null,

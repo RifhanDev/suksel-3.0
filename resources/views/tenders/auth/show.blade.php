@@ -712,7 +712,7 @@
 								{{-- {!! nl2br( $tender->tender_rules, '<b><strong><i><em><u><p><ul><ol><li>' ) !!} --}}
 								<div class="syarat-paper-wrap">
 									<div class="syarat-paper">
-										{!! $tender->tender_rules !!}
+										{!! syarat_html($tender->tender_rules) !!}
 									</div>
 								</div>
 							</div>

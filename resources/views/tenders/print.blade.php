@@ -843,7 +843,7 @@
     @if ($hasTerms)
         <div class="tp-section">
             <div class="tp-heading">Syarat {{ $typeLabel }}</div>
-            <div class="tp-terms">{!! $tender->tender_rules !!}</div>
+            <div class="tp-terms">{!! syarat_html($tender->tender_rules) !!}</div>
         </div>
     @endif
 

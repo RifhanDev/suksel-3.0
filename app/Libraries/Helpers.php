@@ -74,6 +74,35 @@ function tender_code_rule_html(?string $rule, string $default = 'and'): string
 	return \App\VendorCode::$rule[$key];
 }
 
+// Keeps only allowed formatting from Word-pasted syarat; widths, no-wrap, scripts etc. are dropped
+function syarat_html(?string $html): string
+{
+	if (trim((string) $html) === '') {
+		return '';
+	}
+
+	static $purifier;
+	if (! $purifier) {
+		$config = \HTMLPurifier_Config::createDefault();
+		$cache = storage_path('framework/cache/htmlpurifier');
+		if (! is_dir($cache)) {
+			@mkdir($cache, 0775, true);
+		}
+		if (is_writable($cache)) {
+			$config->set('Cache.SerializerPath', $cache);
+		} else {
+			$config->set('Cache.DefinitionImpl', null);
+		}
+		$config->set('HTML.Allowed', 'p[style],div[style],span[style],br,strong,b,em,i,u,s,sub,sup,h1[style],h2[style],h3[style],h4[style],h5[style],h6[style],ul,ol[type|start],li[style],table[border|cellpadding|cellspacing|style],thead,tbody,tfoot,tr,th[colspan|rowspan|align|valign|style],td[colspan|rowspan|align|valign|style],a[href|target],img[src|alt],blockquote,hr');
+		$config->set('CSS.AllowedProperties', 'font-weight,font-style,text-decoration,text-align,vertical-align,color,background-color,border,border-top,border-right,border-bottom,border-left,border-collapse,list-style-type');
+		$config->set('Attr.AllowedFrameTargets', ['_blank']);
+		$config->set('URI.AllowedSchemes', ['http' => true, 'https' => true, 'mailto' => true, 'data' => true]);
+		$purifier = new \HTMLPurifier($config);
+	}
+
+	return $purifier->purify($html);
+}
+
 /**
  * Annotate code groups with join_after (connector AFTER this group).
  *

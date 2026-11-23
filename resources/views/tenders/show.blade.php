@@ -462,7 +462,7 @@
 					<div role="tabpanel" class="tab-pane" id="tf-syarat">
 						<h3 class="visible-print">Syarat {{ App\Tender::$types[$tender->type] }}</h3>
 						{{-- {!! nl2br( $tender->tender_rules, '<b><strong><i><em><u><p><ul><ol><li>' ) !!} --}}
-						{!! $tender->tender_rules !!}
+						{!! syarat_html($tender->tender_rules) !!}
 					</div>
 
 					@if (count($tender->siteVisits) > 0)

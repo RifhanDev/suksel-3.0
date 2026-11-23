@@ -390,7 +390,7 @@
 						@if ($tender->tender_rules)
 							<div class="syarat-paper-wrap">
 								<div class="syarat-paper">
-									{!! $tender->tender_rules !!}
+									{!! syarat_html($tender->tender_rules) !!}
 								</div>
 							</div>
 						@else
