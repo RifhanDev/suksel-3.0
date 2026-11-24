@@ -1671,9 +1671,24 @@ class TendersController extends Controller
 			? $file->downloadFilename()
 			: trim((string) ($file->label ?: $file->name ?: 'dokumen'));
 
+		$isMejaPdf = (int) $file->public === 1 && $this->uploadLooksLikePdf($file);
+
 		// Migrated 2.0 rows keep old absolute paths (/Data/var/www/.../etender-selangor/...).
 		// Prefer NAS (legacy + new root) whenever remote attachments are enabled.
 		$relative = \App\Support\AttachmentStorage::relativeForUpload((string) $file->path, (string) $file->name);
+
+		// Dokumen Meja Terkawal: watermark a temp copy on download (same as legacy behaviour
+		// users expect). NAS streaming alone would skip watermark after save-time failures.
+		if ($isMejaPdf) {
+			$localCopy = $this->materializeUploadToTemp($file, $relative, $tender);
+			if ($localCopy) {
+				$toSend = $this->applyMejaWatermarkForDownload($localCopy);
+				return response()->download($toSend, $downloadName, [
+					'Content-Type' => $file->type ?: 'application/pdf',
+				])->deleteFileAfterSend(true);
+			}
+		}
+
 		if ($relative !== '') {
 			try {
 				$stored = \App\Support\AttachmentStorage::responseOrNull(
@@ -1716,6 +1731,94 @@ class TendersController extends Controller
 		return response()->download($fullPath, $downloadName, [
 			'Content-Type' => $file->type ?: (mime_content_type($fullPath) ?: 'application/octet-stream'),
 		]);
+	}
+
+	protected function uploadLooksLikePdf($file): bool
+	{
+		$type = strtolower((string) ($file->type ?? ''));
+		if (str_contains($type, 'pdf')) {
+			return true;
+		}
+
+		$name = strtolower((string) ($file->name ?? ''));
+		$label = strtolower((string) ($file->label ?? ''));
+
+		return str_ends_with($name, '.pdf') || str_ends_with($label, '.pdf');
+	}
+
+	/**
+	 * Copy upload bytes to a local temp PDF for download-time watermarking.
+	 */
+	protected function materializeUploadToTemp($file, string $relative, Tender $tender): ?string
+	{
+		$tmp = tempnam(sys_get_temp_dir(), 'meja_dl_');
+		if ($tmp === false) {
+			return null;
+		}
+		$target = $tmp . '.pdf';
+		@unlink($tmp);
+
+		$written = false;
+
+		if ($relative !== '') {
+			try {
+				$located = \App\Support\AttachmentStorage::locate($relative);
+				if ($located !== null) {
+					$bytes = \Illuminate\Support\Facades\Storage::disk($located['disk'])->get($located['path']);
+					if (is_string($bytes) && $bytes !== '') {
+						$written = file_put_contents($target, $bytes) !== false;
+					}
+				}
+			} catch (\Throwable $e) {
+				\Illuminate\Support\Facades\Log::warning('Meja download materialize from NAS failed', [
+					'upload_id' => $file->id ?? null,
+					'relative' => $relative,
+					'error' => $e->getMessage(),
+				]);
+			}
+		}
+
+		if (! $written) {
+			$fullPath = method_exists($file, 'resolveAbsolutePath')
+				? $file->resolveAbsolutePath()
+				: null;
+			if (! $fullPath || ! is_file($fullPath)) {
+				$fullPath = $this->resolveMejaTerkawalFallbackPath($tender, $file);
+			}
+			if ($fullPath && is_file($fullPath) && filesize($fullPath) > 0) {
+				$written = @copy($fullPath, $target);
+			}
+		}
+
+		if (! $written || ! is_file($target) || filesize($target) <= 0) {
+			@unlink($target);
+
+			return null;
+		}
+
+		return $target;
+	}
+
+	/**
+	 * Watermark temp PDF for meja download. On failure, return the original temp path.
+	 */
+	protected function applyMejaWatermarkForDownload(string $localPdf): string
+	{
+		$watermark = public_path('images/etender-dokumen-watermark.png');
+		if (! is_file($watermark) || ! method_exists($this, 'setWatermark')) {
+			return $localPdf;
+		}
+
+		try {
+			$this->setWatermark($localPdf, $watermark);
+		} catch (\Throwable $e) {
+			\Illuminate\Support\Facades\Log::warning('Meja download watermark failed; serving original', [
+				'file' => $localPdf,
+				'error' => $e->getMessage(),
+			]);
+		}
+
+		return $localPdf;
 	}
 
 	/**
