@@ -336,38 +336,42 @@ trait Helper
             $pdf->AddPage($orientation, [$size['width'], $size['height']]);
             $pdf->useTemplate($tpl, 0, 0, $size['width'], $size['height'], false);
 
-            // Top-right stamp matching production samples (text + ID box).
+            // Large top-right stamp (text is primary — PNG alone was often invisible).
             $label = 'Dokumen Meja Terkawal';
-            $pdf->SetFont('Helvetica', 'B', 14);
+            $pdf->SetFont('Helvetica', 'B', 16);
             $textW = $pdf->GetStringWidth($label) + 2;
-            $markX = max(2, $size['width'] - $textW - 10);
-            $markY = 4;
+            $markX = max(3, $size['width'] - $textW - 8);
+            $markY = 5;
+
+            // White backdrop so brown text stays readable on any letterhead.
+            $pdf->SetFillColor(255, 255, 255);
+            $pdf->Rect($markX - 1, $markY - 1, $textW + 2, 14, 'F');
 
             if ($hasPng) {
                 try {
-                    $pdf->Image($watermarkFile, $markX, $markY - 1, min(55, $textW + 4), 0, 'PNG');
+                    $pdf->Image($watermarkFile, $markX, $markY - 0.5, min(60, $textW + 2), 0, 'PNG');
                 } catch (\Throwable) {
-                    // Fall through to text stamp.
+                    // Text stamp below is enough.
                 }
             }
 
             $pdf->SetTextColor(166, 68, 28);
-            $pdf->SetFont('Helvetica', 'B', 14);
+            $pdf->SetFont('Helvetica', 'B', 16);
             $pdf->SetXY($markX, $markY);
             $pdf->Cell($textW, 7, $label, 0, 0, 'L');
 
             if ($idLabel !== null && $idLabel !== '') {
-                $pdf->SetFont('Helvetica', 'B', 9);
-                $boxW = max(22, $pdf->GetStringWidth($idLabel) + 6);
-                $boxH = 6.5;
+                $pdf->SetFont('Helvetica', 'B', 10);
+                $boxW = max(24, $pdf->GetStringWidth($idLabel) + 8);
+                $boxH = 7;
                 $boxX = $markX + ($textW / 2) - ($boxW / 2);
-                $boxY = $markY + 5.5;
+                $boxY = $markY + 7;
                 $pdf->SetDrawColor(0, 0, 0);
-                $pdf->SetLineWidth(0.4);
+                $pdf->SetLineWidth(0.5);
                 $pdf->SetFillColor(255, 255, 255);
                 $pdf->Rect($boxX, $boxY, $boxW, $boxH, 'DF');
                 $pdf->SetTextColor(0, 0, 0);
-                $pdf->SetXY($boxX, $boxY + 1.2);
+                $pdf->SetXY($boxX, $boxY + 1.5);
                 $pdf->Cell($boxW, 4, $idLabel, 0, 0, 'C');
             }
 

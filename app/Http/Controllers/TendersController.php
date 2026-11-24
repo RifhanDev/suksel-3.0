@@ -1679,36 +1679,34 @@ class TendersController extends Controller
 
 		$disposition = \App\Support\AttachmentStorage::contentDisposition('attachment', $downloadName);
 
-		// Dokumen Meja Terkawal: try watermark on a temp copy, but never break the download.
-		// Chrome shows "Site wasn't available" when disposition/filename is bad or the
-		// response aborts mid-stream (e.g. watermark OOM). Always fall back to NAS.
+		// Dokumen Meja Terkawal MUST go through watermark — never fall back to raw NAS
+		// (that was why downloads "worked" with no stamp).
 		if ($isMejaPdf) {
-			try {
-				@set_time_limit(180);
-				$localCopy = $this->materializeUploadToTemp($file, $relative, $tender);
-				if ($localCopy && is_file($localCopy) && filesize($localCopy) > 0) {
-					$toSend = $this->applyMejaWatermarkForDownload($localCopy);
-					if ($toSend && is_file($toSend) && filesize($toSend) > 0) {
-						// Do not use response()->download($path, $fancyName) — Symfony
-						// rewrites Content-Disposition and Chrome aborts on spaces/brackets.
-						return response()->file($toSend, [
-							'Content-Type' => 'application/pdf',
-							'Content-Disposition' => $disposition,
-						])->deleteFileAfterSend(true);
-					}
-					@unlink($localCopy);
-					\Illuminate\Support\Facades\Log::error('Meja watermark produced no file; refusing silent unwatermarked serve from watermark path', [
-						'tender_id' => $tender_id,
-						'upload_id' => $id,
-					]);
-				}
-			} catch (\Throwable $e) {
-				\Illuminate\Support\Facades\Log::warning('Meja watermarked download failed; falling back to stream', [
+			@set_time_limit(180);
+			$localCopy = $this->materializeUploadToTemp($file, $relative, $tender);
+			if (! $localCopy || ! is_file($localCopy) || filesize($localCopy) <= 0) {
+				\Illuminate\Support\Facades\Log::error('Meja download: cannot materialize source for watermark', [
 					'tender_id' => $tender_id,
 					'upload_id' => $id,
-					'error' => $e->getMessage(),
+					'relative' => $relative,
 				]);
+				abort(500, 'Gagal menyediakan dokumen meja terkawal untuk dimuat turun.');
 			}
+
+			$toSend = $this->applyMejaWatermarkForDownload($localCopy);
+			if (! $toSend || ! is_file($toSend) || filesize($toSend) <= 0) {
+				@unlink($localCopy);
+				\Illuminate\Support\Facades\Log::error('Meja watermark produced no file; not serving unwatermarked copy', [
+					'tender_id' => $tender_id,
+					'upload_id' => $id,
+				]);
+				abort(500, 'Gagal menerapkan watermark pada dokumen meja terkawal.');
+			}
+
+			return response()->file($toSend, [
+				'Content-Type' => 'application/pdf',
+				'Content-Disposition' => $disposition,
+			])->deleteFileAfterSend(true);
 		}
 
 		if ($relative !== '') {
