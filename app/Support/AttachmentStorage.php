@@ -84,6 +84,10 @@ class AttachmentStorage
             throw new \RuntimeException('Gagal membaca fail yang dimuat naik.');
         }
 
+        if ($bytes === '') {
+            throw new \RuntimeException('Fail yang dimuat naik kosong (0 bait).');
+        }
+
         return $bytes;
     }
 
@@ -141,10 +145,12 @@ class AttachmentStorage
             return;
         }
 
-        $ok = Storage::disk('attachments')->put($relative, file_get_contents($absolutePath));
-        if ($ok === false) {
+        $bytes = file_get_contents($absolutePath);
+        if ($bytes === false) {
             throw new \RuntimeException('Gagal menyimpan lampiran ke pelayan fail.');
         }
+
+        self::putRemoteBytes($relative, $bytes);
 
         @unlink($absolutePath);
     }

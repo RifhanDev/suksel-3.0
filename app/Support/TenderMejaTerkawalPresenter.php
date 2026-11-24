@@ -88,7 +88,8 @@ class TenderMejaTerkawalPresenter
                     ? $upload->downloadFilename()
                     : $label;
                 $url = route('tenders.files', [$this->tender->id, $upload->id]);
-                $size = $upload->size;
+                // Prefer raw bytes — Upload::$size accessor returns "0.00 B" / "1.23 MB".
+                $size = $upload->getRawOriginal('size') ?? $upload->getAttributes()['size'] ?? null;
                 $type = $upload->type;
             } else {
                 $url = trim((string) ($doc['url'] ?? ''));
