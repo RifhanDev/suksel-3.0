@@ -1682,8 +1682,8 @@ class TendersController extends Controller
 		// Meja: watermark when possible, but ALWAYS deliver the file (never 500 the download).
 		if ($isMejaPdf) {
 			try {
-				@set_time_limit(120);
-				@ini_set('memory_limit', '512M');
+				@set_time_limit(300);
+				@ini_set('memory_limit', '1024M');
 				$localCopy = $this->materializeUploadToTemp($file, $relative, $tender);
 				if ($localCopy && is_file($localCopy) && filesize($localCopy) > 0) {
 					$toSend = $this->applyMejaWatermarkForDownload($localCopy);
@@ -1831,13 +1831,14 @@ class TendersController extends Controller
 	 */
 	protected function applyMejaWatermarkForDownload(string $localPdf): ?string
 	{
-		$watermark = public_path('images/etender-dokumen-watermark.png');
 		if (! method_exists($this, 'setWatermark')) {
 			return null;
 		}
 
 		$idLabel = $this->mejaDownloadIdLabel();
 		$before = @filesize($localPdf) ?: 0;
+		// PNG path kept for BC with setWatermark signature; engine stamps text (PNG was invisible).
+		$watermark = public_path('images/etender-dokumen-watermark.png');
 
 		try {
 			$this->setWatermark($localPdf, $watermark, $idLabel);
@@ -1846,7 +1847,7 @@ class TendersController extends Controller
 				throw new \RuntimeException('Watermarked file missing after stamp.');
 			}
 
-			\Illuminate\Support\Facades\Log::info('Meja download watermark applied', [
+			\Illuminate\Support\Facades\Log::info('Meja download watermark applied v3', [
 				'id' => $idLabel,
 				'before' => $before,
 				'after' => $after,
@@ -1854,7 +1855,7 @@ class TendersController extends Controller
 
 			return $localPdf;
 		} catch (\Throwable $e) {
-			\Illuminate\Support\Facades\Log::error('Meja download watermark failed', [
+			\Illuminate\Support\Facades\Log::error('Meja download watermark failed v3', [
 				'file' => $localPdf,
 				'id' => $idLabel,
 				'error' => $e->getMessage(),
