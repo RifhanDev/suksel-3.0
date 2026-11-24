@@ -241,81 +241,275 @@ trait Helper
         }
 
         $gsOut = $original_name . '.gs.pdf';
+        $flatPng = null;
 
         try {
-            // Prefer Ghostscript 1.4 downgrade when it works (FPDI compatibility).
-            // Write to a side file first — never overwrite the original with an empty gs output.
+            $flatPng = $this->flattenWatermarkPng($watermark_file);
+
+            // Try FPDI on original, then on Ghostscript 1.4 rewrite.
+            $sources = [$tmp_name];
             @unlink($gsOut);
             shell_exec(
                 'gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dNOPAUSE -dQUIET -dBATCH '
+                . '-dNOOUTERSAVE -dAutoRotatePages=/None '
                 . '-sOutputFile=' . escapeshellarg($gsOut) . ' '
                 . escapeshellarg($tmp_name) . ' 2>/dev/null'
             );
-
-            $fpdiSource = (is_file($gsOut) && filesize($gsOut) > 0) ? $gsOut : $tmp_name;
-            if (! is_file($fpdiSource) || filesize($fpdiSource) <= 0) {
-                throw new \RuntimeException('Source PDF not found for watermark.');
+            if (is_file($gsOut) && filesize($gsOut) > 0) {
+                array_unshift($sources, $gsOut);
             }
 
-            $pdf = new Fpdi();
-            $pagecount = $pdf->setSourceFile($fpdiSource);
-            $hasPng = is_file($watermark_file);
-
-            for ($i = 1; $i <= $pagecount; $i++) {
-                $tpl = $pdf->importPage($i);
-                $size = $pdf->getTemplateSize($tpl);
-                $orientation = ($size['width'] > $size['height']) ? 'L' : 'P';
-                $pdf->AddPage($orientation, [$size['width'], $size['height']]);
-                $pdf->useTemplate($tpl, 0, 0, $size['width'], $size['height'], false);
-
-                // Top-right mark (~55mm), matching production samples.
-                $markW = 55;
-                $markX = max(2, $size['width'] - $markW - 8);
-                $markY = 4;
-
-                if ($hasPng) {
-                    $pdf->Image($watermark_file, $markX, $markY, $markW, 0, 'PNG');
-                } else {
-                    $pdf->SetTextColor(139, 69, 46);
-                    $pdf->SetFont('Helvetica', 'B', 11);
-                    $pdf->SetXY($markX, $markY);
-                    $pdf->Cell($markW, 6, 'Dokumen Meja Terkawal', 0, 0, 'R');
-                    $pdf->SetTextColor(0, 0, 0);
-                }
-
-                // Boxed ID stamp over the mark (e.g. "ID 8361").
-                if ($idLabel !== null && $idLabel !== '') {
-                    $pdf->SetFont('Helvetica', 'B', 8);
-                    $boxW = max(18, $pdf->GetStringWidth($idLabel) + 4);
-                    $boxH = 6;
-                    $boxX = $markX + ($markW / 2) - ($boxW / 2);
-                    $boxY = $markY + 3;
-                    $pdf->SetDrawColor(0, 0, 0);
-                    $pdf->SetLineWidth(0.3);
-                    $pdf->SetFillColor(255, 255, 255);
-                    $pdf->Rect($boxX, $boxY, $boxW, $boxH, 'DF');
-                    $pdf->SetTextColor(0, 0, 0);
-                    $pdf->SetXY($boxX, $boxY + 1);
-                    $pdf->Cell($boxW, 4, $idLabel, 0, 0, 'C');
+            $lastError = null;
+            $stamped = false;
+            foreach ($sources as $fpdiSource) {
+                try {
+                    $this->writeFpdiWatermarkedPdf(
+                        $fpdiSource,
+                        $file,
+                        $flatPng ?: $watermark_file,
+                        $idLabel
+                    );
+                    $stamped = true;
+                    $lastError = null;
+                    break;
+                } catch (\Throwable $e) {
+                    $lastError = $e;
+                    @unlink($file);
                 }
             }
 
-            $pdf->Output('F', $file);
+            // Last resort: rasterize pages + stamp (handles PDFs FPDI cannot parse).
+            if (! $stamped) {
+                try {
+                    $this->writeRasterWatermarkedPdf($tmp_name, $file, $idLabel);
+                    $stamped = true;
+                    $lastError = null;
+                } catch (\Throwable $e) {
+                    $lastError = $e;
+                    @unlink($file);
+                }
+            }
+
+            if (! $stamped) {
+                throw $lastError ?? new \RuntimeException('Gagal menerapkan watermark.');
+            }
+
             @unlink($tmp_name);
             @unlink($gsOut);
+            if ($flatPng) {
+                @unlink($flatPng);
+            }
 
             if (! is_file($file) || filesize($file) <= 0) {
                 throw new \RuntimeException('Watermark PDF output was empty.');
             }
         } catch (\Throwable $e) {
-            // Always put the original bytes back — never leave a 0-byte .pdf behind.
             @unlink($gsOut);
+            if ($flatPng) {
+                @unlink($flatPng);
+            }
             if (is_file($tmp_name)) {
                 @unlink($file);
                 @rename($tmp_name, $original_name);
             }
             throw $e;
         }
+    }
+
+    /**
+     * FPDI import + visible text/PNG stamp on every page.
+     */
+    protected function writeFpdiWatermarkedPdf(
+        string $sourcePdf,
+        string $destPdf,
+        string $watermarkFile,
+        ?string $idLabel
+    ): void {
+        $pdf = new Fpdi();
+        $pagecount = $pdf->setSourceFile($sourcePdf);
+        $hasPng = is_file($watermarkFile);
+
+        for ($i = 1; $i <= $pagecount; $i++) {
+            $tpl = $pdf->importPage($i);
+            $size = $pdf->getTemplateSize($tpl);
+            $orientation = ($size['width'] > $size['height']) ? 'L' : 'P';
+            $pdf->AddPage($orientation, [$size['width'], $size['height']]);
+            $pdf->useTemplate($tpl, 0, 0, $size['width'], $size['height'], false);
+
+            // Top-right stamp matching production samples (text + ID box).
+            $label = 'Dokumen Meja Terkawal';
+            $pdf->SetFont('Helvetica', 'B', 14);
+            $textW = $pdf->GetStringWidth($label) + 2;
+            $markX = max(2, $size['width'] - $textW - 10);
+            $markY = 4;
+
+            if ($hasPng) {
+                try {
+                    $pdf->Image($watermarkFile, $markX, $markY - 1, min(55, $textW + 4), 0, 'PNG');
+                } catch (\Throwable) {
+                    // Fall through to text stamp.
+                }
+            }
+
+            $pdf->SetTextColor(166, 68, 28);
+            $pdf->SetFont('Helvetica', 'B', 14);
+            $pdf->SetXY($markX, $markY);
+            $pdf->Cell($textW, 7, $label, 0, 0, 'L');
+
+            if ($idLabel !== null && $idLabel !== '') {
+                $pdf->SetFont('Helvetica', 'B', 9);
+                $boxW = max(22, $pdf->GetStringWidth($idLabel) + 6);
+                $boxH = 6.5;
+                $boxX = $markX + ($textW / 2) - ($boxW / 2);
+                $boxY = $markY + 5.5;
+                $pdf->SetDrawColor(0, 0, 0);
+                $pdf->SetLineWidth(0.4);
+                $pdf->SetFillColor(255, 255, 255);
+                $pdf->Rect($boxX, $boxY, $boxW, $boxH, 'DF');
+                $pdf->SetTextColor(0, 0, 0);
+                $pdf->SetXY($boxX, $boxY + 1.2);
+                $pdf->Cell($boxW, 4, $idLabel, 0, 0, 'C');
+            }
+
+            $pdf->SetTextColor(0, 0, 0);
+        }
+
+        $pdf->Output('F', $destPdf);
+    }
+
+    /**
+     * FPDF often mishandles RGBA PNGs — flatten onto white for reliable Image().
+     */
+    protected function flattenWatermarkPng(string $watermarkFile): ?string
+    {
+        if (! is_file($watermarkFile) || ! function_exists('imagecreatefrompng')) {
+            return null;
+        }
+
+        $src = @imagecreatefrompng($watermarkFile);
+        if (! $src) {
+            return null;
+        }
+
+        $w = imagesx($src);
+        $h = imagesy($src);
+        $dst = imagecreatetruecolor($w, $h);
+        $white = imagecolorallocate($dst, 255, 255, 255);
+        imagefilledrectangle($dst, 0, 0, $w, $h, $white);
+        imagealphablending($dst, true);
+        imagecopy($dst, $src, 0, 0, 0, 0, $w, $h);
+        imagedestroy($src);
+
+        $flat = tempnam(sys_get_temp_dir(), 'wm_flat_') . '.png';
+        if (! @imagepng($dst, $flat)) {
+            imagedestroy($dst);
+            @unlink($flat);
+
+            return null;
+        }
+        imagedestroy($dst);
+
+        return $flat;
+    }
+
+    /**
+     * Rasterize PDF pages with Ghostscript, stamp text/ID via GD, rebuild with FPDF.
+     * Used when FPDI cannot parse the source PDF.
+     */
+    protected function writeRasterWatermarkedPdf(string $sourcePdf, string $destPdf, ?string $idLabel): void
+    {
+        $dir = sys_get_temp_dir() . '/meja_wm_' . uniqid('', true);
+        if (! @mkdir($dir, 0755, true) && ! is_dir($dir)) {
+            throw new \RuntimeException('Gagal menyediakan folder watermark.');
+        }
+
+        try {
+            $pattern = $dir . '/page-%03d.jpg';
+            shell_exec(
+                'gs -dNOPAUSE -dBATCH -dQUIET -sDEVICE=jpeg -r120 -dJPEGQ=85 '
+                . '-sOutputFile=' . escapeshellarg($pattern) . ' '
+                . escapeshellarg($sourcePdf) . ' 2>/dev/null'
+            );
+
+            $pages = glob($dir . '/page-*.jpg') ?: [];
+            sort($pages);
+            if ($pages === []) {
+                throw new \RuntimeException('Ghostscript tidak dapat rasterize PDF untuk watermark.');
+            }
+
+            $pdf = new \FPDF('P', 'mm', 'A4');
+            foreach ($pages as $pageJpg) {
+                $stamped = $this->stampJpegWithMejaMark($pageJpg, $idLabel);
+                [$wPx, $hPx] = @getimagesize($stamped) ?: [1240, 1754];
+                $widthMm = 210;
+                $heightMm = $widthMm * ($hPx / max(1, $wPx));
+                $orientation = ($widthMm > $heightMm) ? 'L' : 'P';
+                $pdf->AddPage($orientation, [$widthMm, $heightMm]);
+                $pdf->Image($stamped, 0, 0, $widthMm, $heightMm, 'JPG');
+                if ($stamped !== $pageJpg) {
+                    @unlink($stamped);
+                }
+            }
+
+            $pdf->Output('F', $destPdf);
+            if (! is_file($destPdf) || filesize($destPdf) <= 0) {
+                throw new \RuntimeException('Raster watermark output empty.');
+            }
+        } finally {
+            foreach (glob($dir . '/*') ?: [] as $f) {
+                @unlink($f);
+            }
+            @rmdir($dir);
+        }
+    }
+
+    protected function stampJpegWithMejaMark(string $jpegPath, ?string $idLabel): string
+    {
+        if (! function_exists('imagecreatefromjpeg')) {
+            return $jpegPath;
+        }
+
+        $im = @imagecreatefromjpeg($jpegPath);
+        if (! $im) {
+            return $jpegPath;
+        }
+
+        $w = imagesx($im);
+        $h = imagesy($im);
+        $brown = imagecolorallocate($im, 166, 68, 28);
+        $black = imagecolorallocate($im, 0, 0, 0);
+        $white = imagecolorallocate($im, 255, 255, 255);
+
+        $label = 'Dokumen Meja Terkawal';
+        $font = 5; // GD built-in font
+        $textW = imagefontwidth($font) * strlen($label);
+        $textH = imagefontheight($font);
+        $x = max(10, $w - $textW - 40);
+        $y = 20;
+        imagestring($im, $font, $x, $y, $label, $brown);
+
+        if ($idLabel) {
+            $idW = imagefontwidth($font) * strlen($idLabel) + 16;
+            $idH = $textH + 10;
+            $idX = (int) ($x + ($textW / 2) - ($idW / 2));
+            $idY = $y + $textH + 6;
+            imagefilledrectangle($im, $idX, $idY, $idX + $idW, $idY + $idH, $white);
+            imagerectangle($im, $idX, $idY, $idX + $idW, $idY + $idH, $black);
+            imagestring(
+                $im,
+                $font,
+                $idX + 8,
+                $idY + 5,
+                $idLabel,
+                $black
+            );
+        }
+
+        $out = $jpegPath . '.stamped.jpg';
+        imagejpeg($im, $out, 85);
+        imagedestroy($im);
+
+        return is_file($out) ? $out : $jpegPath;
     }
 
     public function encryptString(string $string)

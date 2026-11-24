@@ -1684,11 +1684,11 @@ class TendersController extends Controller
 		// response aborts mid-stream (e.g. watermark OOM). Always fall back to NAS.
 		if ($isMejaPdf) {
 			try {
-				@set_time_limit(120);
+				@set_time_limit(180);
 				$localCopy = $this->materializeUploadToTemp($file, $relative, $tender);
 				if ($localCopy && is_file($localCopy) && filesize($localCopy) > 0) {
 					$toSend = $this->applyMejaWatermarkForDownload($localCopy);
-					if (is_file($toSend) && filesize($toSend) > 0) {
+					if ($toSend && is_file($toSend) && filesize($toSend) > 0) {
 						// Do not use response()->download($path, $fancyName) — Symfony
 						// rewrites Content-Disposition and Chrome aborts on spaces/brackets.
 						return response()->file($toSend, [
@@ -1697,6 +1697,10 @@ class TendersController extends Controller
 						])->deleteFileAfterSend(true);
 					}
 					@unlink($localCopy);
+					\Illuminate\Support\Facades\Log::error('Meja watermark produced no file; refusing silent unwatermarked serve from watermark path', [
+						'tender_id' => $tender_id,
+						'upload_id' => $id,
+					]);
 				}
 			} catch (\Throwable $e) {
 				\Illuminate\Support\Facades\Log::warning('Meja watermarked download failed; falling back to stream', [
@@ -1820,28 +1824,42 @@ class TendersController extends Controller
 
 	/**
 	 * Watermark temp PDF for meja download (text mark + optional ID box).
-	 * On failure, return the original temp path so download still works.
+	 *
+	 * @return string|null  Watermarked path, or null if stamping failed (caller may fall back)
 	 */
-	protected function applyMejaWatermarkForDownload(string $localPdf): string
+	protected function applyMejaWatermarkForDownload(string $localPdf): ?string
 	{
 		$watermark = public_path('images/etender-dokumen-watermark.png');
 		if (! method_exists($this, 'setWatermark')) {
-			return $localPdf;
+			return null;
 		}
 
 		$idLabel = $this->mejaDownloadIdLabel();
+		$before = @filesize($localPdf) ?: 0;
 
 		try {
 			$this->setWatermark($localPdf, $watermark, $idLabel);
+			$after = @filesize($localPdf) ?: 0;
+			if (! is_file($localPdf) || $after <= 0) {
+				throw new \RuntimeException('Watermarked file missing after stamp.');
+			}
+
+			\Illuminate\Support\Facades\Log::info('Meja download watermark applied', [
+				'id' => $idLabel,
+				'before' => $before,
+				'after' => $after,
+			]);
+
+			return $localPdf;
 		} catch (\Throwable $e) {
-			\Illuminate\Support\Facades\Log::warning('Meja download watermark failed; serving original', [
+			\Illuminate\Support\Facades\Log::error('Meja download watermark failed', [
 				'file' => $localPdf,
 				'id' => $idLabel,
 				'error' => $e->getMessage(),
 			]);
-		}
 
-		return $localPdf;
+			return null;
+		}
 	}
 
 	/**
