@@ -1677,15 +1677,33 @@ class TendersController extends Controller
 		// Prefer NAS (legacy + new root) whenever remote attachments are enabled.
 		$relative = \App\Support\AttachmentStorage::relativeForUpload((string) $file->path, (string) $file->name);
 
-		// Dokumen Meja Terkawal: watermark a temp copy on download (same as legacy behaviour
-		// users expect). NAS streaming alone would skip watermark after save-time failures.
+		$disposition = \App\Support\AttachmentStorage::contentDisposition('attachment', $downloadName);
+
+		// Dokumen Meja Terkawal: try watermark on a temp copy, but never break the download.
+		// Chrome shows "Site wasn't available" when disposition/filename is bad or the
+		// response aborts mid-stream (e.g. watermark OOM). Always fall back to NAS.
 		if ($isMejaPdf) {
-			$localCopy = $this->materializeUploadToTemp($file, $relative, $tender);
-			if ($localCopy) {
-				$toSend = $this->applyMejaWatermarkForDownload($localCopy);
-				return response()->download($toSend, $downloadName, [
-					'Content-Type' => $file->type ?: 'application/pdf',
-				])->deleteFileAfterSend(true);
+			try {
+				@set_time_limit(120);
+				$localCopy = $this->materializeUploadToTemp($file, $relative, $tender);
+				if ($localCopy && is_file($localCopy) && filesize($localCopy) > 0) {
+					$toSend = $this->applyMejaWatermarkForDownload($localCopy);
+					if (is_file($toSend) && filesize($toSend) > 0) {
+						// Do not use response()->download($path, $fancyName) — Symfony
+						// rewrites Content-Disposition and Chrome aborts on spaces/brackets.
+						return response()->file($toSend, [
+							'Content-Type' => 'application/pdf',
+							'Content-Disposition' => $disposition,
+						])->deleteFileAfterSend(true);
+					}
+					@unlink($localCopy);
+				}
+			} catch (\Throwable $e) {
+				\Illuminate\Support\Facades\Log::warning('Meja watermarked download failed; falling back to stream', [
+					'tender_id' => $tender_id,
+					'upload_id' => $id,
+					'error' => $e->getMessage(),
+				]);
 			}
 		}
 
@@ -1728,8 +1746,9 @@ class TendersController extends Controller
 			abort(404, 'Fail tidak dijumpai.');
 		}
 
-		return response()->download($fullPath, $downloadName, [
+		return response()->file($fullPath, [
 			'Content-Type' => $file->type ?: (mime_content_type($fullPath) ?: 'application/octet-stream'),
+			'Content-Disposition' => $disposition,
 		]);
 	}
 
