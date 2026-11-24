@@ -10,6 +10,7 @@ use App\Models\ApiDetailVendor;
 use App\Models\ApiTransactionContract;
 use App\Traits\Helper;
 use App\Traits\ApiHelper;
+use App\Support\ApiCredentialContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use App\Http\Controllers\Controller;
@@ -23,136 +24,99 @@ class ApiController extends Controller
     {
         $message = null;
         $data = [];
-        $status = null;
-        $response = [];
-        $token = $request->bearerToken();
         $registration = $request->registration;
 
-        $rules = array(
-            "token" => "required",
-            "registration" => "required"
-        );
-
-        $validator = Validator::make([
-            "token" => $token,
-            "registration" => $registration
-        ], $rules);
+        $validator = Validator::make(['registration' => $registration], [
+            'registration' => 'required',
+        ]);
 
         if ($validator->fails()) {
-            return response()->json($validator->messages());
+            return response()->json($validator->messages(), 422);
         }
 
-        if (!$this->tokenValidator($token)) {
-            $status = 'failed';
-            $message = 'token is not valid';
-        } else {
-            $this->recordApiRequest($token, "vendor", ['registration' => $registration]);
-            $vendor = Vendor::where('registration', $registration)->with(['user', 'uploads', 'vendorCodes'])->first();
+        $this->recordApiRequestForCredential($request, 'vendor', ['registration' => $registration]);
+        $credential = $request->attributes->get('api_credential');
+        $vendor = Vendor::where('registration', $registration)
+            ->where('organization_unit_id', $credential->organizationUnitId)
+            ->with(['user', 'uploads', 'vendorCodes'])
+            ->first();
 
-            if (!$this->isExists($vendor)) {
-
-                $status = 'failed';
-                $message = 'data not found';
-
-                $response = [
-                    'status' => $status,
-                    'message' => $message,
-                    'data' => $data
-                ];
-
-                return response()->json($response);
-            }
-
-            $status = 'success';
-
-            $data[] = [
-                'company_information' => [
-                    'email' => $vendor->user->email,
-                    'registration_no' => $vendor->registration,
-                    'name' => $vendor->name,
-                    'address' => $vendor->address,
-                    'district' => Vendor::$districts[$vendor->district_id],
-                    'tel' => $vendor->tel,
-                    'fax' => $vendor->fax,
-                    'code_cert' => $vendor->token
-                ],
-                'mof' => [
-                    'reference' => $vendor->mof_ref_no,
-                    'active_start' => Carbon::parse($vendor->mof_start_date)->format('d-m-Y'),
-                    'active_end' => Carbon::parse($vendor->mof_end_date)->format('d-m-Y'),
-                    'bumi' => $vendor->mof_bumi,
-                    'mof_code' => $vendor->mofCodes->map->only(['code'])
-                ],
-                'shareholder' => [
-                    'holder' => $vendor->shareholders,
-                    'summary' => [
-                        'bumi' => $vendor->bumi_percentage . '%',
-                        'nonbumi' => $vendor->nonbumi_percentage . '%',
-                        'foreigner' => $vendor->foreigner_percentage . '%',
-                        'total' => sprintf('%.2f', $vendor->bumi_percentage + $vendor->nonbumi_percentage + $vendor->foreigner_percentage) . '%'
-                    ]
-                ],
-                'director' => $vendor->directors,
-                'project' => $vendor->projects,
-                'file' => $vendor->uploads->map->only(['name', 'type', 'size', 'created_at', 'url'])
-
-            ];
+        if (!$this->isExists($vendor)) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'data not found',
+                'data' => $data,
+            ]);
         }
 
-        $response = [
-            'status' => $status,
-            'message' => $message,
-            'data' => $data
+        $data[] = [
+            'company_information' => [
+                'email' => $vendor->user->email,
+                'registration_no' => $vendor->registration,
+                'name' => $vendor->name,
+                'address' => $vendor->address,
+                'district' => Vendor::$districts[$vendor->district_id],
+                'tel' => $vendor->tel,
+                'fax' => $vendor->fax,
+                'code_cert' => $vendor->token,
+            ],
+            'mof' => [
+                'reference' => $vendor->mof_ref_no,
+                'active_start' => Carbon::parse($vendor->mof_start_date)->format('d-m-Y'),
+                'active_end' => Carbon::parse($vendor->mof_end_date)->format('d-m-Y'),
+                'bumi' => $vendor->mof_bumi,
+                'mof_code' => $vendor->mofCodes->map->only(['code']),
+            ],
+            'shareholder' => [
+                'holder' => $vendor->shareholders,
+                'summary' => [
+                    'bumi' => $vendor->bumi_percentage . '%',
+                    'nonbumi' => $vendor->nonbumi_percentage . '%',
+                    'foreigner' => $vendor->foreigner_percentage . '%',
+                    'total' => sprintf('%.2f', $vendor->bumi_percentage + $vendor->nonbumi_percentage + $vendor->foreigner_percentage) . '%',
+                ],
+            ],
+            'director' => $vendor->directors,
+            'project' => $vendor->projects,
+            'file' => $vendor->uploads->map->only(['name', 'type', 'size', 'created_at', 'url']),
         ];
 
-        return response()->json($response);
+        return response()->json([
+            'status' => 'success',
+            'message' => $message,
+            'data' => $data,
+        ]);
     }
 
     public function tenderApi(Request $request)
     {
         $message = null;
         $data = [];
-        $status = null;
-        $response = [];
-        $token = $request->bearerToken();
         $ref_number = $request->ref_number;
 
-        $rules = array(
-            "token" => "required",
-            "ref_number" => "required"
-        );
-
-        $validator = Validator::make([
-            "token" => $token,
-            "ref_number" => $ref_number
-        ], $rules);
+        $validator = Validator::make(['ref_number' => $ref_number], [
+            'ref_number' => 'required',
+        ]);
 
         if ($validator->fails()) {
-            return response()->json($validator->messages());
+            return response()->json($validator->messages(), 422);
         }
 
-        if (!$this->tokenValidator($token)) {
-            $status = 'failed';
-            $message = 'token is not valid';
-        } else {
-            $this->recordApiRequest($token, "tender", ['ref_number' => $ref_number]);
-            $tender = Tender::where('ref_number', $ref_number)->first();
+        $this->recordApiRequestForCredential($request, 'tender', ['ref_number' => $ref_number]);
+        $credential = $request->attributes->get('api_credential');
+        $tender = Tender::where('ref_number', $ref_number)
+            ->where('organization_unit_id', $credential->organizationUnitId)
+            ->first();
 
-            if (!$this->isExists($tender)) {
+        if (!$this->isExists($tender)) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'data not found',
+                'data' => $data,
+            ]);
+        }
 
-                $status = 'failed';
-                $message = 'data not found';
-
-                $response = [
-                    'status' => $status,
-                    'message' => $message,
-                    'data' => $data
-                ];
-
-                return response()->json($response);
-            }
-
-            $participants = $tender->participants()->has('vendor')->with('vendor')->get();
+        $participants = $tender->participants()->has('vendor')->with('vendor')->get();
             $histories = $tender->histories()->orderBy('created_at', 'desc')->get();
             $news = $tender->news()->wherePublish(1)->orderBy('published_at', 'asc')->get();
 
@@ -217,98 +181,71 @@ class ApiController extends Controller
                 'participant' => $participant_arr
             ];
 
-            $status = 'success';
-        }
-
-        $response = [
-            'status' => $status,
+        return response()->json([
+            'status' => 'success',
             'message' => $message,
-            'data' => $data
-        ];
-
-        return response()->json($response);
+            'data' => $data,
+        ]);
     }
 
     public function transactionApi(Request $request)
     {
         $message = null;
         $data = [];
-        $status = null;
-        $response = [];
-        $token = $request->bearerToken();
         $tender_ref_number = $request->tender_ref_number;
 
-        $rules = array(
-            "token" => "required",
-            "tender_ref_number" => "required"
-        );
-
-        $validator = Validator::make([
-            "token" => $token,
-            "tender_ref_number" => $tender_ref_number
-        ], $rules);
+        $validator = Validator::make(['tender_ref_number' => $tender_ref_number], [
+            'tender_ref_number' => 'required',
+        ]);
 
         if ($validator->fails()) {
-            return response()->json($validator->messages());
+            return response()->json($validator->messages(), 422);
         }
 
-        if (!$this->tokenValidator($token)) {
-            $status = 'failed';
-            $message = 'token is not valid';
-        } else {
-            $this->recordApiRequest($token, "tender", ['tender_ref_number' => $tender_ref_number]);
-            $tender = Tender::where('ref_number', $tender_ref_number)->first();
+        $this->recordApiRequestForCredential($request, 'transaction', ['tender_ref_number' => $tender_ref_number]);
+        $credential = $request->attributes->get('api_credential');
+        $tender = Tender::where('ref_number', $tender_ref_number)
+            ->where('organization_unit_id', $credential->organizationUnitId)
+            ->first();
 
-            if (!$this->isExists($tender)) {
+        if (!$this->isExists($tender)) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'data not found',
+                'data' => $data,
+            ]);
+        }
 
-                $status = 'failed';
-                $message = 'data not found';
+        $participants = $tender->participants;
+        $transaction_arr = [];
 
-                $response = [
-                    'status' => $status,
-                    'message' => $message,
-                    'data' => $data
-                ];
-
-                return response()->json($response);
-            }
-
-            $participants = $tender->participants;
-
-            $transaction_arr = [];
-
-            foreach ($participants as $participant) {
-                $receipt = $this->receiptNumGenerator($participant->transaction->number, date('d-m-Y', strtotime($participant->transaction->created_at)));
-                $transaction_arr[] = [
-                    'transaction_time' => $participant->transaction->created_at,
-                    'vendor' => $participant->vendor->name,
-                    'transaction_number' => $participant->transaction->number,
-                    'gateway_reference' => $participant->transaction->gateway_reference,
-                    'receipt_number' => ($receipt != 'old') ? $receipt : $participant->transaction->vendor_id . '-' . $participant->transaction->gateway_reference,
-                    'type' => $participant->transaction->type,
-                    'method' => $participant->transaction->method,
-                    'amount' => $participant->transaction->amount,
-                    'status' => $participant->transaction->status
-                ];
-            }
-
-            $status = 'success';
-
-            $data[] = [
-                'information' => [
-                    'ref_number' => $tender->ref_number
-                ],
-                'transaction' => $transaction_arr
+        foreach ($participants as $participant) {
+            $receipt = $this->receiptNumGenerator($participant->transaction->number, date('d-m-Y', strtotime($participant->transaction->created_at)));
+            $transaction_arr[] = [
+                'transaction_time' => $participant->transaction->created_at,
+                'vendor' => $participant->vendor->name,
+                'transaction_number' => $participant->transaction->number,
+                'gateway_reference' => $participant->transaction->gateway_reference,
+                'receipt_number' => ($receipt != 'old') ? $receipt : $participant->transaction->vendor_id . '-' . $participant->transaction->gateway_reference,
+                'type' => $participant->transaction->type,
+                'method' => $participant->transaction->method,
+                'amount' => $participant->transaction->amount,
+                'status' => $participant->transaction->status,
             ];
         }
 
-        $response = [
-            'status' => $status,
-            'message' => $message,
-            'data' => $data
+        $data[] = [
+            'information' => [
+                'ref_number' => $tender->ref_number,
+            ],
+            'transaction' => $transaction_arr,
         ];
 
-        return response()->json($response);
+        return response()->json([
+            'status' => 'success',
+            'message' => $message,
+            'data' => $data,
+        ]);
     }
 
     // function API tender agency

@@ -33,9 +33,15 @@ Route::get('search-users', function(Request $request) {
 });
 
 Route::prefix('v1')->group(function () {
-    Route::post('vendor', 'App\Http\Controllers\API\ApiController@vendorApi')->name('vendorApi');
-    Route::post('tender', 'App\Http\Controllers\API\ApiController@tenderApi')->name('tenderApi');
-    Route::post('transaction', 'App\Http\Controllers\API\ApiController@transactionApi')->name('transactionApi');
+    Route::middleware('api.compat:vendor:read,bearer')->group(function () {
+        Route::post('vendor', 'App\Http\Controllers\API\ApiController@vendorApi')->name('vendorApi');
+    });
+    Route::middleware('api.compat:tender:read,bearer')->group(function () {
+        Route::post('tender', 'App\Http\Controllers\API\ApiController@tenderApi')->name('tenderApi');
+    });
+    Route::middleware('api.compat:transaction:read,bearer')->group(function () {
+        Route::post('transaction', 'App\Http\Controllers\API\ApiController@transactionApi')->name('transactionApi');
+    });
     Route::post('tender_agency', 'App\Http\Controllers\API\ApiController@tenderAgency')->name('tenderAgencyApi');       //10-FEB-2025  API utk tender agency AUFA & MBSA
     Route::post('detail_vendor', 'App\Http\Controllers\API\ApiController@detailVendor')->name('detailVendorApi');        //10-FEB-2025  API utk maklumat vendor AUFA & MBSA
     Route::post('transaction_contract', 'App\Http\Controllers\API\ApiController@transactionContract')->name('transactionContractApi'); //10-FEB-2025  API utk transaksi tender agency AUFA & MBSA

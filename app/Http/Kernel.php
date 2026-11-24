@@ -66,6 +66,7 @@ class Kernel extends HttpKernel
 	     'permission' => \Zizaco\Entrust\Middleware\EntrustPermission::class,
 	     'ability' => \Zizaco\Entrust\Middleware\EntrustAbility::class,
         'stos.api' => \App\Http\Middleware\ValidateStosApiKey::class,
+        'api.compat' => \App\Http\Middleware\LegacyApiCompatibilityMiddleware::class,
     ];
 
     /**

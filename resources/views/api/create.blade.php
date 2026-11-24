@@ -48,6 +48,29 @@
 							@endforeach
 						</select>
 					</div>
+
+					<div class="col-12">
+						<fieldset>
+							<legend class="form-label fw-medium small">Kebenaran API</legend>
+							<div class="form-check">
+								<input class="form-check-input" type="checkbox" name="abilities[]" value="blacklist:read" id="ability_blacklist" @checked(in_array('blacklist:read', old('abilities', ['blacklist:read']), true))>
+								<label class="form-check-label" for="ability_blacklist">Maklumat senarai hitam</label>
+							</div>
+							<div class="form-check">
+								<input class="form-check-input" type="checkbox" name="abilities[]" value="tender:read" id="ability_tender" @checked(in_array('tender:read', old('abilities', []), true))>
+								<label class="form-check-label" for="ability_tender">Maklumat tender</label>
+							</div>
+							<div class="form-check">
+								<input class="form-check-input" type="checkbox" name="abilities[]" value="transaction:read" id="ability_transaction" @checked(in_array('transaction:read', old('abilities', []), true))>
+								<label class="form-check-label" for="ability_transaction">Maklumat transaksi</label>
+							</div>
+							<div class="form-check">
+								<input class="form-check-input" type="checkbox" name="abilities[]" value="vendor:read" id="ability_vendor" @checked(in_array('vendor:read', old('abilities', []), true))>
+								<label class="form-check-label" for="ability_vendor">Maklumat pembekal</label>
+							</div>
+							<div class="form-text">Pilih hanya API yang telah diluluskan untuk klien ini.</div>
+						</fieldset>
+					</div>
 				</div>
 			</div>
 

@@ -12,6 +12,13 @@ use Illuminate\Support\Facades\Validator;
 
 class ApiTokenController extends Controller
 {
+    private const API_ABILITIES = [
+        'blacklist:read',
+        'tender:read',
+        'transaction:read',
+        'vendor:read',
+    ];
+
     public function index(Request $request)
     {
         if (! ApiToken::canList()) {
@@ -102,9 +109,21 @@ class ApiTokenController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:150|unique:api_clients,name',
             'organization_unit_id' => 'nullable|exists:organization_units,id',
+            'abilities' => 'required|array|min:1',
+            'abilities.*' => 'required|string|in:' . implode(',', self::API_ABILITIES),
         ], [
             'name.unique' => 'Nama klien ini sudah wujud. Setiap klien mesti mempunyai token sendiri.',
         ]);
+
+        $validator->after(function ($validator) use ($request) {
+            $dataAbilities = (array) $request->input('abilities', []);
+            if (
+                array_intersect(['tender:read', 'transaction:read', 'vendor:read'], $dataAbilities)
+                && !$request->filled('organization_unit_id')
+            ) {
+                $validator->errors()->add('organization_unit_id', 'Agensi diperlukan untuk akses API tender, transaksi atau pembekal.');
+            }
+        });
 
         if ($validator->fails()) {
             return $this->_validation_error($validator->errors());
@@ -116,7 +135,7 @@ class ApiTokenController extends Controller
             'status' => true,
         ]);
 
-        $plainTextToken = $this->issueToken($client);
+        $plainTextToken = $this->issueToken($client, $request->input('abilities', []));
 
         return redirect()
             ->route('apitoken.index')
@@ -131,7 +150,11 @@ class ApiTokenController extends Controller
             return $this->_access_denied();
         }
 
-        $plainTextToken = $this->issueToken($client);
+        $previousToken = $client->tokens()->orderByDesc('id')->first();
+        $abilities = $previousToken && is_array($previousToken->abilities)
+            ? $previousToken->abilities
+            : ['blacklist:read'];
+        $plainTextToken = $this->issueToken($client, $abilities);
 
         return redirect()
             ->route('apitoken.index')
@@ -162,13 +185,18 @@ class ApiTokenController extends Controller
         ], 422);
     }
 
-    protected function issueToken(ApiClient $client): string
+    protected function issueToken(ApiClient $client, array $abilities): string
     {
+        $abilities = array_values(array_unique(array_intersect(self::API_ABILITIES, $abilities)));
+        if (empty($abilities)) {
+            $abilities = ['blacklist:read'];
+        }
+
         $client->tokens()->delete();
 
         $plainTextToken = $client->createToken(
-            $client->name . '-blacklist',
-            ['blacklist:read']
+            $client->name . '-api',
+            $abilities
         )->plainTextToken;
 
         $client->plain_token = $plainTextToken;
