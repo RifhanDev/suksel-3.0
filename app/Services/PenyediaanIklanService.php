@@ -530,11 +530,12 @@ class PenyediaanIklanService
                 if ($upload) {
                     $prev = $previousByUploadId->get($uploadId);
                     $pathUnchanged = $prev && ($prev['path'] ?? '') === ($doc['path'] ?? '');
-                    $existingPath = method_exists($upload, 'resolveAbsolutePath')
-                        ? $upload->resolveAbsolutePath()
-                        : (is_file($upload->getPath()) ? $upload->getPath() : null);
+                    // Production pushes the tender copy to NAS then deletes the local file.
+                    // resolveAbsolutePath() only checks local disk — also accept a live NAS object
+                    // and reject size=0 rows so a re-sync can rebuild the upload.
+                    $uploadHealthy = $pathUnchanged && $this->tenderMejaUploadIsHealthy($upload);
 
-                    if ($pathUnchanged && $existingPath) {
+                    if ($uploadHealthy) {
                         $upload->label = $nama;
                         $upload->save();
                         $keptUploadIds[] = (int) $upload->id;
@@ -606,15 +607,34 @@ class PenyediaanIklanService
             }
         }
 
+        $sizeBeforeWatermark = (int) (@filesize($fullPath) ?: 0);
+
         if ($mime === 'application/pdf' && method_exists($tender, 'setWatermark')) {
             try {
                 $tender->setWatermark($fullPath, public_path('images/etender-dokumen-watermark.png'));
-            } catch (\Throwable) {
-                // Non-fatal: dokumen tetap disimpan tanpa watermark.
+            } catch (\Throwable $e) {
+                // Non-fatal: keep original PDF. setWatermark restores _ori on failure.
+                \Illuminate\Support\Facades\Log::warning('Meja terkawal watermark skipped', [
+                    'tender_id' => $tender->id,
+                    'file' => $fullPath,
+                    'error' => $e->getMessage(),
+                ]);
+                $ori = \Illuminate\Support\Str::replace('.pdf', '_ori.pdf', $fullPath);
+                if ((! is_file($fullPath) || filesize($fullPath) <= 0) && is_file($ori) && filesize($ori) > 0) {
+                    @unlink($fullPath);
+                    @rename($ori, $fullPath);
+                }
             }
         }
 
         $size = (int) (@filesize($fullPath) ?: 0);
+        if ($size <= 0 && $sizeBeforeWatermark > 0) {
+            $size = $sizeBeforeWatermark;
+        }
+        if ($size <= 0) {
+            @unlink($fullPath);
+            throw new \RuntimeException('Dokumen meja terkawal kosong atau gagal disalin (saiz 0).');
+        }
 
         // Push to NAS (perolehan_attachment) on production; no-op locally/staging.
         AttachmentStorage::pushPublicFile($fullPath);
@@ -652,6 +672,29 @@ class PenyediaanIklanService
         }
 
         return Str::uuid() . '.pdf';
+    }
+
+    /**
+     * Tender meja copy is healthy when DB size > 0 and the bytes exist locally or on NAS.
+     * Size accessor formats bytes (e.g. "0.00 B") — always read the raw column.
+     */
+    protected function tenderMejaUploadIsHealthy(Upload $upload): bool
+    {
+        $rawSize = (int) ($upload->getRawOriginal('size') ?? $upload->getAttributes()['size'] ?? 0);
+        if ($rawSize <= 0) {
+            return false;
+        }
+
+        if (method_exists($upload, 'resolveAbsolutePath') && $upload->resolveAbsolutePath()) {
+            return true;
+        }
+
+        $relative = AttachmentStorage::relativeForUpload(
+            (string) ($upload->path ?? ''),
+            (string) ($upload->name ?? '')
+        );
+
+        return $relative !== '' && AttachmentStorage::exists($relative);
     }
 
     protected function deleteTenderUpload(Upload $upload): void
@@ -710,7 +753,7 @@ class PenyediaanIklanService
             return null;
         }
 
-        if ($contents === null || $contents === false) {
+        if ($contents === null || $contents === false || $contents === '') {
             return null;
         }
 
@@ -759,11 +802,7 @@ class PenyediaanIklanService
                 return true;
             }
 
-            if (method_exists($upload, 'resolveAbsolutePath')) {
-                return $upload->resolveAbsolutePath() === null;
-            }
-
-            return ! is_file($upload->getPath());
+            return ! $this->tenderMejaUploadIsHealthy($upload);
         });
 
         if (! $needsSync) {
