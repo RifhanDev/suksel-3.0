@@ -1819,25 +1819,50 @@ class TendersController extends Controller
 	}
 
 	/**
-	 * Watermark temp PDF for meja download. On failure, return the original temp path.
+	 * Watermark temp PDF for meja download (text mark + optional ID box).
+	 * On failure, return the original temp path so download still works.
 	 */
 	protected function applyMejaWatermarkForDownload(string $localPdf): string
 	{
 		$watermark = public_path('images/etender-dokumen-watermark.png');
-		if (! is_file($watermark) || ! method_exists($this, 'setWatermark')) {
+		if (! method_exists($this, 'setWatermark')) {
 			return $localPdf;
 		}
 
+		$idLabel = $this->mejaDownloadIdLabel();
+
 		try {
-			$this->setWatermark($localPdf, $watermark);
+			$this->setWatermark($localPdf, $watermark, $idLabel);
 		} catch (\Throwable $e) {
 			\Illuminate\Support\Facades\Log::warning('Meja download watermark failed; serving original', [
 				'file' => $localPdf,
+				'id' => $idLabel,
 				'error' => $e->getMessage(),
 			]);
 		}
 
 		return $localPdf;
+	}
+
+	/**
+	 * Stamp shown on meja downloads, e.g. "ID 8361" (vendor id, else user id).
+	 */
+	protected function mejaDownloadIdLabel(): ?string
+	{
+		$user = auth()->user();
+		if (! $user) {
+			return null;
+		}
+
+		if ($user->hasRole('Vendor') && ! empty($user->vendor_id)) {
+			return 'ID ' . (int) $user->vendor_id;
+		}
+
+		if (! empty($user->id)) {
+			return 'ID ' . (int) $user->id;
+		}
+
+		return null;
 	}
 
 	/**
