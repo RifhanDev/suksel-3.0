@@ -119,7 +119,7 @@
                                 </td>
                                 <td>{{ number_format($detail->amount, 2) }}</td>
                                 <td rowspan="{{ $response->details->count() }}">
-                                    {{ number_format($response->details->sum('amount'), 2) }}</td>
+                                    {{ number_format($response->total_amount ?? $response->details->sum('amount'), 2) }}</td>
                             </tr>
                         @else
                             <tr>
@@ -159,35 +159,35 @@
             </tr>
             <tr>
                 <td colspan="10" style="text-align: right;">Berjaya</td>
-                <td>{{ $responses->pluck('details')->flatten()->where('status', 'success')->where('fpx_buyerBankId', 'B2C')->count() }}</td>
-                <td>{{ $responses->pluck('details')->flatten()->where('status', 'success')->where('fpx_buyerBankId', 'B2B')->count() }}</td>
-                <td>{{ $responses->pluck('details')->flatten()->where('status', 'success')->count() }}</td>
-                <td>{{ number_format($responses->pluck('details')->flatten()->where('status', 'success')->sum('amount'),2) }}
+                <td>{{ $summary['success_b2c'] ?? 0 }}</td>
+                <td>{{ $summary['success_b2b'] ?? 0 }}</td>
+                <td>{{ $summary['success_count'] ?? 0 }}</td>
+                <td>{{ number_format($summary['success_amount'] ?? 0, 2) }}
                 </td>
             </tr>
             <tr>
                 <td colspan="10" style="text-align: right;">Gagal</td>
-                <td>{{ $responses->pluck('details')->flatten()->where('status', 'failed')->where('fpx_buyerBankId', 'B2C')->count() }}</td>
-                <td>{{ $responses->pluck('details')->flatten()->where('status', 'failed')->where('fpx_buyerBankId', 'B2B')->count() }}</td>
-                <td>{{ $responses->pluck('details')->flatten()->where('status', 'failed')->count() }}</td>
-                <td>{{ number_format($responses->pluck('details')->flatten()->where('status', 'failed')->sum('amount'),2) }}
+                <td>{{ $summary['failed_b2c'] ?? 0 }}</td>
+                <td>{{ $summary['failed_b2b'] ?? 0 }}</td>
+                <td>{{ $summary['failed_count'] ?? 0 }}</td>
+                <td>{{ number_format($summary['failed_amount'] ?? 0, 2) }}
                 </td>
             </tr>
             <tr>
                 <td colspan="10" style="text-align: right;">Menunggu</td>
-                <td>{{ $responses->pluck('details')->flatten()->where('status', 'pending')->where('fpx_buyerBankId', 'B2C')->count() }}</td>
-                <td>{{ $responses->pluck('details')->flatten()->where('status', 'pending')->where('fpx_buyerBankId', 'B2B')->count() }}</td>
-                <td>{{ $responses->pluck('details')->flatten()->where('status', 'pending')->count() }}</td>
-                <td>{{ number_format($responses->pluck('details')->flatten()->where('status', 'pending')->sum('amount'),2) }}
+                <td>{{ $summary['pending_b2c'] ?? 0 }}</td>
+                <td>{{ $summary['pending_b2b'] ?? 0 }}</td>
+                <td>{{ $summary['pending_count'] ?? 0 }}</td>
+                <td>{{ number_format($summary['pending_amount'] ?? 0, 2) }}
                 </td>
             </tr>
             <tr>
                 <td colspan="10" style="text-align: right;"><strong>Jumlah Keseluruhan</strong></td>
-                <td><strong>{{ $responses->pluck('details')->flatten()->whereIn('status', ['success', 'failed', 'pending'])->where('fpx_buyerBankId', 'B2C')->count() }}</strong></td>
-                <td><strong>{{ $responses->pluck('details')->flatten()->whereIn('status', ['success', 'failed', 'pending'])->where('fpx_buyerBankId', 'B2B')->count() }}</strong></td>
-                <td><strong>{{ $responses->pluck('details')->flatten()->whereIn('status', ['success', 'failed', 'pending'])->count() }}</strong></td>
+                <td><strong>{{ ($summary['success_b2c'] ?? 0) + ($summary['failed_b2c'] ?? 0) + ($summary['pending_b2c'] ?? 0) }}</strong></td>
+                <td><strong>{{ ($summary['success_b2b'] ?? 0) + ($summary['failed_b2b'] ?? 0) + ($summary['pending_b2b'] ?? 0) }}</strong></td>
+                <td><strong>{{ ($summary['success_count'] ?? 0) + ($summary['failed_count'] ?? 0) + ($summary['pending_count'] ?? 0) }}</strong></td>
                 <td>
-                    <strong>{{ number_format($responses->pluck('details')->flatten()->whereIn('status', ['success', 'failed', 'pending'])->sum('amount'),2) }}</strong>
+                    <strong>{{ number_format(($summary['success_amount'] ?? 0) + ($summary['failed_amount'] ?? 0) + ($summary['pending_amount'] ?? 0), 2) }}</strong>
                 </td>
             </tr>
         </tbody>
