@@ -230,27 +230,25 @@ trait Helper
         }
 
         try {
-            // Downgrade PDF to 1.4 when Ghostscript is available (FPDI compatibility hack).
-            $gsSource = $tmp_name;
-            if ($this->ghostscriptAvailable()) {
-                $gsOut = $original_name . '.gs.pdf';
-                $cmd = 'gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dNOPAUSE -dQUIET -dBATCH '
-                    . '-sOutputFile=' . escapeshellarg($gsOut) . ' ' . escapeshellarg($tmp_name);
-                shell_exec($cmd);
-                if (is_file($gsOut) && filesize($gsOut) > 0) {
-                    @unlink($tmp_name);
-                    @rename($gsOut, $tmp_name);
-                } else {
-                    @unlink($gsOut);
-                }
+            // Prefer Ghostscript 1.4 downgrade when it works (FPDI compatibility).
+            // Write to a side file first — never overwrite the original with an empty gs output.
+            $gsOut = $original_name . '.gs.pdf';
+            @unlink($gsOut);
+            shell_exec(
+                'gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dNOPAUSE -dQUIET -dBATCH '
+                . '-sOutputFile=' . escapeshellarg($gsOut) . ' ' . escapeshellarg($tmp_name) . ' 2>/dev/null'
+            );
+            $fpdiSource = $tmp_name;
+            if (is_file($gsOut) && filesize($gsOut) > 0) {
+                $fpdiSource = $gsOut;
             }
 
-            if (! is_file($tmp_name)) {
+            if (! is_file($fpdiSource)) {
                 throw new \RuntimeException('Source PDF not found for watermark.');
             }
 
             $pdf = new Fpdi();
-            $pagecount = $pdf->setSourceFile($tmp_name);
+            $pagecount = $pdf->setSourceFile($fpdiSource);
 
             for ($i = 1; $i <= $pagecount; $i++) {
                 $tpl = $pdf->importPage($i);
@@ -265,33 +263,20 @@ trait Helper
 
             $pdf->Output('F', $file);
             @unlink($tmp_name);
+            @unlink($gsOut);
 
             if (! is_file($file) || filesize($file) <= 0) {
                 throw new \RuntimeException('Watermark PDF output was empty.');
             }
         } catch (\Throwable $e) {
             // Always put the original bytes back — never leave a 0-byte .pdf behind.
+            @unlink($original_name . '.gs.pdf');
             if (is_file($tmp_name)) {
                 @unlink($file);
                 @rename($tmp_name, $original_name);
             }
             throw $e;
         }
-    }
-
-    protected function ghostscriptAvailable(): bool
-    {
-        static $available = null;
-        if ($available !== null) {
-            return $available;
-        }
-
-        $out = [];
-        $code = 1;
-        @exec('command -v gs 2>/dev/null', $out, $code);
-        $available = $code === 0 && ! empty($out[0]);
-
-        return $available;
     }
 
     public function encryptString(string $string)
