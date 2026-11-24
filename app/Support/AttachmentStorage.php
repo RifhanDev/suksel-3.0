@@ -285,6 +285,10 @@ class AttachmentStorage
 
         $located = self::locate($path);
         if ($located !== null) {
+            // Filenames with spaces (common in legacy 2.0 zips) need RFC 5987 headers
+            // or some browsers abort the download as "Site wasn't available".
+            $headers['Content-Disposition'] = self::contentDisposition($disposition, $name);
+
             return Storage::disk($located['disk'])->response($located['path'], $name, $headers, $disposition);
         }
 

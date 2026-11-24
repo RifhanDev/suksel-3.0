@@ -1667,6 +1667,34 @@ class TendersController extends Controller
 				return $this->_access_denied();
 		}
 
+		$downloadName = method_exists($file, 'downloadFilename')
+			? $file->downloadFilename()
+			: trim((string) ($file->label ?: $file->name ?: 'dokumen'));
+
+		// Migrated 2.0 rows keep old absolute paths (/Data/var/www/.../etender-selangor/...).
+		// Prefer NAS (legacy + new root) whenever remote attachments are enabled.
+		$relative = \App\Support\AttachmentStorage::relativeForUpload((string) $file->path, (string) $file->name);
+		if ($relative !== '') {
+			try {
+				$stored = \App\Support\AttachmentStorage::responseOrNull(
+					$relative,
+					$downloadName,
+					$file->type ?: null,
+					true
+				);
+				if ($stored) {
+					return $stored;
+				}
+			} catch (\Throwable $e) {
+				\Illuminate\Support\Facades\Log::warning('Tender file NAS stream failed', [
+					'tender_id' => $tender_id,
+					'upload_id' => $id,
+					'relative' => $relative,
+					'error' => $e->getMessage(),
+				]);
+			}
+		}
+
 		$fullPath = method_exists($file, 'resolveAbsolutePath')
 			? $file->resolveAbsolutePath()
 			: null;
@@ -1681,19 +1709,7 @@ class TendersController extends Controller
 			$fullPath = $this->resolveMejaTerkawalFallbackPath($tender, $file);
 		}
 
-		$downloadName = method_exists($file, 'downloadFilename')
-			? $file->downloadFilename()
-			: trim((string) ($file->label ?: $file->name ?: 'dokumen'));
-
 		if (! $fullPath || ! is_file($fullPath)) {
-			$relative = \App\Support\AttachmentStorage::relativeForUpload((string) $file->path, (string) $file->name);
-			$stored = $relative !== ''
-				? \App\Support\AttachmentStorage::responseOrNull($relative, $downloadName, $file->type ?: null, true)
-				: null;
-			if ($stored) {
-				return $stored;
-			}
-
 			abort(404, 'Fail tidak dijumpai.');
 		}
 
