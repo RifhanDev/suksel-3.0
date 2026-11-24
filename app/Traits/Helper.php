@@ -231,6 +231,10 @@ trait Helper
         if ($tmp_name === $file) {
             $tmp_name = $file . '_ori.pdf';
         }
+        // Case-insensitive .pdf
+        if ($tmp_name === $file && preg_match('/\.pdf$/i', $file)) {
+            $tmp_name = preg_replace('/\.pdf$/i', '_ori.pdf', $file);
+        }
 
         if (! is_file($file)) {
             throw new \RuntimeException('PDF source missing for watermark.');
@@ -241,54 +245,55 @@ trait Helper
         }
 
         $gsOut = $original_name . '.gs.pdf';
-        $flatPng = null;
+        $coverPdf = null;
+        $bytes = @filesize($tmp_name) ?: 0;
 
         try {
-            $flatPng = $this->flattenWatermarkPng($watermark_file);
-
-            // Try FPDI on original, then on Ghostscript 1.4 rewrite.
-            $sources = [$tmp_name];
-            @unlink($gsOut);
-            $gs = $this->ghostscriptBinary();
-            shell_exec(
-                escapeshellarg($gs) . ' -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dNOPAUSE -dQUIET -dBATCH '
-                . '-dNOOUTERSAVE -dAutoRotatePages=/None '
-                . '-sOutputFile=' . escapeshellarg($gsOut) . ' '
-                . escapeshellarg($tmp_name) . ' 2>/dev/null'
-            );
-            if (is_file($gsOut) && filesize($gsOut) > 0) {
-                array_unshift($sources, $gsOut);
-            }
-
             $lastError = null;
             $stamped = false;
-            foreach ($sources as $fpdiSource) {
-                try {
-                    $this->writeFpdiWatermarkedPdf(
-                        $fpdiSource,
-                        $file,
-                        $flatPng ?: $watermark_file,
-                        $idLabel
-                    );
-                    $stamped = true;
-                    $lastError = null;
-                    break;
-                } catch (\Throwable $e) {
-                    $lastError = $e;
-                    @unlink($file);
-                }
-            }
+            $method = null;
 
-            // Lightweight Ghostscript text stamp — no full-page raster (that OOM/timeout
-            // on large meja PDFs and Chrome shows "Site wasn't available").
-            if (! $stamped) {
+            // Large PDFs: Ghostscript text stamp first (FPDI page-loop OOMs / times out).
+            // Small PDFs: FPDI first (fast, no shell dependency).
+            $preferGs = $bytes > (8 * 1024 * 1024);
+
+            $attempts = $preferGs
+                ? ['gs_text', 'fpdi', 'gs_rewrite_fpdi', 'gs_cover']
+                : ['fpdi', 'gs_rewrite_fpdi', 'gs_text', 'gs_cover'];
+
+            foreach ($attempts as $attempt) {
+                if ($stamped) {
+                    break;
+                }
+                @unlink($file);
                 try {
-                    $this->writeGsTextWatermark($tmp_name, $file, $idLabel);
-                    $stamped = true;
-                    $lastError = null;
+                    if ($attempt === 'fpdi') {
+                        $this->writeFpdiWatermarkedPdf($tmp_name, $file, $idLabel);
+                    } elseif ($attempt === 'gs_rewrite_fpdi') {
+                        $this->ghostscriptRewritePdf14($tmp_name, $gsOut);
+                        if (! is_file($gsOut) || filesize($gsOut) <= 0) {
+                            throw new \RuntimeException('GS PDF 1.4 rewrite produced no file.');
+                        }
+                        $this->writeFpdiWatermarkedPdf($gsOut, $file, $idLabel);
+                    } elseif ($attempt === 'gs_text') {
+                        $this->writeGsTextWatermark($tmp_name, $file, $idLabel);
+                    } elseif ($attempt === 'gs_cover') {
+                        $coverPdf = $this->writeMejaCoverPdf($idLabel);
+                        $this->ghostscriptConcatPdf([$coverPdf, $tmp_name], $file);
+                    }
+                    if (is_file($file) && filesize($file) > 0) {
+                        $stamped = true;
+                        $method = $attempt;
+                        $lastError = null;
+                    }
                 } catch (\Throwable $e) {
                     $lastError = $e;
                     @unlink($file);
+                    Log::warning('Meja watermark attempt failed', [
+                        'attempt' => $attempt,
+                        'bytes' => $bytes,
+                        'error' => $e->getMessage(),
+                    ]);
                 }
             }
 
@@ -296,10 +301,17 @@ trait Helper
                 throw $lastError ?? new \RuntimeException('Gagal menerapkan watermark.');
             }
 
+            Log::info('Meja watermark applied', [
+                'method' => $method,
+                'bytes_in' => $bytes,
+                'bytes_out' => @filesize($file) ?: 0,
+                'id' => $idLabel,
+            ]);
+
             @unlink($tmp_name);
             @unlink($gsOut);
-            if ($flatPng) {
-                @unlink($flatPng);
+            if ($coverPdf) {
+                @unlink($coverPdf);
             }
 
             if (! is_file($file) || filesize($file) <= 0) {
@@ -307,8 +319,8 @@ trait Helper
             }
         } catch (\Throwable $e) {
             @unlink($gsOut);
-            if ($flatPng) {
-                @unlink($flatPng);
+            if ($coverPdf) {
+                @unlink($coverPdf);
             }
             if (is_file($tmp_name)) {
                 @unlink($file);
@@ -319,17 +331,18 @@ trait Helper
     }
 
     /**
-     * FPDI import + visible text/PNG stamp on every page.
+     * FPDI import + high-visibility text stamps on every page (no PNG — was often invisible).
      */
     protected function writeFpdiWatermarkedPdf(
         string $sourcePdf,
         string $destPdf,
-        string $watermarkFile,
         ?string $idLabel
     ): void {
         $pdf = new Fpdi();
         $pagecount = $pdf->setSourceFile($sourcePdf);
-        $hasPng = is_file($watermarkFile);
+        if ($pagecount < 1) {
+            throw new \RuntimeException('FPDI: PDF has no pages.');
+        }
 
         for ($i = 1; $i <= $pagecount; $i++) {
             $tpl = $pdf->importPage($i);
@@ -337,89 +350,68 @@ trait Helper
             $orientation = ($size['width'] > $size['height']) ? 'L' : 'P';
             $pdf->AddPage($orientation, [$size['width'], $size['height']]);
             $pdf->useTemplate($tpl, 0, 0, $size['width'], $size['height'], false);
-
-            // Large top-right stamp (text is primary — PNG alone was often invisible).
-            $label = 'Dokumen Meja Terkawal';
-            $pdf->SetFont('Helvetica', 'B', 16);
-            $textW = $pdf->GetStringWidth($label) + 2;
-            $markX = max(3, $size['width'] - $textW - 8);
-            $markY = 5;
-
-            // White backdrop so brown text stays readable on any letterhead.
-            $pdf->SetFillColor(255, 255, 255);
-            $pdf->Rect($markX - 1, $markY - 1, $textW + 2, 14, 'F');
-
-            if ($hasPng) {
-                try {
-                    $pdf->Image($watermarkFile, $markX, $markY - 0.5, min(60, $textW + 2), 0, 'PNG');
-                } catch (\Throwable) {
-                    // Text stamp below is enough.
-                }
-            }
-
-            $pdf->SetTextColor(166, 68, 28);
-            $pdf->SetFont('Helvetica', 'B', 16);
-            $pdf->SetXY($markX, $markY);
-            $pdf->Cell($textW, 7, $label, 0, 0, 'L');
-
-            if ($idLabel !== null && $idLabel !== '') {
-                $pdf->SetFont('Helvetica', 'B', 10);
-                $boxW = max(24, $pdf->GetStringWidth($idLabel) + 8);
-                $boxH = 7;
-                $boxX = $markX + ($textW / 2) - ($boxW / 2);
-                $boxY = $markY + 7;
-                $pdf->SetDrawColor(0, 0, 0);
-                $pdf->SetLineWidth(0.5);
-                $pdf->SetFillColor(255, 255, 255);
-                $pdf->Rect($boxX, $boxY, $boxW, $boxH, 'DF');
-                $pdf->SetTextColor(0, 0, 0);
-                $pdf->SetXY($boxX, $boxY + 1.5);
-                $pdf->Cell($boxW, 4, $idLabel, 0, 0, 'C');
-            }
-
-            $pdf->SetTextColor(0, 0, 0);
+            $this->paintMejaStampOnFpdiPage($pdf, $size['width'], $size['height'], $idLabel);
         }
 
         $pdf->Output('F', $destPdf);
+        if (! is_file($destPdf) || filesize($destPdf) <= 0) {
+            throw new \RuntimeException('FPDI watermark output empty.');
+        }
     }
 
     /**
-     * FPDF often mishandles RGBA PNGs — flatten onto white for reliable Image().
+     * Draw "Dokumen Meja Terkawal" (+ ID box) — top-right and center.
      */
-    protected function flattenWatermarkPng(string $watermarkFile): ?string
+    protected function paintMejaStampOnFpdiPage(Fpdi $pdf, float $pageW, float $pageH, ?string $idLabel): void
     {
-        if (! is_file($watermarkFile) || ! function_exists('imagecreatefrompng')) {
-            return null;
+        $label = 'Dokumen Meja Terkawal';
+        $pdf->SetFont('Helvetica', 'B', 18);
+        $textW = $pdf->GetStringWidth($label) + 4;
+        $markX = max(3, $pageW - $textW - 8);
+        $markY = 6;
+        $bandH = ($idLabel !== null && $idLabel !== '') ? 22 : 14;
+
+        $pdf->SetFillColor(255, 255, 255);
+        $pdf->SetDrawColor(166, 68, 28);
+        $pdf->SetLineWidth(0.7);
+        $pdf->Rect($markX - 2, $markY - 2, $textW + 4, $bandH, 'FD');
+
+        $pdf->SetTextColor(166, 68, 28);
+        $pdf->SetFont('Helvetica', 'B', 18);
+        $pdf->SetXY($markX, $markY);
+        $pdf->Cell($textW, 8, $label, 0, 0, 'L');
+
+        if ($idLabel !== null && $idLabel !== '') {
+            $pdf->SetFont('Helvetica', 'B', 11);
+            $boxW = max(28, $pdf->GetStringWidth($idLabel) + 10);
+            $boxH = 8;
+            $boxX = $markX + ($textW / 2) - ($boxW / 2);
+            $boxY = $markY + 9;
+            $pdf->SetDrawColor(0, 0, 0);
+            $pdf->SetLineWidth(0.6);
+            $pdf->SetFillColor(255, 255, 255);
+            $pdf->Rect($boxX, $boxY, $boxW, $boxH, 'DF');
+            $pdf->SetTextColor(0, 0, 0);
+            $pdf->SetXY($boxX, $boxY + 1.5);
+            $pdf->Cell($boxW, 5, $idLabel, 0, 0, 'C');
         }
 
-        $src = @imagecreatefrompng($watermarkFile);
-        if (! $src) {
-            return null;
-        }
-
-        $w = imagesx($src);
-        $h = imagesy($src);
-        $dst = imagecreatetruecolor($w, $h);
-        $white = imagecolorallocate($dst, 255, 255, 255);
-        imagefilledrectangle($dst, 0, 0, $w, $h, $white);
-        imagealphablending($dst, true);
-        imagecopy($dst, $src, 0, 0, 0, 0, $w, $h);
-        imagedestroy($src);
-
-        $flat = tempnam(sys_get_temp_dir(), 'wm_flat_') . '.png';
-        if (! @imagepng($dst, $flat)) {
-            imagedestroy($dst);
-            @unlink($flat);
-
-            return null;
-        }
-        imagedestroy($dst);
-
-        return $flat;
+        $pdf->SetFont('Helvetica', 'B', 22);
+        $centerW = min($pageW - 8, $pdf->GetStringWidth($label) + 16);
+        $centerX = max(4, ($pageW - $centerW) / 2);
+        $centerY = max(40, ($pageH / 2) - 10);
+        $pdf->SetFillColor(255, 255, 255);
+        $pdf->SetDrawColor(166, 68, 28);
+        $pdf->SetLineWidth(0.9);
+        $pdf->Rect($centerX, $centerY, $centerW, 16, 'FD');
+        $pdf->SetTextColor(166, 68, 28);
+        $pdf->SetXY($centerX, $centerY + 4);
+        $pdf->Cell($centerW, 8, $label, 0, 0, 'C');
+        $pdf->SetTextColor(0, 0, 0);
     }
 
     /**
-     * Stamp text via Ghostscript EndPage (no raster). Works when FPDI cannot parse.
+     * Stamp every page via Ghostscript EndPage (correct stack handling, no raster).
      */
     protected function writeGsTextWatermark(string $sourcePdf, string $destPdf, ?string $idLabel): void
     {
@@ -428,58 +420,172 @@ trait Helper
         $id = $idLabel ? $this->gsEscape($idLabel) : '';
 
         $idBlock = $id !== ''
-            ? "0 0 0 setrgbcolor\n0 -16 rmoveto\n({$id}) show\n"
+            ? "/Helvetica-Bold findfont 14 scalefont setfont\n0 0 0 setrgbcolor\n340 785 moveto\n({$id}) show\n"
             : '';
 
+        // EndPage stack is: pageCount reasonCode
+        // Pop count, stamp when reason < 2 (showpage / copypage).
         $ps = <<<PS
 <<
 /EndPage {
   exch pop
   2 lt {
     gsave
-      /Helvetica-Bold findfont 18 scalefont setfont
+      /Helvetica-Bold findfont 22 scalefont setfont
       0.65 0.27 0.11 setrgbcolor
-      currentpagedevice /PageSize get aload pop
-      18 sub exch
-      220 sub exch
-      moveto
+      280 810 moveto
       ({$label}) show
       {$idBlock}
+      /Helvetica-Bold findfont 28 scalefont setfont
+      0.65 0.27 0.11 setrgbcolor
+      160 420 moveto
+      ({$label}) show
     grestore
     true
-  }{ pop false } ifelse
+  }{
+    false
+  } ifelse
 } bind
 >> setpagedevice
 PS;
 
-        $psFile = tempnam(sys_get_temp_dir(), 'wmps_');
-        if ($psFile === false) {
+        $psPath = tempnam(sys_get_temp_dir(), 'wmps_');
+        if ($psPath === false) {
             throw new \RuntimeException('Gagal menulis skrip watermark.');
         }
-        $psPath = $psFile . '.ps';
-        @unlink($psFile);
-        file_put_contents($psPath, $ps);
+        $psFile = $psPath . '.ps';
+        @unlink($psPath);
+        file_put_contents($psFile, $ps);
 
         @unlink($destPdf);
-        $cmd = escapeshellarg($gs)
-            . ' -q -sDEVICE=pdfwrite -dNOPAUSE -dBATCH -dSAFER '
+        $err = [];
+        $code = 0;
+        exec(
+            escapeshellarg($gs)
+            . ' -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 '
             . '-sOutputFile=' . escapeshellarg($destPdf) . ' '
-            . escapeshellarg($psPath) . ' '
-            . escapeshellarg($sourcePdf) . ' 2>/dev/null';
-        shell_exec($cmd);
-        @unlink($psPath);
+            . escapeshellarg($psFile) . ' '
+            . escapeshellarg($sourcePdf) . ' 2>&1',
+            $err,
+            $code
+        );
+        @unlink($psFile);
 
         if (! is_file($destPdf) || filesize($destPdf) <= 0) {
-            throw new \RuntimeException('Ghostscript text watermark gagal.');
+            throw new \RuntimeException(
+                'Ghostscript text watermark gagal'
+                . ($code ? " (exit {$code})" : '')
+                . ($err ? ': ' . implode(' ', array_slice($err, 0, 5)) : '.')
+            );
+        }
+    }
+
+    /**
+     * One-page cover stamped with meja label — prepended when page-level stamp fails.
+     */
+    protected function writeMejaCoverPdf(?string $idLabel): string
+    {
+        $pdf = new \FPDF('P', 'mm', 'A4');
+        $pdf->SetAutoPageBreak(false);
+        $pdf->AddPage();
+        $pdf->SetDrawColor(166, 68, 28);
+        $pdf->SetLineWidth(1.2);
+        $pdf->Rect(12, 12, 186, 273);
+
+        $pdf->SetTextColor(166, 68, 28);
+        $pdf->SetFont('Helvetica', 'B', 28);
+        $pdf->SetXY(15, 110);
+        $pdf->Cell(180, 14, 'Dokumen Meja Terkawal', 0, 2, 'C');
+
+        if ($idLabel !== null && $idLabel !== '') {
+            $pdf->SetFont('Helvetica', 'B', 16);
+            $pdf->SetTextColor(0, 0, 0);
+            $pdf->SetDrawColor(0, 0, 0);
+            $pdf->SetFillColor(255, 255, 255);
+            $w = max(40, $pdf->GetStringWidth($idLabel) + 16);
+            $x = (210 - $w) / 2;
+            $pdf->Rect($x, 132, $w, 12, 'D');
+            $pdf->SetXY($x, 134);
+            $pdf->Cell($w, 8, $idLabel, 0, 0, 'C');
+        }
+
+        $pdf->SetTextColor(80, 80, 80);
+        $pdf->SetFont('Helvetica', '', 11);
+        $pdf->SetXY(15, 155);
+        $pdf->MultiCell(180, 6, "Dokumen ini adalah Dokumen Meja Terkawal.\nSila rujuk halaman seterusnya untuk kandungan penuh.", 0, 'C');
+
+        $out = tempnam(sys_get_temp_dir(), 'meja_cover_');
+        if ($out === false) {
+            throw new \RuntimeException('Gagal cipta cover watermark.');
+        }
+        $path = $out . '.pdf';
+        @unlink($out);
+        $pdf->Output('F', $path);
+        if (! is_file($path) || filesize($path) <= 0) {
+            throw new \RuntimeException('Cover watermark PDF empty.');
+        }
+
+        return $path;
+    }
+
+    protected function ghostscriptRewritePdf14(string $sourcePdf, string $destPdf): void
+    {
+        @unlink($destPdf);
+        $gs = $this->ghostscriptBinary();
+        $err = [];
+        $code = 0;
+        exec(
+            escapeshellarg($gs) . ' -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 '
+            . '-dNOOUTERSAVE -dAutoRotatePages=/None '
+            . '-sOutputFile=' . escapeshellarg($destPdf) . ' '
+            . escapeshellarg($sourcePdf) . ' 2>&1',
+            $err,
+            $code
+        );
+        if (! is_file($destPdf) || filesize($destPdf) <= 0) {
+            throw new \RuntimeException(
+                'Ghostscript rewrite gagal'
+                . ($code ? " (exit {$code})" : '')
+                . ($err ? ': ' . implode(' ', array_slice($err, 0, 3)) : '.')
+            );
+        }
+    }
+
+    /**
+     * @param  list<string>  $inputs
+     */
+    protected function ghostscriptConcatPdf(array $inputs, string $destPdf): void
+    {
+        @unlink($destPdf);
+        $gs = $this->ghostscriptBinary();
+        $parts = '';
+        foreach ($inputs as $input) {
+            if (! is_file($input) || filesize($input) <= 0) {
+                throw new \RuntimeException('Concat input missing: ' . $input);
+            }
+            $parts .= ' ' . escapeshellarg($input);
+        }
+        $err = [];
+        $code = 0;
+        exec(
+            escapeshellarg($gs) . ' -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 '
+            . '-sOutputFile=' . escapeshellarg($destPdf)
+            . $parts . ' 2>&1',
+            $err,
+            $code
+        );
+        if (! is_file($destPdf) || filesize($destPdf) <= 0) {
+            throw new \RuntimeException(
+                'Ghostscript concat gagal'
+                . ($code ? " (exit {$code})" : '')
+                . ($err ? ': ' . implode(' ', array_slice($err, 0, 3)) : '.')
+            );
         }
     }
 
     protected function ghostscriptBinary(): string
     {
-        foreach (['/usr/bin/gs', '/usr/local/bin/gs', 'gs'] as $bin) {
-            if ($bin === 'gs') {
-                return 'gs';
-            }
+        foreach (['/usr/bin/gs', '/bin/gs', '/usr/local/bin/gs'] as $bin) {
             if (is_executable($bin)) {
                 return $bin;
             }
