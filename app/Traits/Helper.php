@@ -218,47 +218,86 @@ trait Helper
     }
 
     /**
-     * Add watermark to PDF Document
+     * Add watermark to PDF Document ("Dokumen Meja Terkawal" + optional ID box).
+     *
+     * @param  string  $file  Absolute path to the PDF (overwritten in place)
+     * @param  string  $watermark_file  Absolute path to PNG watermark
+     * @param  string|null  $idLabel  Optional stamp e.g. "ID 8361"
      */
-    public function setWatermark($file, $watermark_file)
+    public function setWatermark($file, $watermark_file, ?string $idLabel = null)
     {
         $original_name = $file;
-        $tmp_name = Str::replace('.pdf', '_ori.pdf', $file);
+        $tmp_name = Str::replaceLast('.pdf', '_ori.pdf', $file);
+        if ($tmp_name === $file) {
+            $tmp_name = $file . '_ori.pdf';
+        }
+
+        if (! is_file($file)) {
+            throw new \RuntimeException('PDF source missing for watermark.');
+        }
 
         if (! @rename($file, $tmp_name)) {
             throw new \RuntimeException('Gagal menyediakan PDF untuk watermark.');
         }
 
+        $gsOut = $original_name . '.gs.pdf';
+
         try {
             // Prefer Ghostscript 1.4 downgrade when it works (FPDI compatibility).
             // Write to a side file first — never overwrite the original with an empty gs output.
-            $gsOut = $original_name . '.gs.pdf';
             @unlink($gsOut);
             shell_exec(
                 'gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dNOPAUSE -dQUIET -dBATCH '
-                . '-sOutputFile=' . escapeshellarg($gsOut) . ' ' . escapeshellarg($tmp_name) . ' 2>/dev/null'
+                . '-sOutputFile=' . escapeshellarg($gsOut) . ' '
+                . escapeshellarg($tmp_name) . ' 2>/dev/null'
             );
-            $fpdiSource = $tmp_name;
-            if (is_file($gsOut) && filesize($gsOut) > 0) {
-                $fpdiSource = $gsOut;
-            }
 
-            if (! is_file($fpdiSource)) {
+            $fpdiSource = (is_file($gsOut) && filesize($gsOut) > 0) ? $gsOut : $tmp_name;
+            if (! is_file($fpdiSource) || filesize($fpdiSource) <= 0) {
                 throw new \RuntimeException('Source PDF not found for watermark.');
             }
 
             $pdf = new Fpdi();
             $pagecount = $pdf->setSourceFile($fpdiSource);
+            $hasPng = is_file($watermark_file);
 
             for ($i = 1; $i <= $pagecount; $i++) {
                 $tpl = $pdf->importPage($i);
                 $size = $pdf->getTemplateSize($tpl);
-                $pdf->addPage();
-                $pdf->useTemplate($tpl, 1, 1, $size['width'], $size['height'], true);
+                $orientation = ($size['width'] > $size['height']) ? 'L' : 'P';
+                $pdf->AddPage($orientation, [$size['width'], $size['height']]);
+                $pdf->useTemplate($tpl, 0, 0, $size['width'], $size['height'], false);
 
-                $watermark_x_pos = ($size['width'] - 80);
-                $watermark_y_pos = 3;
-                $pdf->Image($watermark_file, $watermark_x_pos, $watermark_y_pos, 0, 0, 'png');
+                // Top-right mark (~55mm), matching production samples.
+                $markW = 55;
+                $markX = max(2, $size['width'] - $markW - 8);
+                $markY = 4;
+
+                if ($hasPng) {
+                    $pdf->Image($watermark_file, $markX, $markY, $markW, 0, 'PNG');
+                } else {
+                    $pdf->SetTextColor(139, 69, 46);
+                    $pdf->SetFont('Helvetica', 'B', 11);
+                    $pdf->SetXY($markX, $markY);
+                    $pdf->Cell($markW, 6, 'Dokumen Meja Terkawal', 0, 0, 'R');
+                    $pdf->SetTextColor(0, 0, 0);
+                }
+
+                // Boxed ID stamp over the mark (e.g. "ID 8361").
+                if ($idLabel !== null && $idLabel !== '') {
+                    $pdf->SetFont('Helvetica', 'B', 8);
+                    $boxW = max(18, $pdf->GetStringWidth($idLabel) + 4);
+                    $boxH = 6;
+                    $boxX = $markX + ($markW / 2) - ($boxW / 2);
+                    $boxY = $markY + 3;
+                    $pdf->SetDrawColor(0, 0, 0);
+                    $pdf->SetLineWidth(0.3);
+                    $pdf->SetFillColor(255, 255, 255);
+                    $pdf->Rect($boxX, $boxY, $boxW, $boxH, 'DF');
+                    $pdf->SetTextColor(0, 0, 0);
+                    $pdf->SetXY($boxX, $boxY + 1);
+                    $pdf->Cell($boxW, 4, $idLabel, 0, 0, 'C');
+                }
             }
 
             $pdf->Output('F', $file);
@@ -270,7 +309,7 @@ trait Helper
             }
         } catch (\Throwable $e) {
             // Always put the original bytes back — never leave a 0-byte .pdf behind.
-            @unlink($original_name . '.gs.pdf');
+            @unlink($gsOut);
             if (is_file($tmp_name)) {
                 @unlink($file);
                 @rename($tmp_name, $original_name);

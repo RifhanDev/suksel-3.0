@@ -611,7 +611,7 @@ class PenyediaanIklanService
 
         if ($mime === 'application/pdf' && method_exists($tender, 'setWatermark')) {
             try {
-                $tender->setWatermark($fullPath, public_path('images/etender-dokumen-watermark.png'));
+                $tender->setWatermark($fullPath, public_path('images/etender-dokumen-watermark.png'), null);
             } catch (\Throwable $e) {
                 // Non-fatal: keep original PDF. setWatermark restores _ori on failure.
                 \Illuminate\Support\Facades\Log::warning('Meja terkawal watermark skipped', [
