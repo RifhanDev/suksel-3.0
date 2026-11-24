@@ -1679,34 +1679,38 @@ class TendersController extends Controller
 
 		$disposition = \App\Support\AttachmentStorage::contentDisposition('attachment', $downloadName);
 
-		// Dokumen Meja Terkawal MUST go through watermark — never fall back to raw NAS
-		// (that was why downloads "worked" with no stamp).
+		// Meja: watermark when possible, but ALWAYS deliver the file (never 500 the download).
 		if ($isMejaPdf) {
-			@set_time_limit(180);
-			$localCopy = $this->materializeUploadToTemp($file, $relative, $tender);
-			if (! $localCopy || ! is_file($localCopy) || filesize($localCopy) <= 0) {
-				\Illuminate\Support\Facades\Log::error('Meja download: cannot materialize source for watermark', [
+			try {
+				@set_time_limit(120);
+				@ini_set('memory_limit', '512M');
+				$localCopy = $this->materializeUploadToTemp($file, $relative, $tender);
+				if ($localCopy && is_file($localCopy) && filesize($localCopy) > 0) {
+					$toSend = $this->applyMejaWatermarkForDownload($localCopy);
+					if ($toSend && is_file($toSend) && filesize($toSend) > 0) {
+						return response()->file($toSend, [
+							'Content-Type' => 'application/pdf',
+							'Content-Disposition' => $disposition,
+						])->deleteFileAfterSend(true);
+					}
+					// Watermark failed — still return the materialized original.
+					\Illuminate\Support\Facades\Log::error('Meja watermark failed; serving file without stamp', [
+						'tender_id' => $tender_id,
+						'upload_id' => $id,
+					]);
+
+					return response()->file($localCopy, [
+						'Content-Type' => 'application/pdf',
+						'Content-Disposition' => $disposition,
+					])->deleteFileAfterSend(true);
+				}
+			} catch (\Throwable $e) {
+				\Illuminate\Support\Facades\Log::warning('Meja watermarked download exception; falling back to stream', [
 					'tender_id' => $tender_id,
 					'upload_id' => $id,
-					'relative' => $relative,
+					'error' => $e->getMessage(),
 				]);
-				abort(500, 'Gagal menyediakan dokumen meja terkawal untuk dimuat turun.');
 			}
-
-			$toSend = $this->applyMejaWatermarkForDownload($localCopy);
-			if (! $toSend || ! is_file($toSend) || filesize($toSend) <= 0) {
-				@unlink($localCopy);
-				\Illuminate\Support\Facades\Log::error('Meja watermark produced no file; not serving unwatermarked copy', [
-					'tender_id' => $tender_id,
-					'upload_id' => $id,
-				]);
-				abort(500, 'Gagal menerapkan watermark pada dokumen meja terkawal.');
-			}
-
-			return response()->file($toSend, [
-				'Content-Type' => 'application/pdf',
-				'Content-Disposition' => $disposition,
-			])->deleteFileAfterSend(true);
 		}
 
 		if ($relative !== '') {
