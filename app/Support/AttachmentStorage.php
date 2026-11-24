@@ -447,7 +447,11 @@ class AttachmentStorage
         return str_contains($mime, 'pdf') || str_starts_with($mime, 'image/');
     }
 
-    protected static function contentDisposition(string $type, string $name): string
+    /**
+     * RFC 5987 Content-Disposition — filenames with spaces/brackets otherwise make
+     * Chrome abort with "Site wasn't available".
+     */
+    public static function contentDisposition(string $type, string $name): string
     {
         $safeAscii = preg_replace('/[^\x20-\x7E]+/', '_', $name) ?: 'Dokumen';
         $safeAscii = str_replace(['"', '\\', "\r", "\n"], ['_', '_', '', ''], $safeAscii);
