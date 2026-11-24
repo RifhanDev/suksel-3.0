@@ -249,8 +249,9 @@ trait Helper
             // Try FPDI on original, then on Ghostscript 1.4 rewrite.
             $sources = [$tmp_name];
             @unlink($gsOut);
+            $gs = $this->ghostscriptBinary();
             shell_exec(
-                'gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dNOPAUSE -dQUIET -dBATCH '
+                escapeshellarg($gs) . ' -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dNOPAUSE -dQUIET -dBATCH '
                 . '-dNOOUTERSAVE -dAutoRotatePages=/None '
                 . '-sOutputFile=' . escapeshellarg($gsOut) . ' '
                 . escapeshellarg($tmp_name) . ' 2>/dev/null'
@@ -278,10 +279,11 @@ trait Helper
                 }
             }
 
-            // Last resort: rasterize pages + stamp (handles PDFs FPDI cannot parse).
+            // Lightweight Ghostscript text stamp — no full-page raster (that OOM/timeout
+            // on large meja PDFs and Chrome shows "Site wasn't available").
             if (! $stamped) {
                 try {
-                    $this->writeRasterWatermarkedPdf($tmp_name, $file, $idLabel);
+                    $this->writeGsTextWatermark($tmp_name, $file, $idLabel);
                     $stamped = true;
                     $lastError = null;
                 } catch (\Throwable $e) {
@@ -417,103 +419,78 @@ trait Helper
     }
 
     /**
-     * Rasterize PDF pages with Ghostscript, stamp text/ID via GD, rebuild with FPDF.
-     * Used when FPDI cannot parse the source PDF.
+     * Stamp text via Ghostscript EndPage (no raster). Works when FPDI cannot parse.
      */
-    protected function writeRasterWatermarkedPdf(string $sourcePdf, string $destPdf, ?string $idLabel): void
+    protected function writeGsTextWatermark(string $sourcePdf, string $destPdf, ?string $idLabel): void
     {
-        $dir = sys_get_temp_dir() . '/meja_wm_' . uniqid('', true);
-        if (! @mkdir($dir, 0755, true) && ! is_dir($dir)) {
-            throw new \RuntimeException('Gagal menyediakan folder watermark.');
+        $gs = $this->ghostscriptBinary();
+        $label = $this->gsEscape('Dokumen Meja Terkawal');
+        $id = $idLabel ? $this->gsEscape($idLabel) : '';
+
+        $idBlock = $id !== ''
+            ? "0 0 0 setrgbcolor\n0 -16 rmoveto\n({$id}) show\n"
+            : '';
+
+        $ps = <<<PS
+<<
+/EndPage {
+  exch pop
+  2 lt {
+    gsave
+      /Helvetica-Bold findfont 18 scalefont setfont
+      0.65 0.27 0.11 setrgbcolor
+      currentpagedevice /PageSize get aload pop
+      18 sub exch
+      220 sub exch
+      moveto
+      ({$label}) show
+      {$idBlock}
+    grestore
+    true
+  }{ pop false } ifelse
+} bind
+>> setpagedevice
+PS;
+
+        $psFile = tempnam(sys_get_temp_dir(), 'wmps_');
+        if ($psFile === false) {
+            throw new \RuntimeException('Gagal menulis skrip watermark.');
         }
+        $psPath = $psFile . '.ps';
+        @unlink($psFile);
+        file_put_contents($psPath, $ps);
 
-        try {
-            $pattern = $dir . '/page-%03d.jpg';
-            shell_exec(
-                'gs -dNOPAUSE -dBATCH -dQUIET -sDEVICE=jpeg -r120 -dJPEGQ=85 '
-                . '-sOutputFile=' . escapeshellarg($pattern) . ' '
-                . escapeshellarg($sourcePdf) . ' 2>/dev/null'
-            );
+        @unlink($destPdf);
+        $cmd = escapeshellarg($gs)
+            . ' -q -sDEVICE=pdfwrite -dNOPAUSE -dBATCH -dSAFER '
+            . '-sOutputFile=' . escapeshellarg($destPdf) . ' '
+            . escapeshellarg($psPath) . ' '
+            . escapeshellarg($sourcePdf) . ' 2>/dev/null';
+        shell_exec($cmd);
+        @unlink($psPath);
 
-            $pages = glob($dir . '/page-*.jpg') ?: [];
-            sort($pages);
-            if ($pages === []) {
-                throw new \RuntimeException('Ghostscript tidak dapat rasterize PDF untuk watermark.');
-            }
-
-            $pdf = new \FPDF('P', 'mm', 'A4');
-            foreach ($pages as $pageJpg) {
-                $stamped = $this->stampJpegWithMejaMark($pageJpg, $idLabel);
-                [$wPx, $hPx] = @getimagesize($stamped) ?: [1240, 1754];
-                $widthMm = 210;
-                $heightMm = $widthMm * ($hPx / max(1, $wPx));
-                $orientation = ($widthMm > $heightMm) ? 'L' : 'P';
-                $pdf->AddPage($orientation, [$widthMm, $heightMm]);
-                $pdf->Image($stamped, 0, 0, $widthMm, $heightMm, 'JPG');
-                if ($stamped !== $pageJpg) {
-                    @unlink($stamped);
-                }
-            }
-
-            $pdf->Output('F', $destPdf);
-            if (! is_file($destPdf) || filesize($destPdf) <= 0) {
-                throw new \RuntimeException('Raster watermark output empty.');
-            }
-        } finally {
-            foreach (glob($dir . '/*') ?: [] as $f) {
-                @unlink($f);
-            }
-            @rmdir($dir);
+        if (! is_file($destPdf) || filesize($destPdf) <= 0) {
+            throw new \RuntimeException('Ghostscript text watermark gagal.');
         }
     }
 
-    protected function stampJpegWithMejaMark(string $jpegPath, ?string $idLabel): string
+    protected function ghostscriptBinary(): string
     {
-        if (! function_exists('imagecreatefromjpeg')) {
-            return $jpegPath;
+        foreach (['/usr/bin/gs', '/usr/local/bin/gs', 'gs'] as $bin) {
+            if ($bin === 'gs') {
+                return 'gs';
+            }
+            if (is_executable($bin)) {
+                return $bin;
+            }
         }
 
-        $im = @imagecreatefromjpeg($jpegPath);
-        if (! $im) {
-            return $jpegPath;
-        }
+        return 'gs';
+    }
 
-        $w = imagesx($im);
-        $h = imagesy($im);
-        $brown = imagecolorallocate($im, 166, 68, 28);
-        $black = imagecolorallocate($im, 0, 0, 0);
-        $white = imagecolorallocate($im, 255, 255, 255);
-
-        $label = 'Dokumen Meja Terkawal';
-        $font = 5; // GD built-in font
-        $textW = imagefontwidth($font) * strlen($label);
-        $textH = imagefontheight($font);
-        $x = max(10, $w - $textW - 40);
-        $y = 20;
-        imagestring($im, $font, $x, $y, $label, $brown);
-
-        if ($idLabel) {
-            $idW = imagefontwidth($font) * strlen($idLabel) + 16;
-            $idH = $textH + 10;
-            $idX = (int) ($x + ($textW / 2) - ($idW / 2));
-            $idY = $y + $textH + 6;
-            imagefilledrectangle($im, $idX, $idY, $idX + $idW, $idY + $idH, $white);
-            imagerectangle($im, $idX, $idY, $idX + $idW, $idY + $idH, $black);
-            imagestring(
-                $im,
-                $font,
-                $idX + 8,
-                $idY + 5,
-                $idLabel,
-                $black
-            );
-        }
-
-        $out = $jpegPath . '.stamped.jpg';
-        imagejpeg($im, $out, 85);
-        imagedestroy($im);
-
-        return is_file($out) ? $out : $jpegPath;
+    protected function gsEscape(string $value): string
+    {
+        return str_replace(['\\', '(', ')'], ['\\\\', '\\(', '\\)'], $value);
     }
 
     public function encryptString(string $string)
