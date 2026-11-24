@@ -580,7 +580,7 @@
 										<td>{{ $upload->size }}</td>
 										<td>{{ $upload->type }}</td>
 										<td>
-											<a href="{{ $upload->url }}" class="btn btn-primary btn-xs" download="{{ method_exists($upload, 'downloadFilename') ? $upload->downloadFilename() : ($upload->label ?: $upload->name) }}">Muat Turun</a>
+											<a href="{{ route('tenders.files', [$tender->id, $upload->id]) }}" class="btn btn-primary btn-xs" download="{{ method_exists($upload, 'downloadFilename') ? $upload->downloadFilename() : ($upload->label ?: $upload->name) }}">Muat Turun</a>
 										</td>
 									</tr>
 								@endforeach
@@ -608,7 +608,7 @@
 												<td>{{ $upload->size }}</td>
 												<td>{{ $upload->type }}</td>
 												<td>
-													<a href="{{ $upload->url }}" class="btn btn-primary btn-xs" download="{{ method_exists($upload, 'downloadFilename') ? $upload->downloadFilename() : ($upload->label ?: $upload->name) }}">Muat
+													<a href="{{ route('tenders.files', [$tender->id, $upload->id]) }}" class="btn btn-primary btn-xs" download="{{ method_exists($upload, 'downloadFilename') ? $upload->downloadFilename() : ($upload->label ?: $upload->name) }}">Muat
 														Turun</a>
 												</td>
 											</tr>
