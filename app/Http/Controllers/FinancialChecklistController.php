@@ -7,6 +7,7 @@ use App\Http\Controllers\Concerns\UpdatesTenderProcessAfterChecklistSubmit;
 use App\Models\FinancialChecklistFile;
 use App\Models\FinancialChecklistHeader;
 use App\Models\FinancialChecklistItem;
+use App\Models\PenyataBank;
 use App\Models\Tender;
 use App\Services\StosBackendClient;
 use App\Support\PenyediaanIklanNavigation;
@@ -225,6 +226,53 @@ class FinancialChecklistController extends Controller
             }
         }
 
+        $specificationPricingStatuses = [];
+        try {
+            $pricingStatusResponse = $this->api()->get(
+                $this->url('specification-pricings/statuses/tender/' . $tenderUuid)
+            );
+            if ($pricingStatusResponse->successful()) {
+                foreach ($pricingStatusResponse->json('data') ?? [] as $pricingStatus) {
+                    $status = strtolower(trim((string) ($pricingStatus['status'] ?? '')));
+                    if ($status === '') {
+                        continue;
+                    }
+                    foreach (['technical_item_uuid', 'specification_document_uuid'] as $uuidKey) {
+                        $uuid = $pricingStatus[$uuidKey] ?? null;
+                        if ($uuid) {
+                            $specificationPricingStatuses[$uuid] = $status;
+                        }
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('FinancialChecklistController@index: Specification pricing status request failed', [
+                'tender_uuid' => $tenderUuid,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        if ($specificationPricingStatuses && ! empty($checklistData['items']) && is_array($checklistData['items'])) {
+            foreach ($checklistData['items'] as &$item) {
+                $isSpecification = ($item['source_type'] ?? '') === 'specification_document'
+                    || ($item['source_type'] ?? '') === 'specification'
+                    || ($item['mechanism'] ?? '') === 'spesifikasi';
+                if (! $isSpecification) {
+                    continue;
+                }
+
+                foreach (['technical_item_uuid', 'specification_document_uuid'] as $uuidKey) {
+                    $uuid = $item[$uuidKey] ?? null;
+                    if ($uuid && isset($specificationPricingStatuses[$uuid])) {
+                        $item['status'] = $specificationPricingStatuses[$uuid];
+                        $item['form_completed'] = in_array($item['status'], ['submitted', 'complete', 'completed'], true);
+                        break;
+                    }
+                }
+            }
+            unset($item);
+        }
+
         $standardItems = [];
         try {
             $standardApiUrl   = $this->url('standard-checklist-items?category=financial');
@@ -249,6 +297,72 @@ class FinancialChecklistController extends Controller
                 ->all();
         }
 
+        // The Maklumat Profil Petender row's Skema is configured in its own
+        // online form. Each scoring band is an alternative, so use the highest
+        // score per analysis and add the two analysis maxima together.
+        $profilPetenderSkema = 0.0;
+        $profilPetenderFormCompleted = false;
+        try {
+            $profilResponse = $this->api()->get($this->url('profil-petenders/' . $tenderUuid . '/scoring-summary'));
+            if ($profilResponse->successful()) {
+                $profilData = $profilResponse->json('data') ?? [];
+                $profilPetenderSkema = max(0, (float) ($profilData['skema_total'] ?? 0));
+                $profilPetenderFormCompleted = (bool) ($profilData['form_completed'] ?? false);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('FinancialChecklistController@index: Profil Petender API request failed', [
+                'tender_uuid' => $tenderUuid,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        // Penyata Bank keeps its scoring bands in SPS 3.0. Each band is an
+        // alternative, so the checklist receives the highest configured mark.
+        $penyataBank = PenyataBank::query()
+            ->with('scoringItems:id,penyata_bank_id,skema')
+            ->where('tender_id', $tender->id)
+            ->first();
+        $penyataBankScores = collect($penyataBank?->scoringItems ?? [])
+            ->pluck('skema')
+            ->map(fn ($score) => (float) $score)
+            ->filter(fn ($score) => $score > 0)
+            ->values();
+        $penyataBankSkema = (float) $penyataBankScores->max() ?: 0.0;
+        $penyataBankFormCompleted = $penyataBank !== null
+            && in_array($penyataBank->jenis_skor_purata, ['manual', 'automatik'], true)
+            && $penyataBankScores->isNotEmpty()
+            && $penyataBank->dari_bulan !== null
+            && $penyataBank->dari_tahun !== null;
+
+        $standardItemsByUuid = collect($standardItems)->keyBy('uuid');
+        if (!empty($checklistData['items']) && is_array($checklistData['items'])) {
+            foreach ($checklistData['items'] as &$item) {
+                if (($item['source_type'] ?? '') !== 'borang_atas_talian') {
+                    continue;
+                }
+
+                $standardItem = $standardItemsByUuid->get($item['standard_item_uuid'] ?? '');
+                $actionUrl = (string) ($item['action_url'] ?? data_get($standardItem, 'action_url', ''));
+                $title = mb_strtolower(trim((string) ($item['title'] ?? '')));
+                $isProfilPetender = rtrim(parse_url($actionUrl, PHP_URL_PATH) ?: $actionUrl, '/') === '/profil-petender'
+                    || str_contains($title, 'maklumat profil petender');
+                $isPenyataBank = rtrim(parse_url($actionUrl, PHP_URL_PATH) ?: $actionUrl, '/') === '/penyata-bank'
+                    || str_contains($title, 'penyata bank');
+
+                if (!$isProfilPetender && !$isPenyataBank) {
+                    continue;
+                }
+
+                $formCompleted = $isProfilPetender ? $profilPetenderFormCompleted : $penyataBankFormCompleted;
+                $score = $isProfilPetender ? $profilPetenderSkema : $penyataBankSkema;
+                $item[$isProfilPetender ? 'is_profil_petender_form' : 'is_penyata_bank_form'] = true;
+                $item['form_completed'] = $formCompleted;
+                $item['score'] = $score;
+                $item['status'] = $formCompleted && $score > 0 ? 'submitted' : 'draft';
+            }
+            unset($item);
+        }
+
         // Specification rows mirror the Serahan Tangan flag on their linked
         // technical checklist item.
         if (!empty($checklistData['items'])) {
@@ -269,6 +383,10 @@ class FinancialChecklistController extends Controller
             'physicalSubmissionEnabled' => (int) $tender->penilaian_fizikal === 1,
             'checklistData' => $checklistData,
             'standardItems' => $standardItems,
+            'profilPetenderSkema' => $profilPetenderSkema,
+            'profilPetenderFormCompleted' => $profilPetenderFormCompleted,
+            'penyataBankSkema' => $penyataBankSkema,
+            'penyataBankFormCompleted' => $penyataBankFormCompleted,
             'afterSpecificationUrl' => PenyediaanIklanNavigation::afterSpecificationUrl($tender),
         ]);
     }

@@ -1683,14 +1683,15 @@
 							ready: !!(res && res.ready),
 							errors: (res && res.errors) ? res.errors : [],
 						};
-						if (latestReadiness.errors.length) {
-							showErrors(latestReadiness.errors);
-						}
+						showErrors(latestReadiness.errors);
 						return latestReadiness;
 					});
 				}
 
 				fetchReadiness();
+				window.addEventListener('vendor-checklist-updated', function() {
+					fetchReadiness();
+				});
 
 				function submitTawaran($btn) {
 					$btn.prop('disabled', true);

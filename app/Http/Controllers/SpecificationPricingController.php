@@ -383,12 +383,13 @@ class SpecificationPricingController extends Controller
     private function submitLocalFallback(string $spesifikasiUuid): array
     {
         $techItem = DB::table('technical_checklist_items as tci')
+            ->join('technical_checklist_headers as tch', 'tch.id', '=', 'tci.technical_checklist_header_id')
             ->leftJoin('specification_pricings as sp', 'sp.technical_checklist_item_id', '=', 'tci.id')
             ->leftJoin('technical_specification_documents as tsd', 'tsd.id', '=', 'tci.specification_document_id')
             ->where('tci.uuid', $spesifikasiUuid)
             ->orWhere('sp.uuid', $spesifikasiUuid)
             ->orWhere('tsd.uuid', $spesifikasiUuid)
-            ->select('tci.id as tci_id')
+            ->select('tci.id as tci_id', 'tci.title as title', 'tch.tender_id')
             ->first();
 
         if ($techItem) {
@@ -397,13 +398,24 @@ class SpecificationPricingController extends Controller
                 ->update(['status' => 'submitted', 'updated_at' => now()]);
 
             DB::table('financial_checklist_items')
-                ->where('technical_item_id', $techItem->tci_id)
-                ->orWhere('source_type', 'specification_document')
+                ->whereIn('financial_checklist_header_id', DB::table('financial_checklist_headers')
+                    ->where('tender_id', $techItem->tender_id)
+                    ->select('id'))
+                ->where(function ($query) use ($techItem) {
+                    $query->where('technical_item_id', $techItem->tci_id)
+                        ->orWhere(function ($fallback) use ($techItem) {
+                            $fallback->whereNull('technical_item_id')
+                                ->where('title', $techItem->title)
+                                ->where(function ($type) {
+                                    $type->where('source_type', 'specification_document')
+                                        ->orWhere('mechanism', 'spesifikasi');
+                                });
+                        });
+                })
                 ->update(['status' => 'submitted', 'updated_at' => now()]);
         } else {
             DB::table('financial_checklist_items')
                 ->where('uuid', $spesifikasiUuid)
-                ->orWhere('source_type', 'specification_document')
                 ->update(['status' => 'submitted', 'updated_at' => now()]);
         }
 

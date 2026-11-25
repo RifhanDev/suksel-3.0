@@ -14,9 +14,12 @@ use Illuminate\Support\Facades\Auth;
  */
 class LegacyApiCompatibilityMiddleware
 {
-    public function handle($request, Closure $next, string $ability, string $legacySource = 'bearer')
+    public function handle($request, Closure $next, string $ability, string ...$legacySources)
     {
-        if (!in_array($legacySource, ['bearer', 'body'], true)) {
+        $legacySources = $legacySources ?: ['bearer'];
+        $legacySources = array_values(array_unique($legacySources));
+
+        if ($legacySources === [] || array_diff($legacySources, ['bearer', 'body']) !== []) {
             return $this->unauthorized('Invalid API authentication configuration.');
         }
 
@@ -32,11 +35,18 @@ class LegacyApiCompatibilityMiddleware
             ], 400);
         }
 
-        // Sanctum itself parses and validates the bearer token. A valid Sanctum
-        // identity with insufficient ability is rejected, never downgraded to
-        // legacy-key authentication.
-        $sanctumPrincipal = $bearerToken ? Auth::guard('sanctum')->user() : null;
-        if ($sanctumPrincipal !== null) {
+        // Sanctum personal access tokens use the "id|secret" format. Treat
+        // that format as Sanctum-only: if it is invalid or revoked, do not
+        // retry the same credential against the legacy key table.
+        $isSanctumToken = is_string($bearerToken)
+            && preg_match('/^\d+\|.+$/s', $bearerToken) === 1;
+
+        if ($isSanctumToken) {
+            $sanctumPrincipal = Auth::guard('sanctum')->user();
+            if ($sanctumPrincipal === null) {
+                return $this->unauthorized();
+            }
+
             if (!$sanctumPrincipal instanceof ApiClient || !$sanctumPrincipal->isActive()) {
                 return $this->unauthorized();
             }
@@ -76,7 +86,13 @@ class LegacyApiCompatibilityMiddleware
             return $next($request);
         }
 
-        $legacyToken = $legacySource === 'body' ? $bodyToken : $bearerToken;
+        $legacyToken = null;
+        if ($bearerToken && in_array('bearer', $legacySources, true)) {
+            $legacyToken = $bearerToken;
+        } elseif (is_string($bodyToken) && trim($bodyToken) !== '' && in_array('body', $legacySources, true)) {
+            $legacyToken = $bodyToken;
+        }
+
         if (!is_string($legacyToken) || trim($legacyToken) === '') {
             return $this->unauthorized();
         }

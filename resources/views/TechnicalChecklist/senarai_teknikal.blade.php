@@ -554,6 +554,7 @@
 @endpush
 
 @section('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="{{ asset('js/components/file-upload.js') }}"></script>
     <script type="text/javascript">
         $(document).ready(function() {
@@ -1582,6 +1583,23 @@
             });
 
             function doHantar() {
+                var hasSpecification = collectItems().some(function(item) {
+                    return item.source_type === 'specification_document'
+                        && !!item.specification_document_uuid;
+                });
+                if (!hasSpecification) {
+                    Swal.fire({
+                        title: 'Spesifikasi Diperlukan',
+                        text: 'Sila cipta dan tambah sekurang-kurangnya satu Spesifikasi sebelum klik Hantar.',
+                        icon: 'warning',
+                        confirmButtonText: 'Baik',
+                        confirmButtonColor: '#1e293b',
+                        heightAuto: false,
+                        scrollbarPadding: false
+                    });
+                    return;
+                }
+
                 var skemaMaksima = parseInt($('#skema-maksima-display').val()) || 0;
                 var penilaian    = parseInt($('#input-penilaian').val()) || 0;
                 if (skemaMaksima > 0 && penilaian > skemaMaksima) {
@@ -1603,8 +1621,20 @@
                         error: function(xhr) {
                             hideOverlay();
                             var msg = 'Ralat semasa menghantar.';
-                            if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
-                            alert(msg);
+                            if (xhr.responseJSON && xhr.responseJSON.errors && xhr.responseJSON.errors.specification) {
+                                msg = xhr.responseJSON.errors.specification[0];
+                            } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                                msg = xhr.responseJSON.message;
+                            }
+                            Swal.fire({
+                                title: 'Ralat',
+                                text: msg,
+                                icon: 'error',
+                                confirmButtonText: 'Tutup',
+                                confirmButtonColor: '#1e293b',
+                                heightAuto: false,
+                                scrollbarPadding: false
+                            });
                             if (window.SukselSubmitGuard) {
                                 window.SukselSubmitGuard.unlockAllSoft();
                             }
@@ -1612,7 +1642,15 @@
                     });
                 }, function() {
                     hideOverlay();
-                    alert('Ralat semasa menyimpan sebelum hantar. Sila cuba lagi.');
+                    Swal.fire({
+                        title: 'Ralat',
+                        text: 'Ralat semasa menyimpan sebelum hantar. Sila cuba lagi.',
+                        icon: 'error',
+                        confirmButtonText: 'Tutup',
+                        confirmButtonColor: '#1e293b',
+                        heightAuto: false,
+                        scrollbarPadding: false
+                    });
                     if (window.SukselSubmitGuard) {
                         window.SukselSubmitGuard.unlockAllSoft();
                     }

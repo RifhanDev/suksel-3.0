@@ -80,6 +80,29 @@ class SenaraiKewanganKerjaController extends Controller
             }
         }
 
+        $penyataBankSummary = $this->penyataBankChecklistSummary($tender);
+        if (! empty($checklistData['items']) && is_array($checklistData['items'])) {
+            foreach ($checklistData['items'] as &$item) {
+                $title = mb_strtolower(trim((string) ($item['title'] ?? '')));
+                $actionPath = rtrim(parse_url((string) ($item['action_url'] ?? ''), PHP_URL_PATH) ?: '', '/');
+                $isPenyataBankItem = ($item['source_type'] ?? '') === 'borang_atas_talian'
+                    && ($actionPath === '/penyata-bank' || str_contains($title, 'penyata bulanan / akaun bank'));
+
+                if (! $isPenyataBankItem) {
+                    continue;
+                }
+
+                $item['is_penyata_bank_form'] = true;
+                $item['form_updated'] = $penyataBankSummary['form_completed'];
+                $item['form_completed'] = $penyataBankSummary['form_completed'];
+                $item['score'] = $penyataBankSummary['skema'];
+                $item['status'] = $penyataBankSummary['form_completed'] && $penyataBankSummary['skema'] > 0
+                    ? 'submitted'
+                    : 'draft';
+            }
+            unset($item);
+        }
+
         // Collect standard_item_uuids currently in use in tbl-kewangan
         $usedStandardUuids = array_values(array_filter(
             array_map(fn ($item) => $item['standard_item_uuid'] ?? null, $checklistData['items'] ?? [])
@@ -302,7 +325,8 @@ class SenaraiKewanganKerjaController extends Controller
 
     private function serializeLocalKewanganKerja(KewanganKerjaHeader $header, Tender $tender): array
     {
-        $penyataBankFormUpdated = $this->isPenyataBankFormUpdated($tender);
+        $penyataBankSummary = $this->penyataBankChecklistSummary($tender);
+        $penyataBankFormUpdated = $penyataBankSummary['form_completed'];
 
         return [
             'uuid' => $header->uuid,
@@ -312,7 +336,7 @@ class SenaraiKewanganKerjaController extends Controller
             'passing_percentage' => (float) $header->passing_percentage,
             'status' => $header->status,
             'submitted_at' => optional($header->submitted_at)->toIso8601String(),
-            'items' => $header->items->map(function ($item) use ($tender, $penyataBankFormUpdated) {
+            'items' => $header->items->map(function ($item) use ($tender, $penyataBankFormUpdated, $penyataBankSummary) {
                 $isPenyataBankItem = $item->title === 'Penyata Bulanan / Akaun Bank';
                 $mechanism = $item->mechanism;
                 $vendorAction = $item->vendor_action;
@@ -329,9 +353,9 @@ class SenaraiKewanganKerjaController extends Controller
                     'mechanism' => $mechanism,
                     'vendor_action' => $vendorAction,
                     'penghantaran_fizikal' => (int) $tender->penilaian_fizikal === 1 && (bool) $item->penghantaran_fizikal,
-                    'score' => (float) $item->score,
+                    'score' => $isPenyataBankItem ? $penyataBankSummary['skema'] : (float) $item->score,
                     'status' => $isPenyataBankItem
-                        ? ($penyataBankFormUpdated && (float) $item->score > 0 ? 'submitted' : 'draft')
+                        ? ($penyataBankFormUpdated && $penyataBankSummary['skema'] > 0 ? 'submitted' : 'draft')
                         : $item->status,
                     'form_updated' => $isPenyataBankItem ? $penyataBankFormUpdated : true,
                     'sort_order' => (int) $item->sort_order,
@@ -365,13 +389,27 @@ class SenaraiKewanganKerjaController extends Controller
         ];
     }
 
-    private function isPenyataBankFormUpdated(Tender $tender): bool
+    private function penyataBankChecklistSummary(Tender $tender): array
     {
-        $penyata = PenyataBank::where('tender_id', $tender->id)->first();
-
-        return $penyata !== null
+        $penyata = PenyataBank::query()
+            ->with('scoringItems:id,penyata_bank_id,skema')
+            ->where('tender_id', $tender->id)
+            ->first();
+        $scores = collect($penyata?->scoringItems ?? [])
+            ->pluck('skema')
+            ->map(fn ($score) => (float) $score)
+            ->filter(fn ($score) => $score > 0);
+        $hasScoringSetup = $penyata !== null
+            && in_array($penyata->jenis_skor_purata, ['manual', 'automatik'], true)
+            && $scores->isNotEmpty();
+        $formCompleted = $hasScoringSetup
             && $penyata->dari_bulan !== null
             && $penyata->dari_tahun !== null;
+
+        return [
+            'skema' => (float) $scores->max() ?: 0.0,
+            'form_completed' => $formCompleted,
+        ];
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────

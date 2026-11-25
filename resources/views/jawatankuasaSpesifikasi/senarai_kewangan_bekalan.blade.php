@@ -493,6 +493,10 @@
             var sokonganFiles   = @json($checklistData['files'] ?? []);
             var IS_SUBMITTED    = @json(($checklistData['status'] ?? null) === 'submitted');
             var PHYSICAL_SUBMISSION_ENABLED = @json($physicalSubmissionEnabled);
+            var PROFILE_PETENDER_SKEMA = @json((float) ($profilPetenderSkema ?? 0));
+            var PROFILE_PETENDER_FORM_COMPLETED = @json((bool) ($profilPetenderFormCompleted ?? false));
+            var PENYATA_BANK_SKEMA = @json((float) ($penyataBankSkema ?? 0));
+            var PENYATA_BANK_FORM_COMPLETED = @json((bool) ($penyataBankFormCompleted ?? false));
 
             function physicalSubmissionCell(value, locked, mechanism, isSpecification) {
                 if (!PHYSICAL_SUBMISSION_ENABLED) return '';
@@ -538,7 +542,9 @@
 
             function normalizeSourceType(sourceType, item) {
                 sourceType = valueOr(sourceType, item && item.standard_item_uuid ? 'standard_item' : 'manual');
-                return sourceType === 'standard' ? 'standard_item' : sourceType;
+                if (sourceType === 'standard') return 'standard_item';
+                if (sourceType === 'specification') return 'specification_document';
+                return sourceType;
             }
 
             function statusMeta(status) {
@@ -565,17 +571,9 @@
                     && parsedValue > 0;
             }
 
-            function isStandardChecklistRow($row) {
-                var sourceType = normalizeSourceType($row.data('source-type'), {
-                    standard_item_uuid: $row.data('standard-item-uuid') || null
-                });
-
-                return sourceType === 'standard_item';
-            }
-
             function hasTajukValue($row) {
-                var val = $row.find('input[name="tajuk_dokumen[]"]').val();
-                return val !== null && val !== undefined && String(val).trim() !== '';
+                var value = $row.find('input[name="tajuk_dokumen[]"]').val();
+                return value !== null && value !== undefined && String(value).trim() !== '';
             }
 
             function updateRowCompletionStatus($row) {
@@ -583,27 +581,51 @@
                     standard_item_uuid: $row.data('standard-item-uuid') || null
                 });
                 var rawMechanism    = String($row.find('.mekanisma-select').val() || $row.data('mechanism') || '').toLowerCase();
-                var mechanismLabel  = String($row.find('td:nth-child(3)').text() || '').toLowerCase();
-                var isBorangAtasTalian = (sourceType === 'borang_atas_talian' || rawMechanism === 'borang_atas_talian' || mechanismLabel.indexOf('borang atas talian') !== -1);
+                var isSpecification = sourceType === 'specification_document' || rawMechanism === 'spesifikasi';
+                var isScoredOnlineForm = $row.data('profile-petender-form') === true
+                    || String($row.data('profile-petender-form')) === '1'
+                    || $row.data('penyata-bank-form') === true
+                    || String($row.data('penyata-bank-form')) === '1';
 
-                if (!isBorangAtasTalian) {
+                if (isScoredOnlineForm) {
                     var hasSkema = hasSkemaValue($row);
-                    setRowStatus($row, hasSkema ? 'submitted' : 'draft');
+                    var formCompleted = $row.data('form-completed') === true
+                        || String($row.data('form-completed')) === '1';
+                    setRowStatus($row, hasSkema && formCompleted ? 'submitted' : 'draft');
                     return;
                 }
 
-                var mechanism       = normalizeMechanism(rawMechanism);
+                if (isSpecification) {
+                    var specificationCompleted = $row.data('form-completed') === true
+                        || String($row.data('form-completed')) === '1';
+                    setRowStatus($row, specificationCompleted ? 'submitted' : 'draft');
+                    return;
+                }
+
+                var mechanism = normalizeMechanism(rawMechanism);
                 var hasUploadedFile = $row.find('.dokumen-ptj-ours').length > 0;
 
                 if (sourceType === 'standard_item') {
-                    var isComplete = mechanism === 'ptj_muat_naik' && hasUploadedFile && hasSkemaValue($row);
-                    setRowStatus($row, isComplete ? 'submitted' : 'draft');
-                } else if (sourceType === 'manual') {
-                    var hasTajuk  = hasTajukValue($row);
-                    var hasSkema  = hasSkemaValue($row);
+                    var standardComplete = hasSkemaValue($row)
+                        && (mechanism !== 'ptj_muat_naik' || hasUploadedFile);
+                    setRowStatus($row, standardComplete ? 'submitted' : 'draft');
+                    return;
+                }
+
+                if (sourceType === 'manual') {
+                    var hasTitle = hasTajukValue($row);
                     var needsFile = mechanism === 'ptj_muat_naik';
-                    var isComplete = hasTajuk && hasSkema && (!needsFile || hasUploadedFile);
-                    setRowStatus($row, isComplete ? 'submitted' : 'draft');
+                    var manualComplete = hasTitle
+                        && hasSkemaValue($row)
+                        && (!needsFile || hasUploadedFile);
+                    setRowStatus($row, manualComplete ? 'submitted' : 'draft');
+                    return;
+                }
+
+                // Other Borang Atas Talian rows have no separate form
+                // completion signal, so their completion depends on Skema.
+                if (sourceType === 'borang_atas_talian' || rawMechanism === 'borang_atas_talian') {
+                    setRowStatus($row, hasSkemaValue($row) ? 'submitted' : 'draft');
                 }
             }
 
@@ -617,7 +639,17 @@
             function buildInitialRow(data) {
                 var tindakanUrl = valueOr(data.tindakanUrl, '#');
                 var isSpec = (data.source_type === 'specification_document' || data.mechanism === 'spesifikasi');
-                var skemaReadonlyAttr = isSpec ? ' readonly style="max-width:90px;margin:0 auto;background:#f8fafc;"' : ' style="max-width:90px;margin:0 auto;"';
+                var isProfilPetenderForm = data.isProfilPetenderForm === true;
+                var isPenyataBankForm = data.isPenyataBankForm === true;
+                var statusMeansFormCompleted = ['submitted', 'complete', 'completed'].indexOf(String(data.statusKey || '').toLowerCase()) !== -1;
+                var formCompleted = isSpec
+                    ? (data.formCompleted === true || String(data.formCompleted) === '1' || statusMeansFormCompleted)
+                    : (data.formCompleted === true
+                        || String(data.formCompleted) === '1'
+                        || (!isProfilPetenderForm && !isPenyataBankForm && statusMeansFormCompleted));
+                var skemaReadonlyAttr = (isSpec || isProfilPetenderForm || isPenyataBankForm)
+                    ? ' readonly style="max-width:90px;margin:0 auto;background:#f8fafc;"'
+                    : ' style="max-width:90px;margin:0 auto;"';
                 return $(
                     '<tr class="initial-row"' +
                     ' data-row-uuid="' + (data.uuid || '') + '"' +
@@ -626,6 +658,9 @@
                     ' data-mechanism="' + (data.mechanism || '') + '"' +
                     ' data-standard-item-uuid="' + (data.standard_item_uuid || '') + '"' +
                     ' data-technical-item-uuid="' + (data.technical_item_uuid || '') + '"' +
+                    ' data-form-completed="' + (formCompleted ? '1' : '0') + '"' +
+                    ' data-profile-petender-form="' + (isProfilPetenderForm ? '1' : '0') + '"' +
+                    ' data-penyata-bank-form="' + (isPenyataBankForm ? '1' : '0') + '"' +
                     '>' +
                     '<td class="text-center"><span class="text-muted" style="font-size:0.75rem;" title="Data daripada sistem">—</span></td>' +
                     '<td><span class="small fw-semibold">' + $('<span>').text(valueOr(data.tajuk, '')).html() + '</span></td>' +
@@ -686,10 +721,12 @@
             // Render rows on page load — locked for spec/borang items, editable for manual/standard
             var seenSpecKeys = {};
             checklistItems.forEach(function(item) {
+                var originalMechanism = String(item.mechanism || '').toLowerCase();
                 item.source_type = normalizeSourceType(item.source_type, item);
-                item.mechanism = normalizeMechanism(item.mechanism);
-
-                var isSpec = item.source_type === 'specification_document' || item.mechanism === 'spesifikasi';
+                var isSpec = item.source_type === 'specification_document' || originalMechanism === 'spesifikasi';
+                item.mechanism = isSpec ? 'spesifikasi' : normalizeMechanism(item.mechanism);
+                if (isSpec) item.source_type = 'specification_document';
+                var statusMeansFormCompleted = ['submitted', 'complete', 'completed'].indexOf(String(item.status || '').toLowerCase()) !== -1;
                 if (isSpec) {
                     var specKey = item.specification_document_uuid || item.technical_item_uuid || item.title || item.uuid;
                     if (seenSpecKeys[specKey]) {
@@ -718,6 +755,13 @@
                         statusKey:           item.status,
                         status:              s.label,
                         statusClass:         s.cls,
+                        formCompleted:       isSpec
+                            ? (item.form_completed === true || String(item.form_completed) === '1' || statusMeansFormCompleted)
+                            : (item.form_completed !== undefined
+                                ? (item.form_completed === true || String(item.form_completed) === '1')
+                                : statusMeansFormCompleted),
+                        isProfilPetenderForm: item.is_profil_petender_form === true,
+                        isPenyataBankForm:    item.is_penyata_bank_form === true,
                         dokumen:             '—',
                         tindakanUrl:         tindakanUrl,
                         mechanism:           item.mechanism,
@@ -1160,15 +1204,24 @@
 
             function buildBorangAtasTalianRow(tajuk, actionUrl, standardItemUuid) {
                 var routeUrl = actionUrl ? (actionUrl.startsWith('/') || actionUrl.startsWith('http') ? actionUrl : '/' + actionUrl + '/' + TENDER_UUID) : '';
+                var normalizedActionPath = String(actionUrl || '').split('?')[0].replace(/\/+$/, '').toLowerCase();
+                var isProfilPetenderForm = normalizedActionPath === '/profil-petender'
+                    || String(tajuk || '').toLowerCase().indexOf('maklumat profil petender') !== -1;
+                var isPenyataBankForm = normalizedActionPath === '/penyata-bank'
+                    || String(tajuk || '').toLowerCase().indexOf('penyata bank') !== -1;
+                var skema = isProfilPetenderForm ? PROFILE_PETENDER_SKEMA : (isPenyataBankForm ? PENYATA_BANK_SKEMA : 0);
+                var formCompleted = isProfilPetenderForm ? PROFILE_PETENDER_FORM_COMPLETED : (isPenyataBankForm && PENYATA_BANK_FORM_COMPLETED);
+                var isScoredOnlineForm = isProfilPetenderForm || isPenyataBankForm;
+                var skemaReadonlyAttr = isScoredOnlineForm ? ' readonly style="max-width:90px;margin:0 auto;background:#f8fafc;"' : ' style="max-width:90px;margin:0 auto;"';
                 var stdAttr  = standardItemUuid ? ' data-standard-item-uuid="' + $('<span>').text(standardItemUuid).html() + '"' : '';
                 var $row = $(
-                    '<tr data-source-type="borang_atas_talian"' + stdAttr + '>' +
+                    '<tr data-source-type="borang_atas_talian" data-form-completed="' + (formCompleted ? '1' : '0') + '" data-profile-petender-form="' + (isProfilPetenderForm ? '1' : '0') + '" data-penyata-bank-form="' + (isPenyataBankForm ? '1' : '0') + '"' + stdAttr + '>' +
                     '<td class="text-center"><input type="checkbox" name="row_check_kewangan[]" class="form-check-input row-check-kewangan"></td>' +
                     '<td><span class="small fw-semibold">' + $('<span>').text(tajuk).html() + '</span></td>' +
                     '<td class="text-center"><span class="small fw-semibold text-muted">Borang Atas Talian</span></td>' +
                     '<td class="text-center small">Kunci Masuk</td>' +
                     '<td class="text-center">' +
-                        '<input type="number" name="skema[]" class="form-control form-control-sm text-center skema-input fw-semibold" value="0" min="0" style="max-width:90px;margin:0 auto;">' +
+                        '<input type="number" name="skema[]" class="form-control form-control-sm text-center skema-input fw-semibold" value="' + skema + '" min="0"' + skemaReadonlyAttr + '>' +
                     '</td>' +
                     '<td class="text-center"><span class="badge-status badge-status-warning">Draf</span></td>' +
                     '<td class="text-center text-muted small">—</td>' +
@@ -1179,6 +1232,7 @@
                 if (standardItemUuid) {
                     $row.data('standard-item-uuid', standardItemUuid);
                 }
+                updateRowCompletionStatus($row);
                 return $row;
             }
 
