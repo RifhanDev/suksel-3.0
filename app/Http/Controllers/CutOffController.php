@@ -145,7 +145,7 @@ class CutOffController extends Controller
                     'freak' => $isFreak,
                     'failed' => $failed,
                     'is_aj' => $isAj,
-                    'status' => $isAj ? null : ($r['status'] ?? ($failed ? 'Gagal' : 'Lulus')),
+                    'status' => $isAj ? null : ($r['status'] ?? ($failed ? 'Tidak Lengkap' : 'Lengkap')),
                     'selectable' => ! $isAj && ! $failed && $tendPrice !== null,
                 ];
             });
