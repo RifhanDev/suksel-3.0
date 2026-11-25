@@ -301,7 +301,7 @@
                         <th>Z-score</th>
                         <th>%BWAJ</th>
                         <th>%BWAM</th>
-                        <th>Status</th>
+                        <th>Status Pembuka</th>
                         <th class="text-center" style="width:10%;">
                             <div class="d-inline-flex align-items-center gap-1">
                                 Pilih
@@ -329,9 +329,9 @@
                             @if (!empty($r['is_aj']))
                                 <span class="text-muted">—</span>
                             @elseif (!empty($r['failed']))
-                                <span class="badge bg-danger">{{ $r['status'] ?? 'Gagal' }}</span>
+                                <span class="badge bg-danger">{{ $r['status'] ?? 'Tidak Lengkap' }}</span>
                             @else
-                                <span class="badge bg-success">{{ $r['status'] ?? 'Lulus' }}</span>
+                                <span class="badge bg-success">{{ $r['status'] ?? 'Lengkap' }}</span>
                             @endif
                         </td>
                         <td class="text-center">
