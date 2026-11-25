@@ -66,6 +66,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            // Legacy API routes support Sanctum tokens and approved STOS keys.
+            'api.compat' => \App\Http\Middleware\LegacyApiCompatibilityMiddleware::class,
             // Restricts an action to the Pengerusi of a given jawatankuasa,
             // e.g. ->middleware('committee.pengerusi:open')
             'committee.pengerusi' => \App\Http\Middleware\EnsureCommitteeChairperson::class,
