@@ -528,6 +528,7 @@ $(document).ready(function () {
         var isPenyataBankRow = (data.tajuk || '').trim() === 'Penyata Bulanan / Akaun Bank';
         var scoreValue = data.score;
         if (isPenyataBankRow && (parseFloat(scoreValue) || 0) <= 0) scoreValue = '';
+        var scoreReadonlyAttr = isPenyataBankRow ? ' readonly style="max-width:90px;margin:0 auto;background:#f8fafc;"' : ' style="max-width:90px;margin:0 auto;"';
 
         var kemaskiniButton = '-';
 
@@ -548,7 +549,7 @@ $(document).ready(function () {
             '<td><span class="small fw-semibold">' + htmlEscape(data.tajuk) + '</span></td>' +
             '<td class="text-center"><span class="small fw-semibold text-muted">' + data.mekanisma + '</span></td>' +
             '<td class="text-center small">' + data.tindakanPembekal + '</td>' +
-            '<td class="text-center"><input type="number" name="skema[]" class="form-control form-control-sm text-center skema-input fw-semibold" value="' + (scoreValue ?? '') + '" min="' + (isPenyataBankRow ? '0.01' : '0') + '" step="' + (isPenyataBankRow ? '0.01' : '1') + '" style="max-width:90px;margin:0 auto;"></td>' +
+            '<td class="text-center"><input type="number" name="skema[]" class="form-control form-control-sm text-center skema-input fw-semibold" value="' + (scoreValue ?? '') + '" min="' + (isPenyataBankRow ? '0.01' : '0') + '" step="' + (isPenyataBankRow ? '0.01' : '1') + '"' + scoreReadonlyAttr + '></td>' +
             '<td class="text-center"><span class="badge-status ' + data.statusClass + '">' + data.status + '</span></td>' +
             '<td class="text-center text-muted small rujukan-cell">—</td>' +
             '<td class="text-center">' + kemaskiniButton + '</td>' +

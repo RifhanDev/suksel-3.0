@@ -104,7 +104,7 @@
                             <div class="mt-1 bq-vendor-status {{ ($dok['vendor_status'] ?? '') === 'submitted' ? '' : 'd-none' }}">
                                 <span class="badge-status badge-status-success" style="font-size:0.65rem;">Selesai</span>
                             </div>
-                        @elseif ($mode === 'vendor' && $vendorCanEdit && ($dok['action'] ?? '') === 'download_upload')
+                        @elseif ($mode === 'vendor' && $vendorCanEdit && in_array(($dok['action'] ?? ''), ['vendor_upload', 'download_upload'], true))
                             <div class="mt-1 file-vendor-status {{ ($dok['vendor_status'] ?? '') === 'submitted' ? '' : 'd-none' }}">
                                 <span class="badge-status badge-status-success" style="font-size:0.65rem;">Selesai</span>
                             </div>
@@ -286,6 +286,7 @@
                 list.appendChild(li);
                 syncBqCompletionBadge(zone.closest('.dokumen-checklist-detail'));
                 syncFileCompletionBadge(zone.closest('.dokumen-checklist-detail'));
+                window.dispatchEvent(new CustomEvent('vendor-checklist-updated'));
             })
             .catch(function (err) {
                 if (zone.getAttribute('data-single-file') === '1') {
@@ -327,6 +328,7 @@
                 if (row) row.remove();
                 syncBqCompletionBadge(detailRow);
                 syncFileCompletionBadge(detailRow);
+                window.dispatchEvent(new CustomEvent('vendor-checklist-updated'));
             })
             .catch(function (err) { alert(err.message || 'Ralat.'); });
         });

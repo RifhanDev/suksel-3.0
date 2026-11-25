@@ -239,17 +239,17 @@ class TenderDokumenPresenter
         $financialQuery = FinancialChecklistItem::query()
             ->whereHas('header', fn ($query) => $query->where('tender_id', $this->tender->id));
 
-        if ($mode === 'vendor') {
-            $financialQuery->whereNull('technical_item_id')
-                ->where(function ($query) {
-                    $query->whereNotIn('source_type', ['specification_document', 'specification'])
-                        ->orWhereNull('source_type');
-                })
-                ->where(function ($query) {
-                    $query->where('mechanism', '!=', 'spesifikasi')
-                        ->orWhereNull('mechanism');
-                });
-        }
+        // Spesifikasi already appears from the technical checklist above.
+        // Exclude its linked financial copy in both admin and vendor views.
+        $financialQuery->whereNull('technical_item_id')
+            ->where(function ($query) {
+                $query->whereNotIn('source_type', ['specification_document', 'specification'])
+                    ->orWhereNull('source_type');
+            })
+            ->where(function ($query) {
+                $query->where('mechanism', '!=', 'spesifikasi')
+                    ->orWhereNull('mechanism');
+            });
 
         $financial = $financialQuery
             ->orderBy('sort_order')

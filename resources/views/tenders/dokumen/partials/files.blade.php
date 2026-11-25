@@ -50,7 +50,7 @@
             </div>
             @if ($mode === 'vendor' && $vendorCanEdit && $bqTemplateMode)
                 <span class="badge-status badge-status-success bq-vendor-detail-status {{ ($dok['vendor_status'] ?? '') === 'submitted' ? '' : 'd-none' }}" style="font-size:0.68rem;">Selesai</span>
-            @elseif ($mode === 'vendor' && $vendorCanEdit && $action === 'download_upload')
+            @elseif ($mode === 'vendor' && $vendorCanEdit && in_array($action, ['vendor_upload', 'download_upload'], true))
                 <span class="badge-status badge-status-success file-vendor-detail-status {{ ($dok['vendor_status'] ?? '') === 'submitted' ? '' : 'd-none' }}" style="font-size:0.68rem;">Selesai</span>
             @elseif ($mode === 'vendor' && ($dok['vendor_status'] ?? '') === 'submitted')
                 <span class="badge-status badge-status-success" style="font-size:0.68rem;">Selesai</span>
