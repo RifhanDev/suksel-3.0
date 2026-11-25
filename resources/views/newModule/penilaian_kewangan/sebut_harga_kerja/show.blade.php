@@ -2025,7 +2025,8 @@ window.type2State = {
             tr.innerHTML = `
                 <td class="text-center font-monospace fw-bold text-dark py-2.5">${v.kod}</td>
                 <td class="fw-semibold text-dark py-2.5">
-                    <div>${this.escapeAttr(v.name)} <span class="extra-small text-muted fw-normal">(${this.escapeAttr(v.cidb)})</span></div>
+                    <div>${this.escapeAttr(v.name)}</div>
+                    <div class="extra-small text-muted fw-normal">${this.escapeAttr(v.cidb)}</div>
                 </td>
                 ${doc.is_bq_template ? `<td class="text-end py-2.5 font-monospace fw-semibold text-dark">${this.escapeAttr(v.harga_tawaran || '-')}</td>` : ''}
                 <td class="py-2.5">
