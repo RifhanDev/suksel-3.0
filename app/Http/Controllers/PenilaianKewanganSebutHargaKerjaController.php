@@ -76,7 +76,7 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
 
         $numericRefs = array_values(array_filter($cutOffRefs, fn ($ref) => ctype_digit($ref)));
         $query = $tender->participants()
-            ->with(['vendor.cidbGrades.code', 'vendor.cidbGrades.children.code'])
+            ->with(['vendor.cidbGrades.code'])
             ->where('participate', 1)
             ->where('submitted', 1)
             ->where(function ($q) use ($cutOffRefs, $numericRefs) {
@@ -499,31 +499,17 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
             $vendorName = $vendor->name ?? $vendor->company_name ?? ('Petender ' . $kod);
             $ssm = $vendor->registration_number ?? $vendor->ssm_number ?? $vendor->ssm ?? '-';
 
-            // Read CIDB grade and specializations from the vendor's registered CIDB codes.
-            $cidbGradeRows = $vendor?->cidbGrades ?? collect();
-            $cidbGradeDisplay = $cidbGradeRows
-                ->map(function ($grade) {
-                    $gradeCode = $grade->code->code ?? $grade->code->name ?? null;
-                    if (! $gradeCode) {
-                        return null;
-                    }
-
-                    $specializations = $grade->children
-                        ->map(fn ($child) => $child->code->code ?? null)
-                        ->filter()
-                        ->unique()
-                        ->sort()
-                        ->values();
-
-                    return $gradeCode . ($specializations->isNotEmpty()
-                        ? ' (' . $specializations->implode(', ') . ')'
-                        : '');
-                })
+            // Show the vendor's registered CIDB grades only. The specialization
+            // list can contain many codes and makes every evaluation table/modal
+            // excessively tall; detailed registrations remain on the vendor profile.
+            $cidbGradeDisplay = ($vendor?->cidbGrades ?? collect())
+                ->map(fn ($grade) => $grade->code?->code ?? $grade->code?->name ?? null)
                 ->filter()
                 ->unique()
+                ->sort()
                 ->values();
             $cidbDisplay = $cidbGradeDisplay->isNotEmpty()
-                ? 'CIDB Gred ' . $cidbGradeDisplay->implode('; ')
+                ? 'CIDB Gred ' . $cidbGradeDisplay->implode(', ')
                 : 'CIDB Gred: Tiada Rekod';
 
             $hargaTawaran = $p->harga_tawaran_resolved ?? ((float) ($p->harga_tawaran ?? $p->bid_price ?? $p->price ?? 0));
