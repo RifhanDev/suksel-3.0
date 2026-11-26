@@ -356,7 +356,7 @@
                     </div>
 
                     <div class="row g-3 mb-3">
-                        <div class="col-md-6">
+                        <div class="col-md-6 d-none">
                             <label class="form-label">Kategori Perolehan</label>
                             <input type="text" class="form-control" value="{{ $kategoriName }}" disabled>
                         </div>
@@ -402,7 +402,7 @@
                             </svg>
                         </div>
                         <div class="small mt-1">
-                            Klik <strong>Papar</strong> bagi setiap item untuk mengisi brand, harga seunit dan dokumen sokongan.
+                            Klik <strong>Papar</strong> bagi setiap item untuk mengisi catatan, harga seunit dan dokumen sokongan.
                         </div>
                     </div>
 
@@ -532,7 +532,7 @@
                         <input type="text" class="form-control" id="modalKuantiti" readonly>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label required">Brand</label>
+                        <label class="form-label">Catatan (cth: Brand)</label>
                         <input type="text" class="form-control" id="modalBrand" {{ $canSubmitOffer ? '' : 'readonly' }}>
                     </div>
                     <div class="mb-3">
@@ -725,8 +725,8 @@
         var index = parseInt(document.getElementById('modalItemIndex').value, 10) || 0;
         var brand = document.getElementById('modalBrand').value.trim();
         var unit = parseMoney(document.getElementById('modalHargaSeunit').value);
-        if (!brand || unit <= 0) {
-            alert('Sila isi Brand dan Harga Seunit.');
+        if (unit <= 0) {
+            alert('Sila isi Harga Seunit.');
             return;
         }
         recalcModal();

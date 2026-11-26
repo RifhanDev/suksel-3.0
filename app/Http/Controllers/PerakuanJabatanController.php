@@ -13,8 +13,11 @@ use App\Models\PerakuanJabatanPengesyoranPembekal;
 use App\Models\PerakuanJabatanPengesyoranPembekalItem;
 use App\Models\TenderKewanganKerjaEvaluation;
 use App\Models\TenderKewanganLaporan;
+use App\Models\TenderTeknikalKerjaLampiran;
 use App\Models\TenderTeknikalSpesifikasiEvaluation;
+use App\Services\PenilaianKewanganWorkflowResolver;
 use App\Services\StosBackendClient;
+use App\Services\TeknikalKerjaEvaluationService;
 use App\Services\TenderProcessStatusService;
 use App\Support\BidSpecBreakdown;
 use App\Support\TenderProcessStatus;
@@ -53,6 +56,11 @@ class PerakuanJabatanController extends Controller
             if ($file instanceof PerakuanJabatanKertasTaklimatItemFile) {
                 $file->loadMissing('item.header.tender');
                 $this->assertOwnAgency($file->item?->header?->tender);
+            }
+
+            $lampiran = $request->route('lampiran');
+            if ($lampiran instanceof TenderTeknikalKerjaLampiran) {
+                $this->assertOwnAgency($lampiran->tender);
             }
 
             return $next($request);
@@ -352,7 +360,19 @@ class PerakuanJabatanController extends Controller
     {
         $identifier = $tender->uuid ?: ($tender->no_tender ?: ($tender->ref_number ?: (string) $tender->id));
 
-        return app(PenilaianKewanganController::class)->cetakLaporan($identifier, false);
+        return match (app(PenilaianKewanganWorkflowResolver::class)->classify($tender)) {
+            PenilaianKewanganWorkflowResolver::WORKFLOW_SEBUT_HARGA_KERJA => app(PenilaianKewanganSebutHargaKerjaController::class)->cetakLaporan($identifier, false),
+            PenilaianKewanganWorkflowResolver::WORKFLOW_TENDER_KERJA_BESAR,
+            PenilaianKewanganWorkflowResolver::WORKFLOW_TENDER_KERJA_KECIL_ME,
+            PenilaianKewanganWorkflowResolver::WORKFLOW_TENDER_KERJA_KECIL_BUKAN_ME => app(PenilaianKewanganKerjaController::class)->cetakLaporan($identifier),
+            default => app(PenilaianKewanganController::class)->cetakLaporan($identifier, false),
+        };
+    }
+
+    /** Proxy Teknikal Kerja lampiran so Urusetia can download it without TechnicalEvaluation menu. */
+    public function muatTurunLampiranTeknikalKerja(TenderTeknikalKerjaLampiran $lampiran)
+    {
+        return app(PenilaianTeknikalController::class)->downloadLampiranKerja($lampiran);
     }
 
     /**
@@ -532,19 +552,37 @@ class PerakuanJabatanController extends Controller
      * Module-sourced download URLs for download_only slots (not user uploads).
      * Perakuan Jabatan only opens after teknikal + kewangan are done, so links are always available.
      *
-     * @return array<string, array{label: string, url: string}|null>
+     * @return array<string, list<array{label: string, url: string}>>
      */
     private function buildKertasTaklimatSourceLinks(Tender $tender): array
     {
-        return [
-            'teknikal' => [
+        // Kerja has no printable teknikal report; its Jawatankuasa Teknikal uploads lampiran instead.
+        $teknikal = (int) ($tender->kategori_perolehan_id ?? 0) === 3
+            ? app(TeknikalKerjaEvaluationService::class)->loadLampiran($tender)
+                ->map(fn (TenderTeknikalKerjaLampiran $file) => [
+                    'label' => $file->display_name ?: $file->original_name,
+                    'url' => route('perakuanjabatan.lampiranTeknikalKerja', $file),
+                ])
+                ->all()
+            : [[
                 'label' => 'Laporan Jawatankuasa Penilaian Teknikal',
                 'url' => route('perakuanjabatan.laporanTeknikal', $tender),
-            ],
-            'kewangan' => [
-                'label' => 'Laporan Jawatankuasa Penilaian Kewangan',
+            ]];
+
+        $kewanganLabel = match (app(PenilaianKewanganWorkflowResolver::class)->classify($tender)) {
+            PenilaianKewanganWorkflowResolver::WORKFLOW_SEBUT_HARGA_KERJA => 'Laporan Jawatankuasa Penilaian Sebut Harga',
+            PenilaianKewanganWorkflowResolver::WORKFLOW_TENDER_KERJA_BESAR,
+            PenilaianKewanganWorkflowResolver::WORKFLOW_TENDER_KERJA_KECIL_ME,
+            PenilaianKewanganWorkflowResolver::WORKFLOW_TENDER_KERJA_KECIL_BUKAN_ME => 'Laporan Jawatankuasa Penilaian Tender',
+            default => 'Laporan Jawatankuasa Penilaian Kewangan',
+        };
+
+        return [
+            'teknikal' => $teknikal,
+            'kewangan' => [[
+                'label' => $kewanganLabel,
                 'url' => route('perakuanjabatan.laporanKewangan', $tender),
-            ],
+            ]],
         ];
     }
 

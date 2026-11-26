@@ -651,6 +651,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('/perakuan-jabatan/kertas-taklimat/file/{file}', [PerakuanJabatanController::class, 'kertasTaklimatDownload'])->name('perakuanjabatan.kertasTaklimat.download');
 	Route::get('/perakuan-jabatan/{tender}/laporan-teknikal', [PerakuanJabatanController::class, 'muatTurunLaporanTeknikal'])->name('perakuanjabatan.laporanTeknikal');
 	Route::get('/perakuan-jabatan/{tender}/laporan-kewangan', [PerakuanJabatanController::class, 'muatTurunLaporanKewangan'])->name('perakuanjabatan.laporanKewangan');
+	Route::get('/perakuan-jabatan/teknikal-kerja/lampiran/{lampiran}', [PerakuanJabatanController::class, 'muatTurunLampiranTeknikalKerja'])->name('perakuanjabatan.lampiranTeknikalKerja');
 	Route::post('/perakuan-jabatan/{tender}/pengesyoran-pembekal/simpan', [PerakuanJabatanController::class, 'pengesyoranPembekalSimpan'])->name('perakuanjabatan.pengesyoranPembekal.simpan');
 	Route::post('/perakuan-jabatan/{tender}/pengesyoran-pembekal/hantar', [PerakuanJabatanController::class, 'pengesyoranPembekalHantar'])->name('perakuanjabatan.pengesyoranPembekal.hantar');
 	Route::post('/perakuan-jabatan/{tender}/jadual-bidaan/simpan', [PerakuanJabatanController::class, 'jadualBidaanSimpan'])->name('perakuanjabatan.jadualBidaan.simpan');

@@ -138,7 +138,7 @@
 							</td>
 							<td class="kt-col-tindakan">
 								@php
-									$sourceLink = $kertasSourceLinks[$item->slot_key] ?? null;
+									$sourceLinks = $kertasSourceLinks[$item->slot_key] ?? [];
 								@endphp
 								@foreach ($item->files as $f)
 									<div class="d-flex flex-wrap align-items-center gap-2 mb-1 kt-file-row" data-file-id="{{ $f->id }}">
@@ -148,16 +148,16 @@
 										<button type="button" class="btn btn-link btn-sm p-0 kt-remove-file text-danger {{ $ktLocked ? 'd-none' : '' }}">Buang</button>
 									</div>
 								@endforeach
-								@if ($sourceLink)
+								@foreach ($sourceLinks as $sourceLink)
 									<div class="d-flex flex-wrap align-items-center gap-2 mb-1">
 										<a href="{{ $sourceLink['url'] }}" target="_blank" rel="noopener noreferrer"
 											class="kt-action-link kt-muat-turun">Muat Turun</a>
 										<span class="small text-muted text-break">{{ $sourceLink['label'] }}</span>
 									</div>
-								@endif
+								@endforeach
 								<div class="d-flex flex-wrap align-items-center gap-2 kt-upload-actions">
 									@if (in_array($ui, ['download_only', 'upload_download'], true))
-										@if ($item->files->isEmpty() && empty($sourceLink))
+										@if ($item->files->isEmpty() && empty($sourceLinks))
 											<span class="text-muted small">Tiada dokumen untuk dimuat turun</span>
 										@endif
 									@endif

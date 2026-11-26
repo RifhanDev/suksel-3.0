@@ -1741,14 +1741,17 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
     /**
      * Printable Laporan Jawatankuasa Penilaian Sebut Harga.
      */
-    public function cetakLaporan(string $tender_no)
+    public function cetakLaporan(string $tender_no, bool $enforceCommittee = true)
     {
         $tender = $this->resolveTenderByIdentifier($tender_no);
         if (! $tender) {
             abort(404, 'Tender tidak ditemui.');
         }
 
-        $this->assertCommitteeAppointment($tender, $this->financialCommitteeJenis);
+        // Perakuan Jabatan opens this for Urusetia, who is not on the committee.
+        if ($enforceCommittee) {
+            $this->assertCommitteeAppointment($tender, $this->financialCommitteeJenis);
+        }
 
         $jpJenis = $this->resolveJpJenis($tender);
 

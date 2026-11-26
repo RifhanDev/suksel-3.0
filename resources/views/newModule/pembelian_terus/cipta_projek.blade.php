@@ -370,7 +370,7 @@
                         <line x1="16" y1="13" x2="8" y2="13"></line>
                         <line x1="16" y1="17" x2="8" y2="17"></line>
                     </svg>
-                    <span class="fw-bold text-dark text-uppercase small">Cipta Projek Untuk Pembelian Terus</span>
+                    <span class="fw-bold text-dark text-uppercase small">Cipta Projek Untuk Pembelian Terus (Bekalan/ Perkhidmatan)</span>
                 </div>
 
                 <div class="p-4">
@@ -483,11 +483,24 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <!-- Kategori Perolehan -->
+                            <!-- Terbuka Kepada -->
                             <div class="mb-0">
+                                <label class="form-label">Terbuka Kepada <span class="text-danger">*</span></label>
+                                @php $terbukaKepada = old('terbuka_kepada', optional($p)->terbuka_kepada ?? 'semua'); @endphp
+                                <div class="segmented-control">
+                                    <input type="radio" name="terbuka_kepada" id="tk_b" value="bumiputera"
+                                        {{ $terbukaKepada == 'bumiputera' ? 'checked' : '' }}>
+                                    <label for="tk_b">Bumiputera</label>
+                                    <input type="radio" name="terbuka_kepada" id="tk_s" value="semua"
+                                        {{ $terbukaKepada == 'semua' ? 'checked' : '' }}>
+                                    <label for="tk_s">Semua</label>
+                                </div>
+                            </div>
+                            <!-- Kategori Perolehan -->
+                            <div class="mb-0 d-none">
                                 @php $kategoriSelected = old('kategori_perolehan', optional($p)->kategori_perolehan); @endphp
-                                <label class="form-label">Kategori Perolehan <span class="text-danger">*</span></label>
-                                <select class="form-select" name="kategori_perolehan" required>
+                                <label class="form-label">Kategori Perolehan</label>
+                                <select class="form-select" name="kategori_perolehan">
                                     <option value="" selected disabled>Pilih...</option>
                                     @foreach (($kategoriPerolehan ?? \App\Models\Ref\RefKategoriJenisPerolehan::where('active', true)->whereRaw('LOWER(name) <> ?', ['kerja'])->get()) as $kategori)
                                         @continue(strtolower((string) $kategori->name) === 'kerja')
@@ -520,19 +533,6 @@
                                     <input type="text" class="form-control" name="sumber_lain_text"
                                         value="{{ old('sumber_lain_text', optional($p)->sumber_lain_text) }}"
                                         placeholder="Nyatakan sumber peruntukan...">
-                                </div>
-                            </div>
-                            <!-- Terbuka Kepada -->
-                            <div class="mb-0">
-                                <label class="form-label">Terbuka Kepada <span class="text-danger">*</span></label>
-                                @php $terbukaKepada = old('terbuka_kepada', optional($p)->terbuka_kepada ?? 'semua'); @endphp
-                                <div class="segmented-control">
-                                    <input type="radio" name="terbuka_kepada" id="tk_b" value="bumiputera"
-                                        {{ $terbukaKepada == 'bumiputera' ? 'checked' : '' }}>
-                                    <label for="tk_b">Bumiputera</label>
-                                    <input type="radio" name="terbuka_kepada" id="tk_s" value="semua"
-                                        {{ $terbukaKepada == 'semua' ? 'checked' : '' }}>
-                                    <label for="tk_s">Semua</label>
                                 </div>
                             </div>
                         </div>
