@@ -33,6 +33,16 @@ class BlacklistVendorApiController extends Controller
             ], 401);
         }
 
+        // Token boleh dicipta dengan kebenaran lain (vendor/tender/transaction:read);
+        // hanya token dengan blacklist:read boleh baca senarai hitam.
+        if (! $client->tokenCan('blacklist:read')) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'The API client is not authorized for this endpoint.',
+                'data' => [],
+            ], 403);
+        }
+
         $validator = Validator::make($request->all(), [
             'registration' => 'nullable|string|max:100',
             'status' => 'nullable|in:active,cancelled,all',

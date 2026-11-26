@@ -35,9 +35,10 @@ class ApiController extends Controller
         }
 
         $this->recordApiRequestForCredential($request, 'vendor', ['registration' => $registration]);
-        $credential = $request->attributes->get('api_credential');
+        // Tiada tapisan agensi: vendors.organization_unit_id ialah OU pendaftaran
+        // (global_cart_ou), bukan agensi pemanggil. Agensi perlu semak mana-mana
+        // syarikat berdaftar mengikut no. pendaftaran, seperti dalam 2.0.
         $vendor = Vendor::where('registration', $registration)
-            ->where('organization_unit_id', $credential->organizationUnitId)
             ->with(['user', 'uploads', 'vendorCodes'])
             ->first();
 
