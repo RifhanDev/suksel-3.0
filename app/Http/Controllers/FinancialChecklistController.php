@@ -8,7 +8,6 @@ use App\Models\FinancialChecklistFile;
 use App\Models\FinancialChecklistHeader;
 use App\Models\FinancialChecklistItem;
 use App\Models\PenyataBank;
-use App\Models\ProfilPetender;
 use App\Models\Tender;
 use App\Services\StosBackendClient;
 use App\Support\PenyediaanIklanNavigation;
@@ -298,17 +297,15 @@ class FinancialChecklistController extends Controller
                 ->all();
         }
 
-        // Read the Maklumat Profil Petender scoring configuration from the
-        // shared database. The financial evaluation screens use these same
-        // tables, so avoid a separate STOS API request that could silently
-        // leave this checklist row showing zero when the API is unavailable.
+        // Read the scoring rows from the same STOS API endpoint used to load
+        // the officer's Profil Petender form. This keeps the checklist in sync
+        // with the saved form configuration instead of relying on a local copy
+        // of data owned by the STOS backend.
         $profilPetenderSkema = 0.0;
         $profilPetenderFormCompleted = false;
         try {
-            $profilPetender = ProfilPetender::query()
-                ->with('scoringItems:id,profil_petender_id,jenis_skor,skema,sort_order')
-                ->where('tender_id', $tender->id)
-                ->first();
+            $profilUrl = $this->url('profil-petenders/' . $tenderUuid);
+            $profilResponse = $this->api()->get($profilUrl);
 
             $maximumScores = [
                 'modal_berbayar' => 0.0,
@@ -316,28 +313,37 @@ class FinancialChecklistController extends Controller
             ];
             $configuredAnalyses = [];
 
-            foreach ($profilPetender?->scoringItems ?? [] as $scoringItem) {
-                if (!array_key_exists($scoringItem->jenis_skor, $maximumScores)
-                    || !is_numeric($scoringItem->skema)) {
-                    continue;
+            if ($profilResponse->successful()) {
+                $profilData = $profilResponse->json('data') ?? [];
+
+                foreach ((array) ($profilData['scoring_items'] ?? []) as $scoringItem) {
+                    $jenisSkor = $scoringItem['jenis_skor'] ?? null;
+                    $skema = $scoringItem['skema'] ?? null;
+                    if (!array_key_exists($jenisSkor, $maximumScores) || !is_numeric($skema)) {
+                        continue;
+                    }
+
+                    $configuredAnalyses[$jenisSkor] = true;
+                    $maximumScores[$jenisSkor] = max(
+                        $maximumScores[$jenisSkor],
+                        max(0, (float) $skema)
+                    );
                 }
 
-                $configuredAnalyses[$scoringItem->jenis_skor] = true;
-                $maximumScores[$scoringItem->jenis_skor] = max(
-                    $maximumScores[$scoringItem->jenis_skor],
-                    max(0, (float) $scoringItem->skema)
-                );
+                // Bands within an analysis are alternatives. Add the maximum
+                // configured score from each of the two analyses.
+                $profilPetenderSkema = array_sum($maximumScores);
+                $profilPetenderFormCompleted = in_array($profilData['jenis_skor_modal_berbayar'] ?? null, ['manual', 'automatik'], true)
+                    && in_array($profilData['jenis_skor_modal_dibenarkan'] ?? null, ['manual', 'automatik'], true)
+                    && isset($configuredAnalyses['modal_berbayar'], $configuredAnalyses['modal_dibenarkan']);
+            } else {
+                Log::warning('FinancialChecklistController@index: Profil Petender API request failed', [
+                    'tender_uuid' => $tenderUuid,
+                    'status' => $profilResponse->status(),
+                ]);
             }
-
-            // Bands within an analysis are alternatives. Add the maximum
-            // configured score from each of the two analyses.
-            $profilPetenderSkema = array_sum($maximumScores);
-            $profilPetenderFormCompleted = $profilPetender
-                && in_array($profilPetender->jenis_skor_modal_berbayar, ['manual', 'automatik'], true)
-                && in_array($profilPetender->jenis_skor_modal_dibenarkan, ['manual', 'automatik'], true)
-                && isset($configuredAnalyses['modal_berbayar'], $configuredAnalyses['modal_dibenarkan']);
         } catch (\Throwable $e) {
-            Log::warning('FinancialChecklistController@index: Profil Petender scoring lookup failed', [
+            Log::warning('FinancialChecklistController@index: Profil Petender API request failed', [
                 'tender_uuid' => $tenderUuid,
                 'error' => $e->getMessage(),
             ]);
