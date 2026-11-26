@@ -659,7 +659,13 @@ $(document).ready(function () {
         if (!STORE_URL || !pricingData) return;
         $.post(STORE_URL, buildPayload())
             .done(function(res) {
-                if (callback) { callback(res); }
+                if (res && res.success === true) {
+                    if (callback) { callback(res); }
+                    return;
+                }
+
+                unblockUI();
+                Swal.fire('Ralat', (res && res.message) || 'Ralat semasa menyimpan. Sila cuba lagi.', 'error');
             })
             .fail(function() {
                 unblockUI();

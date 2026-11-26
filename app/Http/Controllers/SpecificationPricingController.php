@@ -92,8 +92,16 @@ class SpecificationPricingController extends Controller
             if ($response->successful()) {
                 return response()->json($response->json(), $response->status());
             }
+
+            Log::warning('SpecificationPricingController@submit: STOS API returned an error; attempting local fallback', [
+                'technical_item_uuid' => $targetTechItemUuid,
+                'status' => $response->status(),
+            ]);
         } catch (\Throwable $e) {
-            Log::warning('SpecificationPricingController@submit: API exception, attempting local fallback', ['error' => $e->getMessage()]);
+            Log::warning('SpecificationPricingController@submit: API exception, attempting local fallback', [
+                'technical_item_uuid' => $targetTechItemUuid,
+                'error' => $e->getMessage(),
+            ]);
         }
 
         // Local fallback submit
@@ -397,6 +405,18 @@ class SpecificationPricingController extends Controller
                 ->where('technical_checklist_item_id', $techItem->tci_id)
                 ->update(['status' => 'submitted', 'updated_at' => now()]);
 
+            $pricingExists = DB::table('specification_pricings')
+                ->where('technical_checklist_item_id', $techItem->tci_id)
+                ->exists();
+
+            if (!$pricingExists) {
+                Log::warning('SpecificationPricingController@submit: local fallback found no pricing or checklist row', [
+                    'technical_item_uuid' => $spesifikasiUuid,
+                ]);
+
+                return ['success' => false, 'message' => 'Rekod penetapan harga tidak ditemui. Sila simpan semula sebelum selesai.'];
+            }
+
             DB::table('financial_checklist_items')
                 ->whereIn('financial_checklist_header_id', DB::table('financial_checklist_headers')
                     ->where('tender_id', $techItem->tender_id)
@@ -414,9 +434,17 @@ class SpecificationPricingController extends Controller
                 })
                 ->update(['status' => 'submitted', 'updated_at' => now()]);
         } else {
-            DB::table('financial_checklist_items')
+            $checklistUpdated = DB::table('financial_checklist_items')
                 ->where('uuid', $spesifikasiUuid)
                 ->update(['status' => 'submitted', 'updated_at' => now()]);
+
+            if ($checklistUpdated === 0) {
+                Log::warning('SpecificationPricingController@submit: local fallback found no matching specification row', [
+                    'specification_uuid' => $spesifikasiUuid,
+                ]);
+
+                return ['success' => false, 'message' => 'Rekod spesifikasi tidak ditemui. Sila muat semula halaman dan cuba lagi.'];
+            }
         }
 
         return ['success' => true, 'message' => 'Berjaya dihantar.'];

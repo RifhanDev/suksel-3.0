@@ -244,9 +244,56 @@ class FinancialChecklistController extends Controller
                         }
                     }
                 }
+            } else {
+                Log::warning('FinancialChecklistController@index: Specification pricing status API returned an error', [
+                    'tender_uuid' => $tenderUuid,
+                    'status' => $pricingStatusResponse->status(),
+                ]);
             }
         } catch (\Throwable $e) {
             Log::warning('FinancialChecklistController@index: Specification pricing status request failed', [
+                'tender_uuid' => $tenderUuid,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        // SpecificationPricingController can save/submit locally when the
+        // STOS API is unavailable. Read that same local status as a fallback
+        // so the checklist does not keep showing Draf after a successful local
+        // fallback submission. A submitted local status takes precedence over
+        // a stale draft returned by the API.
+        try {
+            $localPricingStatuses = \Illuminate\Support\Facades\DB::table('specification_pricings as sp')
+                ->join('technical_checklist_items as tci', 'tci.id', '=', 'sp.technical_checklist_item_id')
+                ->join('technical_checklist_headers as tch', 'tch.id', '=', 'tci.technical_checklist_header_id')
+                ->leftJoin('technical_specification_documents as tsd', 'tsd.id', '=', 'tci.specification_document_id')
+                ->where('tch.tender_id', $tender->id)
+                ->where(function ($query) {
+                    $query->where('tci.source_type', 'specification_document')
+                        ->orWhere('tci.mechanism', 'spesifikasi');
+                })
+                ->select([
+                    'tci.uuid as technical_item_uuid',
+                    'tsd.uuid as specification_document_uuid',
+                    'sp.status',
+                ])
+                ->get();
+
+            foreach ($localPricingStatuses as $localPricingStatus) {
+                $status = strtolower(trim((string) ($localPricingStatus->status ?? '')));
+                if (!in_array($status, ['submitted', 'complete', 'completed'], true)) {
+                    continue;
+                }
+
+                foreach (['technical_item_uuid', 'specification_document_uuid'] as $uuidKey) {
+                    $uuid = $localPricingStatus->{$uuidKey} ?? null;
+                    if ($uuid) {
+                        $specificationPricingStatuses[$uuid] = $status;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('FinancialChecklistController@index: Local specification pricing status lookup failed', [
                 'tender_uuid' => $tenderUuid,
                 'error' => $e->getMessage(),
             ]);
