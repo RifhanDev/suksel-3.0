@@ -137,6 +137,13 @@ class PerakuanJabatanController extends Controller
         }
 
         $kertasSourceLinks = $this->buildKertasTaklimatSourceLinks($tender);
+        // Kerja: Teknikal row only when lampiran exist; Kewangan row takes its report's name.
+        if ((int) ($tender->kategori_perolehan_id ?? 0) === 3) {
+            if (empty($kertasSourceLinks['teknikal'])) {
+                $kertasItems = $kertasItems->reject(fn ($item) => $item->slot_key === 'teknikal')->values();
+            }
+            $kertasItems->firstWhere('slot_key', 'kewangan')?->setAttribute('kandungan', $kertasSourceLinks['kewangan'][0]['label']);
+        }
 
         $pengesyoranPembekal = PerakuanJabatanPengesyoranPembekal::firstOrCreate(
             ['tender_id' => $tender->id],
