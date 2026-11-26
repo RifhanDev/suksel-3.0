@@ -15,8 +15,11 @@ use App\Models\PerakuanJabatanKertasTaklimatItem;
 use App\Models\PerakuanJabatanPengesyoranPembekal;
 use App\Models\PerakuanJabatanPengesyoranPembekalItem;
 use App\Models\Ref\RefJustifikasiPemilihanPembekal;
+use App\Models\TenderTeknikalKerjaLampiran;
 use App\Models\TenderTeknikalSpesifikasiEvaluation;
+use App\Services\PenilaianKewanganWorkflowResolver;
 use App\Services\StosBackendClient;
+use App\Services\TeknikalKerjaEvaluationService;
 use App\Services\TenderProcessStatusService;
 use App\Support\BidSpecBreakdown;
 use App\Support\TenderProcessStatus;
@@ -140,8 +143,29 @@ class JawatankuasaPerolehanController extends Controller
                 ->orderBy('sort_order')
                 ->get();
 
+            $isKerja = (int) ($tender->kategori_perolehan_id ?? 0) === 3;
+            // Kerja has no teknikal report: list the Jawatankuasa Teknikal's lampiran instead (none = no row).
+            $teknikalLinks = $isKerja
+                ? app(TeknikalKerjaEvaluationService::class)->loadLampiran($tender)
+                    ->map(fn (TenderTeknikalKerjaLampiran $file) => [
+                        'label' => $file->display_name ?: $file->original_name,
+                        'url' => route('jawatankuasa.perolehan.lampiranTeknikalKerja', $file),
+                    ])
+                    ->all()
+                : [[
+                    'label' => 'Laporan Jawatankuasa Penilaian Teknikal',
+                    'url' => route('jawatankuasa.perolehan.laporanTeknikal', $tender),
+                ]];
+            $kewanganLabel = match (app(PenilaianKewanganWorkflowResolver::class)->classify($tender)) {
+                PenilaianKewanganWorkflowResolver::WORKFLOW_SEBUT_HARGA_KERJA => 'Laporan Jawatankuasa Penilaian Sebut Harga',
+                PenilaianKewanganWorkflowResolver::WORKFLOW_TENDER_KERJA_BESAR,
+                PenilaianKewanganWorkflowResolver::WORKFLOW_TENDER_KERJA_KECIL_ME,
+                PenilaianKewanganWorkflowResolver::WORKFLOW_TENDER_KERJA_KECIL_BUKAN_ME => 'Laporan Jawatankuasa Penilaian Tender',
+                default => 'Laporan Jawatankuasa Penilaian Kewangan',
+            };
+
             $taklimatAttachments = $taklimatItems
-                ->flatMap(function ($item) use ($tender) {
+                ->flatMap(function ($item) use ($tender, $isKerja, $teknikalLinks, $kewanganLabel) {
                     $rows = $item->files->map(function ($file) use ($item) {
                         return [
                             'kandungan' => $item->kandungan,
@@ -153,17 +177,19 @@ class JawatankuasaPerolehanController extends Controller
 
                     // Generated at Perakuan Jabatan (not an uploaded file).
                     if ($item->slot_key === 'teknikal') {
-                        $rows[] = [
-                            'kandungan' => $item->kandungan ?: 'Laporan Jawatankuasa Teknikal',
-                            'file_name' => 'Laporan Jawatankuasa Penilaian Teknikal',
-                            'papar_url' => route('jawatankuasa.perolehan.laporanTeknikal', $tender),
-                        ];
+                        foreach ($teknikalLinks as $link) {
+                            $rows[] = [
+                                'kandungan' => $item->kandungan ?: 'Laporan Jawatankuasa Teknikal',
+                                'file_name' => $link['label'],
+                                'papar_url' => $link['url'],
+                            ];
+                        }
                     }
 
                     if ($item->slot_key === 'kewangan') {
                         $rows[] = [
-                            'kandungan' => $item->kandungan ?: 'Laporan Jawatankuasa Kewangan',
-                            'file_name' => 'Laporan Jawatankuasa Penilaian Kewangan',
+                            'kandungan' => $isKerja ? $kewanganLabel : ($item->kandungan ?: 'Laporan Jawatankuasa Kewangan'),
+                            'file_name' => $kewanganLabel,
                             'papar_url' => route('jawatankuasa.perolehan.laporanKewangan', $tender),
                         ];
                     }
@@ -174,17 +200,19 @@ class JawatankuasaPerolehanController extends Controller
 
             // Fallback if PJ header/items were never seeded but reports still exist.
             if (! $taklimatItems->contains(fn ($item) => $item->slot_key === 'teknikal')) {
-                $taklimatAttachments->prepend([
-                    'kandungan' => 'Laporan Jawatankuasa Teknikal',
-                    'file_name' => 'Laporan Jawatankuasa Penilaian Teknikal',
-                    'papar_url' => route('jawatankuasa.perolehan.laporanTeknikal', $tender),
-                ]);
+                foreach (array_reverse($teknikalLinks) as $link) {
+                    $taklimatAttachments->prepend([
+                        'kandungan' => 'Laporan Jawatankuasa Teknikal',
+                        'file_name' => $link['label'],
+                        'papar_url' => $link['url'],
+                    ]);
+                }
             }
 
             if (! $taklimatItems->contains(fn ($item) => $item->slot_key === 'kewangan')) {
                 $taklimatAttachments->push([
-                    'kandungan' => 'Laporan Jawatankuasa Kewangan',
-                    'file_name' => 'Laporan Jawatankuasa Penilaian Kewangan',
+                    'kandungan' => $isKerja ? $kewanganLabel : 'Laporan Jawatankuasa Kewangan',
+                    'file_name' => $kewanganLabel,
                     'papar_url' => route('jawatankuasa.perolehan.laporanKewangan', $tender),
                 ]);
             }
@@ -391,9 +419,16 @@ class JawatankuasaPerolehanController extends Controller
     {
         $this->assertOwnAgency($tender);
 
-        $identifier = $tender->uuid ?: ($tender->no_tender ?: ($tender->ref_number ?: (string) $tender->id));
+        // Same report choice as Perakuan Jabatan: Bekalan, Sebut Harga Kerja or Kerja.
+        return app(PerakuanJabatanController::class)->muatTurunLaporanKewangan($tender);
+    }
 
-        return app(PenilaianKewanganController::class)->cetakLaporan($identifier, false);
+    /** Proxy Teknikal Kerja lampiran for JP Paparan Kertas Taklimat (MeetingDecision role). */
+    public function muatTurunLampiranTeknikalKerja(TenderTeknikalKerjaLampiran $lampiran)
+    {
+        $this->assertOwnAgency($lampiran->tender);
+
+        return app(PenilaianTeknikalController::class)->downloadLampiranKerja($lampiran);
     }
 
     /**

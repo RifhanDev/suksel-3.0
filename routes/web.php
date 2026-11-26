@@ -667,6 +667,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('jawatankuasa-perolehan/form', [JawatankuasaPerolehanController::class, 'form'])->name('jawatankuasa.perolehan.form');
 	Route::get('jawatankuasa-perolehan/{tender}/laporan-teknikal', [JawatankuasaPerolehanController::class, 'muatTurunLaporanTeknikal'])->name('jawatankuasa.perolehan.laporanTeknikal');
 	Route::get('jawatankuasa-perolehan/{tender}/laporan-kewangan', [JawatankuasaPerolehanController::class, 'muatTurunLaporanKewangan'])->name('jawatankuasa.perolehan.laporanKewangan');
+	Route::get('jawatankuasa-perolehan/teknikal-kerja/lampiran/{lampiran}', [JawatankuasaPerolehanController::class, 'muatTurunLampiranTeknikalKerja'])->name('jawatankuasa.perolehan.lampiranTeknikalKerja');
 	Route::post('jawatankuasa-perolehan/mesyuarat/simpan', [JawatankuasaPerolehanController::class, 'store'])->name('jawatankuasa.perolehan.mesyuarat.simpan');
 	Route::post('jawatankuasa-perolehan/mesyuarat/hantar', [JawatankuasaPerolehanController::class, 'hantar'])->name('jawatankuasa.perolehan.mesyuarat.hantar');
 	Route::post('jawatankuasa-perolehan/kertas-keputusan/simpan', [JawatankuasaPerolehanController::class, 'simpanKertasKeputusan'])->name('jawatankuasa.perolehan.kertas_keputusan.simpan');
