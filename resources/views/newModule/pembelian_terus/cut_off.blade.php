@@ -317,7 +317,7 @@
                                     <th class="text-center" width="50">Bil.</th>
                                     <th>Item</th>
                                     <th class="text-center" width="90">Kuantiti</th>
-                                    <th>Brand</th>
+                                    <th>Catatan</th>
                                     <th class="text-end" width="120">Harga Seunit (RM)</th>
                                     <th class="text-end" width="140">Harga Keseluruhan (RM)</th>
                                     <th class="text-end" width="130">Harga SST (RM)</th>
