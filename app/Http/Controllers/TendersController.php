@@ -2804,7 +2804,10 @@ class TendersController extends Controller
 
 			$route = $request->route();
 			if ($identifier === null && str_contains((string) ($route?->uri() ?? ''), 'tender')) {
-				$identifier = $request->route('id');
+				// Kebenaran Khas Lulus: {id} is the exception id, not the tender id.
+				$identifier = $route->getActionMethod() === 'approve_exception'
+					? ExceptionTender::find($request->route('id'))?->tender_id
+					: $request->route('id');
 			}
 
 			if ($identifier instanceof Tender) {
