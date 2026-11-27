@@ -255,11 +255,21 @@ trait Helper
 
             // Large PDFs: Ghostscript text stamp first (FPDI page-loop OOMs / times out).
             // Small PDFs: FPDI first (fast, no shell dependency).
-            $preferGs = $bytes > (8 * 1024 * 1024);
+            // If `gs` is missing on the host, FPDI is the only option — install ghostscript.
+            $gsOk = $this->ghostscriptAvailable();
+            $preferGs = $gsOk && $bytes > (8 * 1024 * 1024);
+
+            if (! $gsOk) {
+                Log::warning('Meja watermark: Ghostscript (gs) not installed; FPDI-only mode', [
+                    'bytes' => $bytes,
+                ]);
+            }
 
             $attempts = $preferGs
                 ? ['gs_text', 'fpdi', 'gs_rewrite_fpdi', 'gs_cover']
-                : ['fpdi', 'gs_rewrite_fpdi', 'gs_text', 'gs_cover'];
+                : ($gsOk
+                    ? ['fpdi', 'gs_rewrite_fpdi', 'gs_text', 'gs_cover']
+                    : ['fpdi']);
 
             foreach ($attempts as $attempt) {
                 if ($stamped) {
@@ -360,7 +370,7 @@ trait Helper
     }
 
     /**
-     * Draw "Dokumen Meja Terkawal" (+ ID box) — top-right and center.
+     * Draw "Dokumen Meja Terkawal" top-right only (no ID box, no center stamp).
      */
     protected function paintMejaStampOnFpdiPage(Fpdi $pdf, float $pageW, float $pageH, ?string $idLabel): void
     {
@@ -369,44 +379,16 @@ trait Helper
         $textW = $pdf->GetStringWidth($label) + 4;
         $markX = max(3, $pageW - $textW - 8);
         $markY = 6;
-        $bandH = ($idLabel !== null && $idLabel !== '') ? 22 : 14;
+        $bandH = 14;
 
+        // White backdrop only — no border outline.
         $pdf->SetFillColor(255, 255, 255);
-        $pdf->SetDrawColor(166, 68, 28);
-        $pdf->SetLineWidth(0.7);
-        $pdf->Rect($markX - 2, $markY - 2, $textW + 4, $bandH, 'FD');
+        $pdf->Rect($markX - 2, $markY - 2, $textW + 4, $bandH, 'F');
 
         $pdf->SetTextColor(166, 68, 28);
         $pdf->SetFont('Helvetica', 'B', 18);
         $pdf->SetXY($markX, $markY);
         $pdf->Cell($textW, 8, $label, 0, 0, 'L');
-
-        if ($idLabel !== null && $idLabel !== '') {
-            $pdf->SetFont('Helvetica', 'B', 11);
-            $boxW = max(28, $pdf->GetStringWidth($idLabel) + 10);
-            $boxH = 8;
-            $boxX = $markX + ($textW / 2) - ($boxW / 2);
-            $boxY = $markY + 9;
-            $pdf->SetDrawColor(0, 0, 0);
-            $pdf->SetLineWidth(0.6);
-            $pdf->SetFillColor(255, 255, 255);
-            $pdf->Rect($boxX, $boxY, $boxW, $boxH, 'DF');
-            $pdf->SetTextColor(0, 0, 0);
-            $pdf->SetXY($boxX, $boxY + 1.5);
-            $pdf->Cell($boxW, 5, $idLabel, 0, 0, 'C');
-        }
-
-        $pdf->SetFont('Helvetica', 'B', 22);
-        $centerW = min($pageW - 8, $pdf->GetStringWidth($label) + 16);
-        $centerX = max(4, ($pageW - $centerW) / 2);
-        $centerY = max(40, ($pageH / 2) - 10);
-        $pdf->SetFillColor(255, 255, 255);
-        $pdf->SetDrawColor(166, 68, 28);
-        $pdf->SetLineWidth(0.9);
-        $pdf->Rect($centerX, $centerY, $centerW, 16, 'FD');
-        $pdf->SetTextColor(166, 68, 28);
-        $pdf->SetXY($centerX, $centerY + 4);
-        $pdf->Cell($centerW, 8, $label, 0, 0, 'C');
         $pdf->SetTextColor(0, 0, 0);
     }
 
@@ -417,28 +399,19 @@ trait Helper
     {
         $gs = $this->ghostscriptBinary();
         $label = $this->gsEscape('Dokumen Meja Terkawal');
-        $id = $idLabel ? $this->gsEscape($idLabel) : '';
-
-        $idBlock = $id !== ''
-            ? "/Helvetica-Bold findfont 14 scalefont setfont\n0 0 0 setrgbcolor\n340 785 moveto\n({$id}) show\n"
-            : '';
 
         // EndPage stack is: pageCount reasonCode
         // Pop count, stamp when reason < 2 (showpage / copypage).
+        // Top-right label only — no ID box, no center stamp.
         $ps = <<<PS
 <<
 /EndPage {
   exch pop
   2 lt {
     gsave
-      /Helvetica-Bold findfont 22 scalefont setfont
+      /Helvetica-Bold findfont 18 scalefont setfont
       0.65 0.27 0.11 setrgbcolor
-      280 810 moveto
-      ({$label}) show
-      {$idBlock}
-      /Helvetica-Bold findfont 28 scalefont setfont
-      0.65 0.27 0.11 setrgbcolor
-      160 420 moveto
+      300 810 moveto
       ({$label}) show
     grestore
     true
@@ -494,24 +467,12 @@ PS;
 
         $pdf->SetTextColor(166, 68, 28);
         $pdf->SetFont('Helvetica', 'B', 28);
-        $pdf->SetXY(15, 110);
+        $pdf->SetXY(15, 120);
         $pdf->Cell(180, 14, 'Dokumen Meja Terkawal', 0, 2, 'C');
-
-        if ($idLabel !== null && $idLabel !== '') {
-            $pdf->SetFont('Helvetica', 'B', 16);
-            $pdf->SetTextColor(0, 0, 0);
-            $pdf->SetDrawColor(0, 0, 0);
-            $pdf->SetFillColor(255, 255, 255);
-            $w = max(40, $pdf->GetStringWidth($idLabel) + 16);
-            $x = (210 - $w) / 2;
-            $pdf->Rect($x, 132, $w, 12, 'D');
-            $pdf->SetXY($x, 134);
-            $pdf->Cell($w, 8, $idLabel, 0, 0, 'C');
-        }
 
         $pdf->SetTextColor(80, 80, 80);
         $pdf->SetFont('Helvetica', '', 11);
-        $pdf->SetXY(15, 155);
+        $pdf->SetXY(15, 145);
         $pdf->MultiCell(180, 6, "Dokumen ini adalah Dokumen Meja Terkawal.\nSila rujuk halaman seterusnya untuk kandungan penuh.", 0, 'C');
 
         $out = tempnam(sys_get_temp_dir(), 'meja_cover_');
@@ -591,7 +552,23 @@ PS;
             }
         }
 
+        // Last resort — may still 127 if not on PATH (php-fpm often has a minimal PATH).
         return 'gs';
+    }
+
+    protected function ghostscriptAvailable(): bool
+    {
+        foreach (['/usr/bin/gs', '/bin/gs', '/usr/local/bin/gs'] as $bin) {
+            if (is_executable($bin)) {
+                return true;
+            }
+        }
+
+        $out = [];
+        $code = 1;
+        @exec('command -v gs 2>/dev/null', $out, $code);
+
+        return $code === 0 && ! empty($out[0]) && is_executable($out[0]);
     }
 
     protected function gsEscape(string $value): string
